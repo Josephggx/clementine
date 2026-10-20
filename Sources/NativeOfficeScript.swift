@@ -9,6 +9,7 @@ struct NativeOfficePermissionResult {
 /// through this boundary, including reading Numbers sheets and exporting copies.
 enum NativeOfficeScript {
   static let permissionResult = Notification.Name("ClementineNativeAutomationPermissionResult")
+  static let willUseApplication = Notification.Name("ClementineNativeAutomationWillUseApplication")
   static func run(_ script: String, bundleID: String, operation: String,
     report: (String, OSStatus) -> Void = {
       NotificationCenter.default.post(name: NativeOfficeScript.permissionResult,
@@ -18,6 +19,7 @@ enum NativeOfficeScript {
     var failure: NSDictionary?
     var result: NSAppleEventDescriptor?
     let execute = {
+      NotificationCenter.default.post(name: willUseApplication, object: bundleID)
       guard let appleScript = NSAppleScript(source: script) else { return }
       result = appleScript.executeAndReturnError(&failure)
     }

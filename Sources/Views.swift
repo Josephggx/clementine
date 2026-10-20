@@ -133,9 +133,11 @@ struct MainView: View {
             return status != .granted && status != .unavailable
           }
           if hasMissingPermission {
-            Image(systemName: "xmark.shield.fill")
-              .font(.system(size: 14, weight: .semibold))
-              .foregroundStyle(.red)
+            Image(systemName: "exclamationmark")
+              .font(.system(size: 10, weight: .bold))
+              .foregroundStyle(.white)
+              .frame(width: 16, height: 16)
+              .background(.red, in: Circle())
               .accessibilityLabel("Autorisations à vérifier")
           }
         }
@@ -169,13 +171,10 @@ struct WorkspaceView: View {
         empty
           .frame(maxHeight: .infinity)
       } else {
-          VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 20) {
-              VStack(alignment: .leading, spacing: 10) {
+          VStack(alignment: .leading, spacing: 7) {
                 HStack {
                   Text("\(state.files.count) fichier\(state.files.count>1 ? "s" : "")").font(
-                    .headline)
-                  Spacer()
+                    .headline).fixedSize(horizontal: true, vertical: false)
                   if state.files.count > 1 {
                     let clearHovered = fileSelection.hoveredControlID == "clear-files"
                     Button {
@@ -191,7 +190,14 @@ struct WorkspaceView: View {
                     .onHover {fileSelection.hoveredControlID=$0 ? "clear-files" : nil}
                     .animation(.easeInOut(duration:0.18),value:clearHovered)
                   }
+                  Spacer(minLength: 12)
+                  if let previewFile {
+                    documentPath(previewFile).layoutPriority(-1)
+                  }
                 }
+
+            HStack(alignment: .top, spacing: 20) {
+              VStack(alignment: .leading, spacing: 10) {
                 ScrollView {
                   VStack(spacing: 7) {
                     ForEach(state.files, id: \.self) { u in
@@ -211,53 +217,6 @@ struct WorkspaceView: View {
                   .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                   .onTapGesture(count: 2) { NSWorkspace.shared.open(previewFile) }
               }
-            }
-            if let previewFile {
-              let pathHoverID = "path:" + previewFile.path
-              let copyHoverID = "copy-path:" + previewFile.path
-              let pathHovered = fileSelection.hoveredControlID == pathHoverID
-              let copyHovered = fileSelection.hoveredControlID == copyHoverID
-              let pathCopied = fileSelection.copiedPath == previewFile.path
-              HStack(spacing: 4) {
-                Button {
-                  NSWorkspace.shared.activateFileViewerSelecting([previewFile])
-                } label: {
-                  HStack(spacing: 5) {
-                    Image(systemName: "folder")
-                    Text(verbatim: previewFile.path).lineLimit(1).truncationMode(.middle)
-                  }
-                  .font(.system(size: 10))
-                  .foregroundStyle(Color.secondary)
-                  .padding(.horizontal, 7).padding(.vertical, 4)
-                  .background(pathHovered ? citrus.opacity(0.14) : .clear,
-                    in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                  .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help("Afficher dans le Finder")
-                .onHover { fileSelection.hoveredControlID = $0 ? pathHoverID : nil }
-                .animation(.easeInOut(duration: 0.18), value: pathHovered)
-                Button {
-                  fileSelection.copyPath(previewFile.path)
-                } label: {
-                  Image(systemName: pathCopied ? "checkmark" : "doc.on.doc")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(Color.secondary)
-                    .frame(width: 25, height: 25)
-                    .background(copyHovered ? citrus.opacity(0.14) : .clear,
-                      in: Circle())
-                }
-                .buttonStyle(.plain)
-                .help(pathCopied ? "Chemin copié" : "Copier le chemin")
-                .accessibilityLabel(pathCopied ? "Chemin copié" : "Copier le chemin")
-                .onHover { fileSelection.hoveredControlID = $0 ? copyHoverID : nil }
-                .animation(.easeInOut(duration: 0.18), value: copyHovered)
-                .animation(.easeInOut(duration: 0.15), value: pathCopied)
-                Spacer(minLength: 0)
-              }
-              .opacity(fileSelection.documentsHovered ? 1 : 0)
-              .allowsHitTesting(fileSelection.documentsHovered)
-              .accessibilityHidden(!fileSelection.documentsHovered)
             }
           }
           .padding(16)
@@ -372,6 +331,54 @@ struct WorkspaceView: View {
     let n = (try? u.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
     return ByteCountFormatter.string(fromByteCount: Int64(n), countStyle: .file) + " · "
       + Family.of(u).singularName
+  }
+
+  private func documentPath(_ previewFile: URL) -> some View {
+    let pathHoverID = "path:" + previewFile.path
+    let copyHoverID = "copy-path:" + previewFile.path
+    let pathHovered = fileSelection.hoveredControlID == pathHoverID
+    let copyHovered = fileSelection.hoveredControlID == copyHoverID
+    let pathCopied = fileSelection.copiedPath == previewFile.path
+    return HStack(spacing: 4) {
+      Button {
+        NSWorkspace.shared.activateFileViewerSelecting([previewFile])
+      } label: {
+        HStack(spacing: 5) {
+          Image(systemName: "folder").fixedSize()
+          Text(verbatim: previewFile.path).lineLimit(1).truncationMode(.head)
+            .layoutPriority(-1)
+        }
+        .font(.system(size: 10))
+        .foregroundStyle(Color.secondary)
+        .padding(.horizontal, 7).padding(.vertical, 4)
+        .background(pathHovered ? citrus.opacity(0.14) : .clear,
+          in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .help(previewFile.path + "\nAfficher dans le Finder")
+      .onHover { fileSelection.hoveredControlID = $0 ? pathHoverID : nil }
+      .animation(.easeInOut(duration: 0.18), value: pathHovered)
+      Button {
+        fileSelection.copyPath(previewFile.path)
+      } label: {
+        Image(systemName: pathCopied ? "checkmark" : "doc.on.doc")
+          .font(.system(size: 10, weight: .semibold))
+          .foregroundStyle(Color.secondary)
+          .frame(width: 25, height: 25)
+          .background(copyHovered ? citrus.opacity(0.14) : .clear,
+            in: Circle())
+      }
+      .buttonStyle(.plain)
+      .help(pathCopied ? "Chemin copié" : "Copier le chemin")
+      .accessibilityLabel(pathCopied ? "Chemin copié" : "Copier le chemin")
+      .onHover { fileSelection.hoveredControlID = $0 ? copyHoverID : nil }
+      .animation(.easeInOut(duration: 0.18), value: copyHovered)
+      .animation(.easeInOut(duration: 0.15), value: pathCopied)
+    }
+    .opacity(fileSelection.documentsHovered ? 1 : 0)
+    .allowsHitTesting(fileSelection.documentsHovered)
+    .accessibilityHidden(!fileSelection.documentsHovered)
   }
 
   private func fileRow(_ url: URL) -> some View {

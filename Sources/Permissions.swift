@@ -94,13 +94,17 @@ final class PermissionCenter: ObservableObject {
   private var waitingForAccessibility = false
   private var requestCompletion: (() -> Void)?
   private var monitorLaunches = Set<ClementinePermission>()
-  private var monitorOwnedApps: [String: NSRunningApplication] = [:]
+  private var monitorPreexistingApps = Set<ClementinePermission>()
+  private var applicationLeases = PermissionApplicationLeases()
+  private var activatedProcessIdentifiers = Set<pid_t>()
+  private var monitorProbeAttempts: [ClementinePermission: Int] = [:]
   private let defaults: UserDefaults
   private let recoveryOverride: ((ClementinePermission) -> Void)?
   private var automationEpochs: [ClementinePermission: Int] = [:]
   private var automationRequests: [ClementinePermission: [() -> Void]] = [:]
   private var workflowRecoveries = Set<ClementinePermission>()
   private var workflowObserver: NSObjectProtocol?
+  private var workflowUseObserver: NSObjectProtocol?
   private let accessibilityRequestKey = "didRequestAccessibility20261019"
   private let wouldRequireConsent: OSStatus = -1744
   private let eventNotPermitted: OSStatus = -1743
@@ -123,10 +127,26 @@ final class PermissionCenter: ObservableObject {
       guard let result = notification.object as? NativeOfficePermissionResult else { return }
       self?.recordWorkflowResult(bundleID: result.bundleID, result: result.result)
     }
+    workflowUseObserver = NotificationCenter.default.addObserver(
+      forName: NativeOfficeScript.willUseApplication, object: nil, queue: .main
+    ) { [weak self] notification in
+      guard let id = notification.object as? String else { return }
+      self?.applicationLeases.protect(bundleID: id)
+    }
+    targetActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+      forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+    ) { [weak self] notification in
+      guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+        let id = app.bundleIdentifier else { return }
+      self?.activatedProcessIdentifiers.insert(app.processIdentifier)
+      self?.applicationLeases.protect(bundleID: id)
+    }
   }
 
   deinit {
     if let workflowObserver { NotificationCenter.default.removeObserver(workflowObserver) }
+    if let workflowUseObserver { NotificationCenter.default.removeObserver(workflowUseObserver) }
+    if let targetActivationObserver { NSWorkspace.shared.notificationCenter.removeObserver(targetActivationObserver) }
   }
 
   var allRequiredGranted: Bool {
@@ -171,6 +191,14 @@ final class PermissionCenter: ObservableObject {
     refreshAccessibility()
     guard !monitoring else { return }
     monitoring = true
+    applicationLeases = PermissionApplicationLeases()
+    monitorProbeAttempts.removeAll()
+    // A pre-existing app that the user closes must not be reopened by polling.
+    monitorLaunches = Set([ClementinePermission.pages, .numbers, .keynote].filter {
+      guard let installed = installedApplication(for: $0) else { return false }
+      return !NSRunningApplication.runningApplications(withBundleIdentifier: installed.bundleID).isEmpty
+    })
+    monitorPreexistingApps = monitorLaunches
     refresh()
     probeAutomationPermissions()
     lastAutomationProbe = Date()
@@ -185,23 +213,25 @@ final class PermissionCenter: ObservableObject {
     // Keep polling while a menu, slider or another tracking loop is active.
     RunLoop.main.add(timer, forMode: .common)
     monitor = timer
-    if targetActivationObserver == nil {
-      targetActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(
-        forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
-      ) { [weak self] notification in
-        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-          let id = app.bundleIdentifier else { return }
-        // Once the user opens an app, it is theirs to close, even if our
-        // permission check originally started it in the background.
-        self?.monitorOwnedApps.removeValue(forKey: id)
-      }
-    }
     if activationObserver == nil {
       activationObserver = NotificationCenter.default.addObserver(
         forName: NSApplication.didBecomeActiveNotification, object: NSApp, queue: .main
       ) { [weak self] _ in
-        self?.refreshAccessibility()
-        self?.probeAutomationPermissions()
+        guard let self, self.monitoring else { return }
+        self.refreshAccessibility()
+        // Recheck after a visit to System Settings, even if the apps we briefly
+        // started on entry have already been closed. Do not relaunch user apps.
+        for permission in [ClementinePermission.pages, .numbers, .keynote]
+          where !self.monitorPreexistingApps.contains(permission) {
+          guard let installed = self.installedApplication(for: permission),
+            !self.applicationLeases.isProtected(bundleID: installed.bundleID),
+            !self.probesInFlight.contains(permission),
+            NSRunningApplication.runningApplications(withBundleIdentifier: installed.bundleID).isEmpty
+          else { continue }
+          self.monitorLaunches.remove(permission)
+          self.monitorProbeAttempts[permission] = 0
+        }
+        self.probeAutomationPermissions()
       }
     }
   }
@@ -215,16 +245,11 @@ final class PermissionCenter: ObservableObject {
     monitoring = false
     cancelRequests()
     monitorLaunches.removeAll()
-    for app in monitorOwnedApps.values where app.isHidden && !app.isActive {
-      _ = app.terminate()
-    }
-    monitorOwnedApps.removeAll()
+    applicationLeases.finishAll()
     monitor?.invalidate()
     monitor = nil
     if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
     activationObserver = nil
-    if let targetActivationObserver { NSWorkspace.shared.notificationCenter.removeObserver(targetActivationObserver) }
-    targetActivationObserver = nil
   }
 
   func request(_ permission: ClementinePermission) {
@@ -347,16 +372,16 @@ final class PermissionCenter: ObservableObject {
     if NSRunningApplication.runningApplications(withBundleIdentifier: installed.bundleID).isEmpty {
       guard monitoring, monitorLaunches.insert(permission).inserted else { return }
       probesInFlight.insert(permission)
+      let leases = applicationLeases
       withRunningApplication(for: permission, failure: { [weak self] in
         self?.probesInFlight.remove(permission)
       }) { [weak self] bundleID, app, launched in
         guard let self else { return }
-        if launched && app.isHidden && !app.isActive {
-          if self.monitoring { self.monitorOwnedApps[bundleID] = app }
-          else { _ = app.terminate() }
-        }
+        if self.activatedProcessIdentifiers.contains(app.processIdentifier) { leases.protect(bundleID: bundleID) }
+        leases.track(app, bundleID: bundleID, launched: launched)
         self.probesInFlight.remove(permission)
-        if self.monitoring { self.probeAutomation(permission) }
+        if self.monitoring && self.applicationLeases === leases { self.probeAutomation(permission) }
+        else { leases.finish(bundleID: bundleID) }
       }
       return
     }
@@ -364,6 +389,7 @@ final class PermissionCenter: ObservableObject {
     // permission decision; only an explicit grant/refusal changes its status.
     probesInFlight.insert(permission)
     let epoch = automationEpochs[permission, default: 0]
+    let leases = applicationLeases
     DispatchQueue.global(qos: .utility).async { [weak self] in
       guard let self else { return }
       let result = self.passiveAutomationResult(bundleID: installed.bundleID)
@@ -373,6 +399,10 @@ final class PermissionCenter: ObservableObject {
           self.recordPassiveAutomationResult(result, for: permission)
         }
         self.probesInFlight.remove(permission)
+        self.monitorProbeAttempts[permission, default: 0] += 1
+        if self.status(forAppleEventResult: result) != nil || self.monitorProbeAttempts[permission, default: 0] >= 3 {
+          leases.finish(bundleID: installed.bundleID)
+        }
       }
     }
   }
@@ -410,20 +440,22 @@ final class PermissionCenter: ObservableObject {
     automationRequests[permission] = completion.map { [$0] } ?? []
     automationEpochs[permission, default: 0] += 1
     let epoch = automationEpochs[permission, default: 0]
+    let leases = monitoring ? applicationLeases : PermissionApplicationLeases()
     withRunningApplication(for: permission, failure: { [weak self] in
       self?.finishAutomationRequest(permission)
     }) { [weak self] bundleID, app, launched in
       guard let self else { return }
+      if self.activatedProcessIdentifiers.contains(app.processIdentifier) { leases.protect(bundleID: bundleID) }
+      leases.track(app, bundleID: bundleID, launched: launched)
+      guard !leases.isClosed else { self.finishAutomationRequest(permission); return }
       self.determineAutomationPermission(bundleID: bundleID, ask: true) { result in
         DispatchQueue.main.async {
           if self.automationEpochs[permission, default: 0] == epoch,
             let status = self.status(forAppleEventResult: result) {
             self.recordAutomationStatus(status, for: permission)
           }
-          if launched {
-            if self.monitoring { self.monitorOwnedApps[bundleID] = app }
-            else if app.isHidden && !app.isActive { _ = app.terminate() }
-          }
+          if self.activatedProcessIdentifiers.contains(app.processIdentifier) { leases.protect(bundleID: bundleID) }
+          leases.finish(bundleID: bundleID)
           self.refresh()
           self.finishAutomationRequest(permission)
         }
@@ -614,7 +646,7 @@ struct PermissionsView: View {
         VStack(alignment: .leading, spacing: 3) {
           Text("Configurer Clémentine")
             .font(.system(size: 20, weight: .bold, design: .rounded))
-          Text("Une seule configuration pour activer les roues, Finovox et les formats Apple natifs.")
+          Text("Pour activer la fonctionnalité Finovox et les formats Apple natifs.")
             .font(.system(size: 13))
             .foregroundStyle(.secondary)
         }
@@ -626,8 +658,9 @@ struct PermissionsView: View {
       Button {
         center.requestAll()
       } label: {
-        HStack {
+        HStack(spacing: 8) {
           if center.isRequestingAll { ProgressView().controlSize(.small).tint(citrus) }
+          else { Image(systemName: "checkmark.shield.fill") }
           Text(center.isRequestingAll ? "Configuration en cours…" : "Configurer Clémentine")
             .fontWeight(.semibold)
         }
