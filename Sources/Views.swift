@@ -309,7 +309,7 @@ struct WorkspaceView: View {
   func size(_ u: URL) -> String {
     let n = (try? u.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
     return ByteCountFormatter.string(fromByteCount: Int64(n), countStyle: .file) + " · "
-      + Family.of(u).singularName
+      + Family.singularName(for: u)
   }
 
   private func fileRow(_ url: URL) -> some View {
@@ -550,6 +550,7 @@ struct PreviewPane: View {
     if Family.of(url) == .video && selection { movieThumbnail.load(url, at: options.start) }
   }
   private var previewFormatLabel: String {
+    if Family.singularName(for: url) == "Dossier" { return "Dossier" }
     let format = Compatibility.format(url)
     let names = ["md": "Markdown", "pages": "Pages", "numbers": "Numbers", "key": "Keynote"]
     return names[format] ?? (format.isEmpty ? Family.of(url).singularName : Compatibility.label(format))

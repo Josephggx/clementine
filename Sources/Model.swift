@@ -53,6 +53,11 @@ enum Family: String, CaseIterable {
     case .other: return "doc"
     }
   }
+  static func singularName(for url: URL) -> String {
+    let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
+    if values?.isDirectory == true && values?.isPackage != true { return "Dossier" }
+    return of(url).singularName
+  }
   var singularName: String {
     switch self {
     case .presentation: return "Présentation"
