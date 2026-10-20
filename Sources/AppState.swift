@@ -272,11 +272,9 @@ final class AppState: ObservableObject {
       NSPasteboard.general.writeObjects(urls as [NSURL])
     case "airdrop": NSSharingService(named: .sendViaAirDrop)?.perform(withItems: urls)
     case "terminal":
-      let p = Process()
-      p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-      let isFolder = (try? urls[0].resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
-      p.arguments = ["-a", "Terminal", (isFolder ? urls[0] : urls[0].deletingLastPathComponent()).path]
-      try? p.run()
+      TerminalAction.open(urls) { [weak self] error in
+        if let error { self?.error = error.localizedDescription }
+      }
     case "copyto", "moveto":
       let panel = NSOpenPanel()
       panel.canChooseDirectories = true

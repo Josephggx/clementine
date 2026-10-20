@@ -12,22 +12,7 @@ private final class MainHover: ObservableObject {
 }
 private final class WorkspaceFileSelection: ObservableObject {
   @Published var selectedFile: URL?
-  @Published var documentsHovered = false
   @Published var hoveredControlID: String?
-  @Published var copiedPath: String?
-  private var copyFeedbackToken = UUID()
-
-  func copyPath(_ path: String) {
-    NSPasteboard.general.clearContents()
-    NSPasteboard.general.setString(path, forType: .string)
-    let token = UUID()
-    copyFeedbackToken = token
-    copiedPath = path
-    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
-      guard let self, self.copyFeedbackToken == token else { return }
-      self.copiedPath = nil
-    }
-  }
 }
 struct MainView: View {
   @ObservedObject var state: AppState
@@ -171,44 +156,40 @@ struct WorkspaceView: View {
         empty
           .frame(maxHeight: .infinity)
       } else {
-          VStack(alignment: .leading, spacing: 7) {
-                HStack {
-                  Text("\(state.files.count) fichier\(state.files.count>1 ? "s" : "")").font(
-                    .headline).fixedSize(horizontal: true, vertical: false)
-                  if state.files.count > 1 {
-                    let clearHovered = fileSelection.hoveredControlID == "clear-files"
-                    Button {
-                      state.files = []
-                      state.selectedTool = nil
-                    } label: {
-                      Text("Vider").foregroundStyle(.secondary)
-                        .padding(.horizontal,9).padding(.vertical,5)
-                        .background(clearHovered ? citrus.opacity(0.14) : .clear,
-                          in:RoundedRectangle(cornerRadius:7,style:.continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .onHover {fileSelection.hoveredControlID=$0 ? "clear-files" : nil}
-                    .animation(.easeInOut(duration:0.18),value:clearHovered)
-                  }
-                  Spacer(minLength: 12)
-                  if let previewFile {
-                    documentPath(previewFile).layoutPriority(-1)
-                  }
-                }
+        VStack(alignment: .leading, spacing: 10) {
+          HStack {
+            Text("\(state.files.count) fichier\(state.files.count>1 ? "s" : "")").font(
+              .headline).fixedSize(horizontal: true, vertical: false)
+            Spacer(minLength: 12)
+            if state.files.count > 1 {
+              let clearHovered = fileSelection.hoveredControlID == "clear-files"
+              Button {
+                state.files = []
+                state.selectedTool = nil
+              } label: {
+                Text("Vider").foregroundStyle(.secondary)
+                  .padding(.horizontal,9).padding(.vertical,5)
+                  .background(clearHovered ? citrus.opacity(0.14) : .clear,
+                    in:RoundedRectangle(cornerRadius:7,style:.continuous))
+              }
+              .buttonStyle(.plain)
+              .onHover {fileSelection.hoveredControlID=$0 ? "clear-files" : nil}
+              .animation(.easeInOut(duration:0.18),value:clearHovered)
+            }
+          }
+          HStack(alignment: .top, spacing: 20) {
 
-            HStack(alignment: .top, spacing: 20) {
-              VStack(alignment: .leading, spacing: 10) {
-                ScrollView {
-                  VStack(spacing: 7) {
-                    ForEach(state.files, id: \.self) { u in
-                      fileRow(u)
-                    }
+              ScrollView {
+                VStack(spacing: 7) {
+                  ForEach(state.files, id: \.self) { u in
+                    fileRow(u)
                   }
-                  .padding(.horizontal, 2).padding(.vertical, 1)
                 }
-                .scrollIndicators(.hidden)
-                .frame(maxHeight: .infinity)
-              }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 2).padding(.vertical, 1)
+              }
+              .scrollIndicators(.hidden)
+              .frame(maxHeight: .infinity)
+              .frame(maxWidth: .infinity)
               if let previewFile {
                 PreviewPane(url: previewFile, options: $state.options, selection: false)
                   .frame(width: 270, height: 220)
@@ -218,14 +199,12 @@ struct WorkspaceView: View {
                   .onTapGesture(count: 2) { NSWorkspace.shared.open(previewFile) }
               }
             }
+            .frame(height: 220)
           }
           .padding(16)
-          .frame(height: 284)
           .background(citrus.opacity(0.065), in: RoundedRectangle(cornerRadius: 16))
           .overlay(RoundedRectangle(cornerRadius: 16).stroke(citrus.opacity(0.55), lineWidth: 1.2))
           .contentShape(RoundedRectangle(cornerRadius: 16))
-          .onHover { fileSelection.documentsHovered = $0 }
-          .animation(.easeInOut(duration: 0.18), value: fileSelection.documentsHovered)
 
           HStack(alignment: .top, spacing: 14) {
             actionColumn("Conversion") {
@@ -333,54 +312,6 @@ struct WorkspaceView: View {
       + Family.of(u).singularName
   }
 
-  private func documentPath(_ previewFile: URL) -> some View {
-    let pathHoverID = "path:" + previewFile.path
-    let copyHoverID = "copy-path:" + previewFile.path
-    let pathHovered = fileSelection.hoveredControlID == pathHoverID
-    let copyHovered = fileSelection.hoveredControlID == copyHoverID
-    let pathCopied = fileSelection.copiedPath == previewFile.path
-    return HStack(spacing: 4) {
-      Button {
-        NSWorkspace.shared.activateFileViewerSelecting([previewFile])
-      } label: {
-        HStack(spacing: 5) {
-          Image(systemName: "folder").fixedSize()
-          Text(verbatim: previewFile.path).lineLimit(1).truncationMode(.head)
-            .layoutPriority(-1)
-        }
-        .font(.system(size: 10))
-        .foregroundStyle(Color.secondary)
-        .padding(.horizontal, 7).padding(.vertical, 4)
-        .background(pathHovered ? citrus.opacity(0.14) : .clear,
-          in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .contentShape(Rectangle())
-      }
-      .buttonStyle(.plain)
-      .help(previewFile.path + "\nAfficher dans le Finder")
-      .onHover { fileSelection.hoveredControlID = $0 ? pathHoverID : nil }
-      .animation(.easeInOut(duration: 0.18), value: pathHovered)
-      Button {
-        fileSelection.copyPath(previewFile.path)
-      } label: {
-        Image(systemName: pathCopied ? "checkmark" : "doc.on.doc")
-          .font(.system(size: 10, weight: .semibold))
-          .foregroundStyle(Color.secondary)
-          .frame(width: 25, height: 25)
-          .background(copyHovered ? citrus.opacity(0.14) : .clear,
-            in: Circle())
-      }
-      .buttonStyle(.plain)
-      .help(pathCopied ? "Chemin copié" : "Copier le chemin")
-      .accessibilityLabel(pathCopied ? "Chemin copié" : "Copier le chemin")
-      .onHover { fileSelection.hoveredControlID = $0 ? copyHoverID : nil }
-      .animation(.easeInOut(duration: 0.18), value: copyHovered)
-      .animation(.easeInOut(duration: 0.15), value: pathCopied)
-    }
-    .opacity(fileSelection.documentsHovered ? 1 : 0)
-    .allowsHitTesting(fileSelection.documentsHovered)
-    .accessibilityHidden(!fileSelection.documentsHovered)
-  }
-
   private func fileRow(_ url: URL) -> some View {
     let selectable = state.files.count > 1
     let selected = selectable && previewFile == url
@@ -408,7 +339,8 @@ struct WorkspaceView: View {
             .background(previewHovered ? citrus.opacity(0.16) : .clear,
               in: Circle())
         }
-        .buttonStyle(.plain).help(selected ? "Document prévisualisé" : "Afficher l’aperçu")
+        .buttonStyle(.plain)
+        .documentTooltip("Preview", hovered: previewHovered)
         .accessibilityLabel(selected ? "Document prévisualisé : \(url.lastPathComponent)" : "Afficher l’aperçu de \(url.lastPathComponent)")
         .onHover { fileSelection.hoveredControlID = $0 ? previewHoverID : nil }
         .animation(.easeInOut(duration: 0.18), value: previewHovered)
@@ -422,7 +354,9 @@ struct WorkspaceView: View {
           .background(finderHovered ? citrus.opacity(0.16) : .clear,
             in: Circle())
       }
-      .buttonStyle(.plain).help("Afficher dans le Finder")
+      .buttonStyle(.plain)
+      .documentTooltip(url.path, hovered: finderHovered)
+      .accessibilityLabel("Afficher dans le Finder : \(url.lastPathComponent)")
       .onHover { fileSelection.hoveredControlID = $0 ? finderHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: finderHovered)
       Button {
@@ -433,7 +367,8 @@ struct WorkspaceView: View {
           .background(openHovered ? citrus.opacity(0.16) : .clear,
             in: Circle())
       }
-      .buttonStyle(.plain).help("Ouvrir le document")
+      .buttonStyle(.plain)
+      .documentTooltip("Ouvrir", hovered: openHovered)
       .accessibilityLabel("Ouvrir \(url.lastPathComponent)")
       .onHover { fileSelection.hoveredControlID = $0 ? openHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: openHovered)
@@ -447,6 +382,8 @@ struct WorkspaceView: View {
             in: Circle())
       }
       .buttonStyle(.plain)
+      .documentTooltip("Retirer", hovered: removeHovered)
+      .accessibilityLabel("Retirer \(url.lastPathComponent)")
       .onHover { fileSelection.hoveredControlID = $0 ? removeHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: removeHovered)
     }

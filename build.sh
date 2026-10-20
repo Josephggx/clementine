@@ -17,6 +17,7 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 if [[ ! -x "$app/Contents/Helpers/LibreOffice.app/Contents/MacOS/soffice" ]]; then
   CLEMENTINE_APP_PATH="$app" ./prepare-runtime.sh
 fi
+python3 Scripts/normalize-runtime-signatures.py "$app"
 cp -R Resources/. "$app/Contents/Resources/"
 cp THIRDPARTY.txt "$app/Contents/Resources/THIRDPARTY.txt"
 mkdir -p "$app/Contents/Frameworks"

@@ -38,6 +38,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     window.setFrameAutosaveName("ClementineMain")
     state.showModule = { [weak self] tool, files in
       guard let self else { return }
+      guard !files.isEmpty else { return }
+      guard files.count == 1 || !["strip", "metadata"].contains(tool) else {
+        self.state.error = "Sélectionnez un seul fichier pour consulter ses métadonnées."
+        return
+      }
       if ["mute", "extract", "split", "mergepdf", "archive"].contains(tool),
         (tool == "mute" || tool == "extract" || tool == "archive" || (tool == "split" && Family.of(files[0]) == .pdf) || (tool == "mergepdf" && Family.of(files[0]) == .image)) {
         let previous = self.state.jobs.first?.id
@@ -100,7 +105,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     NSApp.mainMenu = mainMenu
     wheel = WheelController(state: state)
     wheel.start()
-    AppUpdates.shared.start(isBusy: { [weak self] in self?.state.running ?? false },
+    AppUpdates.shared.start(isBusy: { [weak self] in
+      guard let self else { return false }
+      return self.state.running || self.modules.values.contains { $0.session.busy }
+    },
       isOnboarding: { [weak self] in self?.state.showingOnboarding ?? false })
     DispatchQueue.main.async { [weak self] in self?.state.registerLaunchAtLoginIfNeeded() }
     // A document-open launch must stay in the Finder's current Space. The
@@ -177,6 +185,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     sender.reply(toOpenOrPrint: .success)
   }
   func applicationWillTerminate(_ notification: Notification) {
+    state.persist()
+    wheel?.stop()
     PermissionCenter.shared.suspendMonitoring()
   }
   func windowWillClose(_ notification: Notification) {

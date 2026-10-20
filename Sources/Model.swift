@@ -157,7 +157,7 @@ struct Tool: Identifiable, Hashable {
       }
     }
     var compatible = ids(Compatibility.format(first)).filter { id in
-      urls.allSatisfy { ids(Compatibility.format($0)).contains(id) }
+      (!group || id != "strip") && urls.allSatisfy { ids(Compatibility.format($0)).contains(id) }
     }
     if !urls.contains(where: { Family.of($0) == .archive }), !compatible.contains("archive") {
       compatible.append("archive")

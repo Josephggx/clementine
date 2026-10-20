@@ -65,5 +65,6 @@ xcrun swiftc -module-cache-path .build/cache Scripts/generate-installer-backgrou
 "$work/generate-background" "$work/background.tiff" "$version"
 PYTHONPATH="$packaging_python" python3 -m dmgbuild -s Scripts/dmg-settings.py \
   -D app="$app" -D background="$work/background.tiff" "Clémentine" "$dmg"
+python3 Scripts/prepare-update.py "$dmg" --verify-archive-only
 (cd "$output_root" && shasum -a 256 "${dmg:t}") > "$dmg.sha256"
 echo "$dmg"

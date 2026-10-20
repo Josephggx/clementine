@@ -22,4 +22,6 @@ label_pos = "bottom"
 arrange_by = None
 icon_locations = {unicodedata.normalize("NFD", "Clémentine.app"): (190, 242),
                   "Applications": (530, 242)}
-hide_extensions = ["Clémentine.app"]
+# Do not use SetFile on a signed app: its FinderInfo xattr invalidates strict
+# code-signature verification. Finder already hides application extensions.
+hide_extensions = []

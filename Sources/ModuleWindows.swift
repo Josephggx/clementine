@@ -18,10 +18,10 @@ final class ModuleWindowController: NSObject, NSWindowDelegate {
     window = ModulePanel(contentRect:NSRect(x:0,y:0,width:spec.width,height:min(spec.height,visible.height-50)),styleMask:[.borderless,.fullSizeContentView,.nonactivatingPanel],backing:.buffered,defer:false)
     super.init()
     window.title = spec.title; window.isOpaque = false; window.backgroundColor = .clear
-    window.hasShadow = true; window.isMovableByWindowBackground = true; window.isReleasedWhenClosed = false
+    window.hasShadow = true; window.isMovableByWindowBackground = false; window.isReleasedWhenClosed = false
     window.hidesOnDeactivate = false; window.level = .floating; window.delegate = self
     window.collectionBehavior = [.fullScreenAuxiliary,.moveToActiveSpace]
-    window.contentView = NSHostingView(rootView:ModuleRoot(session:session))
+    window.contentView = NSHostingView(rootView:ModuleRoot(session:session, movableHeader:true))
     session.close = { [weak self] in self?.window.close() }
     window.center()
     session.$targetEnabled.dropFirst().sink { [weak self] enabled in
@@ -59,6 +59,7 @@ struct ModuleGlass: ViewModifier {
 private final class ModuleRootHover: ObservableObject { @Published var close = false }
 struct ModuleRoot: View {
   @ObservedObject var session: ModuleSession
+  var movableHeader = false
   @StateObject private var hover = ModuleRootHover()
   var body: some View {
     VStack(spacing:0) {
@@ -77,6 +78,9 @@ struct ModuleRoot: View {
           Spacer()
         }
       }.padding(.horizontal,12).frame(height:40)
+        .overlay {
+          if movableHeader { ModuleHeaderDragArea() }
+        }
       Divider().opacity(0.5)
       ScrollView {
         ModuleContent(session:session).padding(12)

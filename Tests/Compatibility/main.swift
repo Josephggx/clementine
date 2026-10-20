@@ -26,8 +26,13 @@ check(Compatibility.targets(urls(["html"])).isEmpty, "HTML output-only")
 check(Compatibility.targets(urls(["gif"])).count == 6, "GIF is video input")
 check(Compatibility.targets(urls(["mp4"])).filter { audioFormats.contains($0) } == ["mp3"], "Video audio export")
 check(Tool.available(urls(["png"])).map(\.id) == ["compress", "strip", "adjust", "annotate", "frame", "crop", "redact", "archive"], "Single image tools")
-check(Tool.available(urls(["png", "jpg"])).map(\.id) == ["compress", "strip", "crop", "mergepdf", "collage", "archive"], "Image group tools")
-check(Tool.available(urls(["pdf", "pdf"])).map(\.id) == ["compress", "strip", "split", "mergepdf", "archive"], "PDF group tools")
+check(Tool.available(urls(["png", "jpg"])).map(\.id) == ["compress", "crop", "mergepdf", "collage", "archive"], "Image group tools")
+check(Tool.available(urls(["pdf", "pdf"])).map(\.id) == ["compress", "split", "mergepdf", "archive"], "PDF group tools")
+for formats in [["svg", "svg"], ["gif", "gif"], ["mp3", "wav"], ["mp4", "mov"],
+                ["zip", "rar"], ["docx", "csv"], ["unknown", "unknown"], ["pdf", "png"]] {
+  check(!Tool.available(urls(formats)).contains { $0.id == "strip" || $0.id == "metadata" },
+        "No metadata tool for multiple files: \(formats)")
+}
 check(Tool.available(urls(["ogg"])).map(\.id) == ["strip", "archive"], "Metadata and ZIP for OGG")
 check(Tool.available(urls(["txt"])).map(\.id) == ["strip", "archive"], "Metadata and ZIP for text")
 check(Tool.available(urls(["docx"])).map(\.id) == ["strip", "archive"], "Metadata and ZIP for documents")
