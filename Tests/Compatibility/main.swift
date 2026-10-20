@@ -39,6 +39,14 @@ check(Tool.available(urls(["docx"])).map(\.id) == ["strip", "archive"], "Metadat
 check(Tool.available(urls(["csv"])).map(\.id) == ["strip", "archive"], "Metadata and ZIP for sheets")
 check(Tool.available(urls(["key"])).map(\.id) == ["strip", "archive"], "Metadata and ZIP for presentations")
 check(Tool.available(urls(["unknown"])).map(\.id) == ["strip", "archive"], "Metadata and ZIP for unknown files")
+let folderFixture = FileManager.default.temporaryDirectory.appendingPathComponent("clementine-folder-" + UUID().uuidString, isDirectory: true)
+try FileManager.default.createDirectory(at: folderFixture, withIntermediateDirectories: true)
+defer { try? FileManager.default.removeItem(at: folderFixture) }
+for folder in [folderFixture, folderFixture.appendingPathComponent("Photos.png", isDirectory: true)] {
+  try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+  check(!Tool.available([folder]).contains { $0.id == "strip" || $0.id == "metadata" }, "No metadata for directories: \(folder.lastPathComponent)")
+  check(Tool.available([folder]).contains { $0.id == "archive" }, "Directories retain ZIP")
+}
 check(Tool.available(urls(["zip"])).map(\.id) == ["strip", "extract"], "Existing ZIP does not offer ZIP")
 check(Tool.available(urls(["rar"])).map(\.id) == ["strip", "extract"], "Existing archive does not offer ZIP")
 check(Tool.catalogue(for: urls(["pdf"])[0]).map(\.id) == ["compress", "strip", "split", "organize", "mergepdf", "archive"], "PDF feature catalogue includes batch actions")

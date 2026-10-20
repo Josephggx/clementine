@@ -157,7 +157,13 @@ struct Tool: Identifiable, Hashable {
       }
     }
     var compatible = ids(Compatibility.format(first)).filter { id in
-      (!group || id != "strip") && urls.allSatisfy { ids(Compatibility.format($0)).contains(id) }
+      (!group || id != "strip") && urls.allSatisfy { url in
+        if id == "strip" || id == "metadata" {
+          let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
+          if values?.isDirectory == true && values?.isPackage != true { return false }
+        }
+        return ids(Compatibility.format(url)).contains(id)
+      }
     }
     if group || Family.of(first) != .archive {
       compatible.append("archive")
