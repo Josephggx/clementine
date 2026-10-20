@@ -214,6 +214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     #endif
     let app = NSApplication.shared
+    if ApplicationInstallation.handleDiskImageLaunch() { return }
     let delegate = AppDelegate()
     app.delegate = delegate
     withExtendedLifetime(delegate) { app.run() }

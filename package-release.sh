@@ -11,7 +11,7 @@ app="$volume/Clémentine.app"
 bundle_id="io.joseph.clementine.desktop"
 dmg="$output_root/Clementine-${version}-arm64.dmg"
 
-# Package the verified build; leave the installed app and beta untouched.
+# Package the verified build; never replace the installed app.
 codesign --verify --deep --strict "$PWD/.build/Clémentine.app"
 rm -rf "$work"
 mkdir -p "$volume" "$output_root"
@@ -27,8 +27,8 @@ codesign --force --sign - --identifier "$bundle_id" \
   --requirements "=designated => identifier \"$bundle_id\"" \
   --entitlements Entitlements.plist "$app"
 codesign --verify --deep --strict "$app"
-ln -s /Applications "$volume/Applications"
-cat > "$volume/Installation.txt" <<'EOF'
+mkdir -p "$work/guide"
+cat > "$work/guide/Installation.txt" <<'EOF'
 CLÉMENTINE — INSTALLATION
 
 Mac Apple Silicon (M1, M2, M3 ou ultérieur), macOS 14 ou plus récent.
@@ -46,11 +46,24 @@ pour autoriser Clémentine.
 Les outils de conversion sont intégrés. Pages, Numbers et Keynote doivent être
 installés pour les opérations nécessitant ces applications.
 
-Si Clémentine Beta est présente, quittez-la avant d’utiliser Clémentine afin
-que les deux apps ne réagissent pas aux mêmes raccourcis.
-
 Licences : Clémentine.app/Contents/Resources/THIRDPARTY.txt.
 EOF
-hdiutil create -quiet -volname "Clémentine" -srcfolder "$volume" -ov -format UDZO "$dmg"
+# Keep the visible installation window focused on the two drag targets.
+cp "$work/guide/Installation.txt" "$app/Contents/Resources/Installation.txt"
+codesign --force --sign - --identifier "$bundle_id" \
+  --requirements "=designated => identifier \"$bundle_id\"" \
+  --entitlements Entitlements.plist "$app"
+codesign --verify --deep --strict "$app"
+
+packaging_python="$PWD/.build/packaging-python"
+if ! PYTHONPATH="$packaging_python" python3 -c 'import dmgbuild, ds_store, mac_alias' 2>/dev/null; then
+  python3 -m pip install --disable-pip-version-check --target "$packaging_python" \
+    -r Scripts/requirements-packaging.txt
+fi
+xcrun swiftc -module-cache-path .build/cache Scripts/generate-installer-background.swift \
+  -o "$work/generate-background" -framework AppKit -framework ImageIO
+"$work/generate-background" "$work/background.tiff" "$version"
+PYTHONPATH="$packaging_python" python3 -m dmgbuild -s Scripts/dmg-settings.py \
+  -D app="$app" -D background="$work/background.tiff" "Clémentine" "$dmg"
 (cd "$output_root" && shasum -a 256 "${dmg:t}") > "$dmg.sha256"
 echo "$dmg"

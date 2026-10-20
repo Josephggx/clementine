@@ -32,6 +32,10 @@ Remplacer le nom du DMG par celui de la version publiée. Créer une release pub
 
 À chaque itération demandée, incrémenter la version et le numéro de build, vérifier le changement, synchroniser les sources privées et publier la nouvelle release. Ne jamais remplacer les fichiers d’une release déjà publiée : les signatures, URL et versions doivent rester cohérentes. Ne pas remplacer directement `/Applications/Clémentine.app`, sauf demande explicite ; Joseph déclenche la mise à jour pour contrôler le résultat.
 
+L’installateur DMG présente deux vraies icônes Finder sur un fond Retina généré par `Scripts/generate-installer-background.swift`. `Scripts/dmg-settings.py` fixe leurs positions et l’apparence de la fenêtre sans modifier les préférences du Finder. Les outils de packaging restent dans `.build/packaging-python` ; ils ne sont pas intégrés à l’app.
+
+Un lancement depuis le DMG ou une copie transloquée ouvre la copie de `/Applications/Clémentine.app` avant de démarrer les roues, l’onboarding ou les demandes d’autorisation. En l’absence de copie installée, le bouton « Installer et ouvrir » effectue une première copie complète dans Applications. Ce chemin ne remplace jamais une app existante ; les mises à jour restent gérées par Sparkle ou par le glisser-déposer du Finder. Une copie Finder ne peut pas lancer automatiquement l’app : le double-clic suivant ouvre toujours la copie installée.
+
 Le DMG et le flux sont signés en Ed25519. La clé privée est dans le Trousseau macOS sous le compte `io.joseph.clementine.desktop` ; elle n’est ni dans le projet, ni dans les dépôts GitHub. Conserver une sauvegarde sécurisée du Trousseau : perdre cette clé empêcherait de signer les prochaines mises à jour reconnues par les installations existantes.
 
 Les vérifications automatiques restent silencieuses. Le bouton « Mettre à jour » apparaît dans la sidebar lorsqu’une version est disponible ; le clic ouvre l’interface d’installation Sparkle. Aucune installation automatique n’est activée. Une conversion en cours retarde le redémarrage. La version installée figure au bas des Réglages.
