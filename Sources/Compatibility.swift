@@ -57,7 +57,7 @@ enum Compatibility {
     return ["jpeg": "jpg", "tif": "tiff", "heif": "heic", "gzip": "gz", "tgz": "gz"][ext] ?? ext
   }
   static func targets(_ urls: [URL]) -> [String] {
-    guard let first = urls.first else { return [] }
+    guard let first = urls.first, !urls.contains(where: Family.isFolder) else { return [] }
     return (conversions[format(first)] ?? []).filter { target in
       urls.allSatisfy { (conversions[format($0)] ?? []).contains(target) }
     }

@@ -495,7 +495,9 @@ struct PreviewPane: View {
     GeometryReader { geo in
       ZStack {
         Color.black.opacity(0.04)
-        if let image = previewImage,
+        if Family.isFolder(url) {
+          filePlaceholder
+        } else if let image = previewImage,
           Family.of(url) == .image || (Family.of(url) == .video && selection)
         {
           Image(nsImage: image).resizable().scaledToFit()
@@ -533,14 +535,7 @@ struct PreviewPane: View {
         } else if Family.of(url) == .video || Family.of(url) == .audio {
           MediaPreview(url: url)
         } else {
-          VStack(spacing: 8) {
-            Image(systemName: Family.of(url).icon).font(.system(size: 45, weight: .ultraLight))
-              .foregroundStyle(citrus)
-            Text(previewFormatLabel).font(.system(size: 11, weight: .semibold))
-              .foregroundStyle(.secondary)
-              .padding(.horizontal, 10).padding(.vertical, 5)
-              .background(Color.primary.opacity(0.065), in: Capsule())
-          }
+          filePlaceholder
         }
       }
     }.onAppear { loadMovie() }.onChange(of: url) { _, _ in loadMovie() }.onChange(of: options.start)
@@ -549,8 +544,18 @@ struct PreviewPane: View {
   func loadMovie() {
     if Family.of(url) == .video && selection { movieThumbnail.load(url, at: options.start) }
   }
+  private var filePlaceholder: some View {
+    VStack(spacing: 8) {
+      Image(systemName: Family.icon(for: url)).font(.system(size: 45, weight: .ultraLight))
+        .foregroundStyle(citrus)
+      Text(previewFormatLabel).font(.system(size: 11, weight: .semibold))
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 10).padding(.vertical, 5)
+        .background(Color.primary.opacity(0.065), in: Capsule())
+    }
+  }
   private var previewFormatLabel: String {
-    if Family.singularName(for: url) == "Dossier" { return "Dossier" }
+    if Family.isFolder(url) { return "Dossier" }
     let format = Compatibility.format(url)
     let names = ["md": "Markdown", "pages": "Pages", "numbers": "Numbers", "key": "Keynote"]
     return names[format] ?? (format.isEmpty ? Family.of(url).singularName : Compatibility.label(format))

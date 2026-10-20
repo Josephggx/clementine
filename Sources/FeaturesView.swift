@@ -20,6 +20,7 @@ private struct FeatureCategory: Identifiable {
       formats: ["ppt", "pptx", "key"]),
     .init(id: "archives", title: "ZIP", icon: "doc.zipper", example: "zip",
       formats: ["zip", "tar", "gz", "rar"]),
+    .init(id: "folders", title: "Dossier", icon: "folder", example: "", formats: []),
     .init(id: "video", title: "Vidéo", icon: "play.rectangle", example: "mp4",
       formats: ["mp4", "mov", "mkv", "webm", "avi", "wmv", "gif"]),
     .init(id: "audio", title: "Audio", icon: "music.note", example: "mp3",
@@ -109,7 +110,10 @@ struct FeaturesView: View {
     FeatureCategory.all.first { $0.id == selection.selectedID } ?? FeatureCategory.all[0]
   }
   private func exampleURL(_ format: String) -> URL { URL(fileURLWithPath: "/exemple.\(format)") }
-  private var exampleURL: URL { exampleURL(selection.selectedFormat.isEmpty ? category.example : selection.selectedFormat) }
+  private var exampleURL: URL {
+    category.id == "folders" ? URL(fileURLWithPath: "/Dossier", isDirectory: true)
+      : exampleURL(selection.selectedFormat.isEmpty ? category.example : selection.selectedFormat)
+  }
   private var sourceFormats: [String] {
     selection.selectedFormat.isEmpty ? category.formats : [selection.selectedFormat]
   }
@@ -119,6 +123,7 @@ struct FeaturesView: View {
       .filter { seen.insert($0).inserted }
   }
   private var tools: [Tool] {
+    if category.id == "folders" { return Tool.catalogue(for: exampleURL) }
     var seen = Set<String>()
     return sourceFormats.flatMap { Tool.catalogue(for: exampleURL($0)) }
       .filter { seen.insert($0.id).inserted }

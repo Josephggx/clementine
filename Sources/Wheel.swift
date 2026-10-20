@@ -8,6 +8,7 @@ struct WheelItem {
 }
 enum WheelActionItems {
   private static func supportsFinovox(_ urls: [URL], preview: Bool) -> Bool {
+    guard !urls.contains(where: Family.isFolder) else { return false }
     guard !urls.isEmpty, urls.allSatisfy({ [.pdf, .image, .archive].contains(Family.of($0)) }) else { return false }
     if preview {
       return urls.allSatisfy { FinovoxUploader.extensions.contains($0.pathExtension.lowercased()) }

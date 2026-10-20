@@ -53,9 +53,16 @@ enum Family: String, CaseIterable {
     case .other: return "doc"
     }
   }
-  static func singularName(for url: URL) -> String {
+  static func isFolder(_ url: URL) -> Bool {
     let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
-    if values?.isDirectory == true && values?.isPackage != true { return "Dossier" }
+    if let directory = values?.isDirectory { return directory && values?.isPackage != true }
+    return url.hasDirectoryPath
+  }
+  static func icon(for url: URL) -> String {
+    isFolder(url) ? "folder" : of(url).icon
+  }
+  static func singularName(for url: URL) -> String {
+    if isFolder(url) { return "Dossier" }
     return of(url).singularName
   }
   var singularName: String {
@@ -141,6 +148,7 @@ struct Tool: Identifiable, Hashable {
   }
   static func available(_ urls: [URL]) -> [Tool] {
     guard let first = urls.first else { return [] }
+    if urls.contains(where: Family.isFolder) { return all.filter { $0.id == "archive" } }
     let group = urls.count > 1
     func ids(_ format: String) -> [String] {
       switch format {
@@ -163,10 +171,6 @@ struct Tool: Identifiable, Hashable {
     }
     var compatible = ids(Compatibility.format(first)).filter { id in
       (!group || id != "strip") && urls.allSatisfy { url in
-        if id == "strip" || id == "metadata" {
-          let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
-          if values?.isDirectory == true && values?.isPackage != true { return false }
-        }
         return ids(Compatibility.format(url)).contains(id)
       }
     }
@@ -177,6 +181,7 @@ struct Tool: Identifiable, Hashable {
   }
   static func batchCandidates(_ urls: [URL]) -> [Tool] {
     guard urls.count >= 2 else { return [] }
+    if urls.contains(where: Family.isFolder) { return all.filter { $0.id == "archive" } }
     let families = urls.map(Family.of)
     var ids: [String] = []
     if families.allSatisfy({ $0 == .pdf || $0 == .image }) { ids.append("mergepdf") }
@@ -187,6 +192,7 @@ struct Tool: Identifiable, Hashable {
   }
   /// Complete feature catalogue for a format; the live drag wheel stays selection-dependent.
   static func catalogue(for source: URL) -> [Tool] {
+    if Family.isFolder(source) { return available([source]) }
     let pair = [source, source.deletingLastPathComponent().appendingPathComponent(
       "second." + source.pathExtension)]
     let candidates = available([source]) + available(pair) + batchCandidates(pair)
