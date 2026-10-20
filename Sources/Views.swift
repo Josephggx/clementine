@@ -55,7 +55,11 @@ struct MainView: View {
           nav("permissions", "Autorisations", "lock.shield")
         }
         Spacer()
-        UpdateSidebarButton()
+        HStack {
+          Spacer(minLength: 0)
+          UpdateSidebarButton()
+          Spacer(minLength: 0)
+        }
       }.padding(20).frame(width: 236).background(.ultraThinMaterial)
       Rectangle()
         .fill(Color.clementineBorder)

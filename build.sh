@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -eu
 cd "$(dirname "$0")"
-app="${CLEMENTINE_APP_PATH:-/Applications/Clémentine.app}"
+app="${CLEMENTINE_APP_PATH:-$PWD/.build/Clémentine.app}"
 mkdir -p .build/cache
 sparkle_root=$(zsh Scripts/prepare-sparkle.sh)
 test_sources=()
@@ -15,7 +15,7 @@ trap 'rm -f "$compiled_binary"' EXIT
 xcrun swiftc -O -swift-version 5 -target arm64-apple-macosx14.0 -module-cache-path .build/cache Sources/*.swift "${test_sources[@]}" "${test_flags[@]}" -o "$compiled_binary" -framework AppKit -framework SwiftUI -framework AVKit -framework AVFoundation -framework PDFKit -framework Vision -framework CoreImage -framework ImageIO -framework CoreText -framework ServiceManagement -framework JavaScriptCore -framework QuickLookThumbnailing -framework CoreServices -F "$sparkle_root" -framework Sparkle -Xlinker -rpath -Xlinker @executable_path/../Frameworks
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 if [[ ! -x "$app/Contents/Helpers/LibreOffice.app/Contents/MacOS/soffice" ]]; then
-  ./prepare-runtime.sh
+  CLEMENTINE_APP_PATH="$app" ./prepare-runtime.sh
 fi
 cp -R Resources/. "$app/Contents/Resources/"
 cp THIRDPARTY.txt "$app/Contents/Resources/THIRDPARTY.txt"

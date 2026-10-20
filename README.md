@@ -6,7 +6,7 @@ L’application installée est **`/Applications/Clémentine.app`**. Le dépôt c
 
 ## Construire et mettre à jour
 
-Quitter Clémentine, puis lancer `./build.sh`. La compilation met à jour directement `/Applications/Clémentine.app`, avec le même identifiant. Il faut disposer du droit d’écriture dans Applications. Les préférences sont conservées.
+Lancer `./build.sh`. La compilation produit `.build/Clémentine.app` et ne remplace pas l’application installée. Les mises à jour sont publiées sur GitHub ; Joseph les installe depuis l’app pour vérifier les changements.
 
 Pour compiler ailleurs : `CLEMENTINE_APP_PATH="/chemin/Clémentine.app" ./build.sh`. Le moteur bureautique est repris de l’app installée s’il est disponible ; sinon `prepare-runtime.sh` le télécharge depuis The Document Foundation.
 
@@ -29,6 +29,8 @@ python3 Scripts/prepare-update.py ../Clementine-1.0.1-arm64.dmg --notes "Nouveau
 ```
 
 Remplacer le nom du DMG par celui de la version publiée. Créer une release publique `vVERSION` et joindre le DMG, son fichier `.sha256` et `appcast.xml`. Publier la release seulement après l’envoi des trois fichiers. L’URL stable du flux pointe vers l’asset `appcast.xml` de la dernière release ; chaque téléchargement du flux utilise l’URL immuable du DMG correspondant.
+
+À chaque itération demandée, incrémenter la version et le numéro de build, vérifier le changement, synchroniser les sources privées et publier la nouvelle release. Ne jamais remplacer les fichiers d’une release déjà publiée : les signatures, URL et versions doivent rester cohérentes. Ne pas remplacer directement `/Applications/Clémentine.app`, sauf demande explicite ; Joseph déclenche la mise à jour pour contrôler le résultat.
 
 Le DMG et le flux sont signés en Ed25519. La clé privée est dans le Trousseau macOS sous le compte `io.joseph.clementine.desktop` ; elle n’est ni dans le projet, ni dans les dépôts GitHub. Conserver une sauvegarde sécurisée du Trousseau : perdre cette clé empêcherait de signer les prochaines mises à jour reconnues par les installations existantes.
 

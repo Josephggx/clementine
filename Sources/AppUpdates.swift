@@ -111,7 +111,6 @@ struct UpdateSidebarButton: View {
       Button { updates.checkForUpdates() } label: {
         Label("Mettre à jour", systemImage: "arrow.down.to.line")
           .font(.system(size: 13, weight: .semibold))
-          .frame(maxWidth: .infinity, alignment: .leading)
           .padding(11)
           .foregroundStyle(citrus)
           .background(citrus.opacity(hover.active ? 0.20 : 0.12),
@@ -127,12 +126,26 @@ struct UpdateSidebarButton: View {
 }
 
 struct AppVersionLabel: View {
+  @ObservedObject var updates = AppUpdates.shared
+  @StateObject private var hover = UpdateHover()
   var body: some View {
     HStack(spacing: 6) {
       ClementineMark(size: 13).saturation(0).opacity(0.6)
       Text("Clémentine version \(AppUpdates.installedVersion)")
         .font(.system(size: 11))
         .foregroundStyle(.secondary)
+      Button { updates.checkForUpdates() } label: {
+        Text("Chercher une mise à jour")
+          .font(.system(size: 11))
+          .foregroundStyle(.secondary)
+          .padding(.horizontal, 6).padding(.vertical, 4)
+          .background(Color.primary.opacity(hover.active ? 0.065 : 0),
+            in: RoundedRectangle(cornerRadius: 5))
+      }
+      .buttonStyle(StableInteractionButtonStyle())
+      .disabled(!updates.canCheckForUpdates)
+      .onHover { hover.active = $0 }
+      .animation(.easeInOut(duration: 0.18), value: hover.active)
     }
     .padding(.top, 8)
   }
