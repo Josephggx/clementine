@@ -45,7 +45,7 @@ check(Tool.catalogue(for: urls(["pdf"])[0]).map(\.id) == ["compress", "strip", "
 check(Tool.catalogue(for: urls(["jpg"])[0]).map(\.id) == ["compress", "strip", "adjust", "annotate", "frame", "crop", "redact", "mergepdf", "collage", "archive"], "Image feature catalogue includes batch actions")
 check(Tool.catalogue(for: urls(["mp3"])[0]).map(\.id) == ["compress", "strip", "normalize", "visualize", "trim", "channels", "bleep", "join", "archive"], "Audio feature catalogue includes assembly")
 check(Tool.catalogue(for: urls(["docx"])[0]).map(\.id) == ["strip", "archive"], "Document feature catalogue includes archive")
-check(Tool.catalogue(for: urls(["zip"])[0]).map(\.id) == ["strip", "extract"], "Archive feature catalogue excludes ZIP")
+check(Tool.catalogue(for: urls(["zip"])[0]).map(\.id) == ["strip", "extract", "archive"], "Archive catalogue includes batch ZIP")
 check(Tool.batchCandidates(urls(["pdf"])).isEmpty, "Single PDF hides batch actions")
 check(Tool.batchCandidates(urls(["pdf", "pdf"])).map(\.id) == ["mergepdf", "archive"], "PDF batch actions")
 check(Tool.batchCandidates(urls(["pdf", "png"])).map(\.id) == ["mergepdf", "archive"], "Mixed PDF and image merge")
@@ -54,7 +54,12 @@ check(Tool.batchCandidates(urls(["mp3", "wav"])).map(\.id) == ["join", "archive"
 check(Tool.batchCandidates(urls(["mp4", "mov"])).map(\.id) == ["join", "archive"], "Video batch actions")
 check(Tool.batchCandidates(urls(["docx", "txt"])).map(\.id) == ["archive"], "Document batch archive")
 check(Tool.batchCandidates(urls(["pdf", "docx"])).map(\.id) == ["archive"], "Incompatible files only show archive")
-check(Tool.batchCandidates(urls(["zip", "txt"])).isEmpty, "Batch containing an archive hides ZIP")
+for formats in [["zip", "zip"], ["zip", "rar"], ["zip", "txt"], ["pdf", "zip"], ["zip", "jpg", "csv"]] {
+  check(Tool.available(urls(formats)).filter { $0.id == "archive" }.count == 1,
+        "Batch may include archives: \(formats)")
+  check(Tool.batchCandidates(urls(formats)).map(\.id) == ["archive"],
+        "Archive batch offers ZIP: \(formats)")
+}
 check(Tool.batchCandidates([]).isEmpty, "No batch actions without files")
 let center = NSPoint(x: 136, y: 136)
 for count in 2...12 {

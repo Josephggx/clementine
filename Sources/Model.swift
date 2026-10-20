@@ -124,7 +124,7 @@ struct Tool: Identifiable, Hashable {
     Tool("mergepdf", "Fusionner / créer un PDF", "doc.on.doc", [.pdf, .image], group: true),
     Tool("organize", "Réorganiser les pages", "rectangle.3.group", [.pdf]),
     Tool("extract", "Extraire l’archive", "archivebox", [.archive]),
-    Tool("archive", "ZIP", "doc.zipper", Family.allCases.filter { $0 != .archive }, group: true),
+    Tool("archive", "ZIP", "doc.zipper", Array(Family.allCases), group: true),
   ]
   var wheelTitle: String {
     ["compress": "COMPRESS", "strip": "METADATA", "adjust": "EDIT", "annotate": "ANNOTATE",
@@ -159,7 +159,7 @@ struct Tool: Identifiable, Hashable {
     var compatible = ids(Compatibility.format(first)).filter { id in
       (!group || id != "strip") && urls.allSatisfy { ids(Compatibility.format($0)).contains(id) }
     }
-    if !urls.contains(where: { Family.of($0) == .archive }), !compatible.contains("archive") {
+    if group || Family.of(first) != .archive {
       compatible.append("archive")
     }
     return compatible.compactMap { id in all.first { $0.id == id } }
@@ -171,7 +171,7 @@ struct Tool: Identifiable, Hashable {
     if families.allSatisfy({ $0 == .pdf || $0 == .image }) { ids.append("mergepdf") }
     if families.allSatisfy({ $0 == .image }) { ids.append("collage") }
     if families.allSatisfy({ $0 == .video }) || families.allSatisfy({ $0 == .audio }) { ids.append("join") }
-    if !families.contains(.archive) { ids.append("archive") }
+    ids.append("archive")
     return ids.compactMap { id in all.first { $0.id == id } }
   }
   /// Complete feature catalogue for a format; the live drag wheel stays selection-dependent.

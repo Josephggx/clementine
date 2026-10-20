@@ -39,6 +39,7 @@ struct FeatureWheelPreview: NSViewRepresentable {
   var idleLabel: String? = nil
   var previewSelection: Int? = nil
   var drivesSelection = false
+  var allowsPointerInteraction = true
   var animateOpening = false
   var onChoose: ((WheelItem) -> Void)? = nil
   func makeCoordinator() -> Coordinator { Coordinator() }
@@ -49,6 +50,7 @@ struct FeatureWheelPreview: NSViewRepresentable {
     view.wheel.previewLabel = idleLabel ?? (onChoose == nil ? nil : "Cliquez pour\ndécouvrir")
     view.wheel.showsIdleCenter = idleLabel != nil || onChoose != nil
     view.wheel.previewDefaultSelection = nil
+    view.wheel.allowsPointerInteraction = allowsPointerInteraction
     if drivesSelection { view.wheel.setPreviewSelection(previewSelection) }
     if animateOpening && !context.coordinator.openingVisible { view.wheel.beginOpening() }
     context.coordinator.openingVisible = animateOpening
@@ -57,8 +59,8 @@ struct FeatureWheelPreview: NSViewRepresentable {
       coordinator?.onChoose?(item)
       return false
     }
-    view.wheel.onSelectionChange = { [weak coordinator = context.coordinator] slot in
-      guard slot != nil, let coordinator else { return }
+    view.wheel.onHoverFeedback = { [weak coordinator = context.coordinator] in
+      guard let coordinator else { return }
       WheelHoverFeedback.shared.perform(sound: coordinator.soundFeedback,
         haptic: coordinator.hapticFeedback)
     }
@@ -67,6 +69,7 @@ struct FeatureWheelPreview: NSViewRepresentable {
     return view
   }
   func updateNSView(_ view: WheelSurface, context: Context) {
+    view.wheel.allowsPointerInteraction = allowsPointerInteraction
     view.appearance = ClementineAppearance(rawValue: appearance)?.nsAppearance
     view.wheel.needsDisplay = true
     if animateOpening && !context.coordinator.openingVisible { view.wheel.beginOpening() }

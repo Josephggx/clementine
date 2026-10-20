@@ -113,6 +113,7 @@ final class WheelHoverFeedback {
   private var voices: [NSSound] = []
   private var next = 0
   private var last = -Double.infinity
+  private var lastHaptic = -Double.infinity
   private(set) var playCount = 0
   private init() {
     if let url=Bundle.main.url(forResource:"WheelHover",withExtension:"wav") {
@@ -121,7 +122,9 @@ final class WheelHoverFeedback {
     }
   }
   func perform(sound: Bool, haptic: Bool) {
-    if haptic {
+    let now = ProcessInfo.processInfo.systemUptime
+    if haptic && now - lastHaptic >= 0.04 {
+      lastHaptic = now
       // AppKit does not expose intensity. Generic is its firmest short detent.
       NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
     }

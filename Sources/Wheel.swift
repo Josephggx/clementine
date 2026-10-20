@@ -279,7 +279,11 @@ final class WheelController {
     let panel = WheelPanel(contentRect: NSRect(origin: origin, size: NSSize(width: side, height: side)),
       styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
     panel.preview = session == nil
-    panel.level = .popUpMenu
+    // Finder's multi-file drag preview uses the dragging window level, above
+    // pop-up menus. Keep the live drop targets above that preview so the file
+    // list cannot cover them. Ordinary demos retain the normal pop-up level.
+    panel.level = session == nil ? .popUpMenu
+      : NSWindow.Level(rawValue:Int(CGWindowLevelForKey(.draggingWindow))+1)
     // The glass disc draws its own circular shadow. A window shadow follows the
     // panel's square bounds and leaves a gray edge below the transparent wheel.
     panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = false
@@ -315,8 +319,8 @@ final class WheelController {
       }
       return true
     }
-    surface.wheel.onSelectionChange = { [weak self] slot in
-      guard let self, slot != nil else { return }
+    surface.wheel.onHoverFeedback = { [weak self] in
+      guard let self else { return }
       WheelHoverFeedback.shared.perform(sound: self.state.sound, haptic: self.state.haptics)
     }
     surface.wheel.onDismiss = { [weak self] in self?.cancel() }
@@ -344,7 +348,16 @@ final class WheelView: NSView {
   var onEnd: (() -> Void)?
   var onDismiss: (() -> Void)?
   var onSelectionChange: ((Int?) -> Void)?
+  var onHoverFeedback: (() -> Void)?
+  private var feedbackGate = WheelFeedbackGate()
   var previewDefaultSelection: Int?
+  var allowsPointerInteraction = true {
+    didSet {
+      guard oldValue != allowsPointerInteraction else { return }
+      if preview && !allowsPointerInteraction { pressed = nil }
+      updateTrackingAreas()
+    }
+  }
   var previewLabel: String?
   var showsIdleCenter = true
   var emptyText = "No tools"
@@ -395,9 +408,14 @@ final class WheelView: NSView {
     RunLoop.main.add(timer, forMode: .common)
     openingTimer = timer
   }
-  override var acceptsFirstResponder: Bool { preview }
+  override var acceptsFirstResponder: Bool { preview && allowsPointerInteraction }
+  override func hitTest(_ point: NSPoint) -> NSView? {
+    guard !preview || allowsPointerInteraction else { return nil }
+    return super.hitTest(point)
+  }
   func replaceItems(_ items: [WheelItem]) {
     self.items = items
+    feedbackGate = WheelFeedbackGate()
     hoverTimer?.invalidate();hoverTimer=nil
     selected=nil;visualState.selected=nil
     visualState.count=items.count;visualState.hoverLevels=Array(repeating:0,count:items.count)
@@ -407,18 +425,23 @@ final class WheelView: NSView {
   }
   override func updateTrackingAreas() {
     super.updateTrackingAreas()
-    if let tracking { removeTrackingArea(tracking) }
+    if let tracking { removeTrackingArea(tracking); self.tracking = nil }
+    guard !preview || allowsPointerInteraction else { return }
     let area = NSTrackingArea(rect: bounds, options: [.mouseMoved, .activeAlways, .mouseEnteredAndExited], owner: self, userInfo: nil)
     tracking = area; addTrackingArea(area)
   }
   func index(_ point: NSPoint) -> Int? { WheelGeometry.hit(point, count: items.count, center: center) }
   func hover(at point: NSPoint) {
+    guard !preview || allowsPointerInteraction else { return }
     let next = index(point)
     select(next)
   }
   private func select(_ next: Int?) {
     guard next != selected else { return }
     selected=next;visualState.selected=next;animateHover(to:next);onSelectionChange?(next)
+    if feedbackGate.selectionChanged(to: next.map { items[$0].action }, at: ProcessInfo.processInfo.systemUptime) {
+      onHoverFeedback?()
+    }
   }
   /// Drives the catalogue/onboarding preview without changing live drag behaviour.
   func setPreviewSelection(_ index: Int?) {
@@ -451,13 +474,16 @@ final class WheelView: NSView {
   }
   override func mouseMoved(with event: NSEvent) { hover(at: convert(event.locationInWindow, from: nil)) }
   override func mouseEntered(with event: NSEvent) { hover(at: convert(event.locationInWindow, from: nil)) }
-  override func mouseExited(with event: NSEvent) { select(previewDefaultSelection) }
+  override func mouseExited(with event: NSEvent) {
+    guard !preview || allowsPointerInteraction else { return }
+    select(previewDefaultSelection)
+  }
   override func mouseDown(with event: NSEvent) {
-    guard preview, !consumed else { return }
+    guard preview, allowsPointerInteraction, !consumed else { return }
     pressed = index(convert(event.locationInWindow, from: nil))
   }
   override func mouseUp(with event: NSEvent) {
-    guard preview, !consumed, nativeSequence == nil else { return }
+    guard preview, allowsPointerInteraction, !consumed, nativeSequence == nil else { return }
     let slot = index(convert(event.locationInWindow, from: nil))
     defer { pressed = nil }
     guard let slot, slot == pressed else { return }
@@ -465,7 +491,7 @@ final class WheelView: NSView {
   }
   override func cancelOperation(_ sender: Any?) { onDismiss?() }
   override func keyDown(with event: NSEvent) {
-    guard preview else { return }
+    guard preview, allowsPointerInteraction else { return }
     if event.keyCode == 53 { onDismiss?(); return }
     if event.keyCode == 36, let selected, !consumed {
       consumed = onChoose?(items[selected], urls, nil) == true

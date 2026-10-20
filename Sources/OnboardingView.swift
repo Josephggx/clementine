@@ -308,7 +308,8 @@ private struct OnboardingDragDemo: View {
             .position(x: origin.x, y: origin.y - 28)
           FeatureWheelPreview(items: items, appearance: state.appearance,
             soundFeedback: false, hapticFeedback: false,
-            previewSelection: hovered, drivesSelection: true, animateOpening: visible)
+            previewSelection: hovered, drivesSelection: true, allowsPointerInteraction: false,
+            animateOpening: visible)
             .frame(width: WheelGeometry.side, height: WheelGeometry.side)
             .opacity(visible ? 1 : 0)
             .position(center)

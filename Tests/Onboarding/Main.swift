@@ -1,6 +1,56 @@
 import AppKit
 import SwiftUI
 
+extension OnboardingCheck {
+  func checkPreviewPointerIsolation() {
+    let items = ["PNG", "WEBP", "PDF"].map { WheelItem(title:$0,icon:"",action:$0) }
+    let frame = NSRect(x:0,y:0,width:WheelGeometry.side,height:WheelGeometry.side)
+    let preview = WheelView(frame:frame,urls:[],items:items,preview:true)
+    let panel = NSWindow(contentRect:frame,styleMask:.borderless,backing:.buffered,defer:false)
+    panel.isReleasedWhenClosed = false
+    panel.contentView = preview
+    let target = WheelGeometry.point(84.5,WheelGeometry.angle(0,count:items.count),center:preview.center)
+    preview.updateTrackingAreas()
+    precondition(!preview.trackingAreas.isEmpty)
+    preview.allowsPointerInteraction = false
+    precondition(preview.trackingAreas.isEmpty)
+    precondition(preview.hitTest(target) == nil && !preview.acceptsFirstResponder)
+    preview.setPreviewSelection(2)
+    var choices = 0
+    preview.onChoose = { _,_,_ in choices += 1; return false }
+    for _ in 0..<30 {
+      preview.hover(at:target)
+      for type in [NSEvent.EventType.mouseMoved,.mouseEntered,.mouseExited,.leftMouseDown,.leftMouseUp] {
+        let event: NSEvent
+        if type == .mouseEntered || type == .mouseExited {
+          event = NSEvent.enterExitEvent(with:type,location:target,modifierFlags:[],timestamp:0,windowNumber:panel.windowNumber,context:nil,eventNumber:0,trackingNumber:0,userData:nil)!
+        } else {
+          event = NSEvent.mouseEvent(with:type,location:target,modifierFlags:[],timestamp:0,windowNumber:panel.windowNumber,context:nil,eventNumber:0,clickCount:1,pressure:0)!
+        }
+        switch type {
+        case .mouseMoved: preview.mouseMoved(with:event)
+        case .mouseEntered: preview.mouseEntered(with:event)
+        case .mouseExited: preview.mouseExited(with:event)
+        case .leftMouseDown: preview.mouseDown(with:event)
+        default: preview.mouseUp(with:event)
+        }
+      }
+      precondition(preview.selected == 2, "Real pointer must not override the animated selection")
+    }
+    precondition(choices == 0)
+    preview.setPreviewSelection(1)
+    precondition(preview.selected == 1, "Animation must remain in control")
+    preview.allowsPointerInteraction = true
+    preview.hover(at:target)
+    precondition(preview.selected == 0 && !preview.trackingAreas.isEmpty)
+    let live = WheelView(frame:frame,urls:[],items:items,preview:false)
+    live.allowsPointerInteraction = false
+    live.hover(at:target)
+    precondition(live.selected == 0, "The actual drag wheel must remain interactive")
+    print("PASS: 150 native pointer events ignored by animated preview; animation, interactive catalogue and live wheel preserved")
+  }
+}
+
 final class OnboardingCheck: NSObject, NSApplicationDelegate {
   var window: NSWindow!
   let state = AppState()
@@ -8,6 +58,11 @@ final class OnboardingCheck: NSObject, NSApplicationDelegate {
   var module: ModuleWindowController?
   let root = URL(fileURLWithPath: Bundle.main.object(forInfoDictionaryKey: "TestRoot") as! String)
   func applicationDidFinishLaunching(_ notification: Notification) {
+    if CommandLine.arguments.contains("--preview-pointer") {
+      checkPreviewPointerIsolation()
+      NSApp.terminate(nil)
+      return
+    }
     NSApp.setActivationPolicy(CommandLine.arguments.contains("--panels") ? .accessory : .regular)
     state.appearance = "dark"; state.applyAppearance()
     window = NSWindow(contentRect: NSRect(x:0,y:0,width:1136,height:790),
