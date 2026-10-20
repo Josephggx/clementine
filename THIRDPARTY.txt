@@ -1,0 +1,45 @@
+COMPOSANTS EMBARQUÉS — CLÉMENTINE
+
+Cette implémentation Swift est indépendante. Aucune ressource n’a été extraite de
+l’application Tangerine. Les pictogrammes sont redessinés en tracés natifs à partir
+de son interface publique ; le clic de survol est synthétisé pour Clémentine.
+Le binaire installé a été inventorié
+(types, chaînes et dépendances) et son interface observée pour établir le périmètre.
+Le dépôt Rea a été examiné ; il n’a pas été installé ni utilisé pour décompiler l’app.
+
+FFmpeg et FFprobe 9.0 : binaires statiques macOS arm64 fournis par OSXExperts.
+https://www.osxexperts.net/
+Sources FFmpeg : https://ffmpeg.org/releases/ffmpeg-9.0.tar.xz
+Configuration de compilation et sources des bibliothèques externes :
+https://www.osxexperts.net/index.html#compile
+FFmpeg est compilé avec --enable-gpl et sans --enable-nonfree. Les binaires
+sont donc distribués sous GPL v2 ou ultérieure. Le récapitulatif de licence,
+le README et les informations de reconstruction sont fournis dans Resources.
+Empreintes SHA-256 des binaires distribués :
+- ffmpeg : 591260c945d0eef150e3bf82b0ef988bd36a9cecc18ff05d6679617159f0a95e
+- ffprobe : e11c17e8200b3ee4c4c186d245e2b4053f01d56957336c1817fca0b997469106
+
+ExifTool 13.59 — Phil Harvey — licence Perl (Artistic/GPL).
+https://github.com/exiftool/exiftool/tree/13.59
+README et code Perl inclus dans Resources/Tools/ExifTool.
+
+LibreOffice 26.8.1.1 — The Document Foundation.
+https://www.libreoffice.org/
+DMG officiel :
+https://download.documentfoundation.org/libreoffice/stable/26.8.1/mac/aarch64/LibreOffice_26.8.1_MacOS_aarch64.dmg
+Application complète embarquée avec LICENSE, NOTICE et notices propres aux composants.
+
+RAR 5 méthode « store » : implémentation indépendante du conteneur à partir de
+la spécification publique RARLAB, sans algorithme de compression propriétaire.
+https://www.rarlab.com/technote.htm
+
+Moteurs Apple : AppKit, SwiftUI, ImageIO, Core Image, PDFKit, Vision,
+AVFoundation, Core Text, ServiceManagement, textutil, libarchive et outils système.
+
+Outils utilisés pour la construction seulement : 7-Zip 26.04 (extraction du DMG),
+compilateur Swift et utilitaires de signature Apple. 7-Zip n’est pas embarqué.
+
+Marked 15.0.12 (MIT), https://github.com/markedjs/marked — Resources/Marked-LICENSE.txt.
+
+Sparkle 2.10.0 (MIT) — https://github.com/sparkle-project/Sparkle/tree/2.10.0
+Framework officiel de mise à jour, licence incluse dans Sparkle-LICENSE.txt.

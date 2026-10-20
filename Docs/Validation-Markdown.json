@@ -1,0 +1,46 @@
+{
+  "passed": 9,
+  "total": 9,
+  "checks": [
+    {
+      "name": "PDF text and artwork export to readable Markdown with real PNG files",
+      "passed": true
+    },
+    {
+      "name": "Repeated export renames Markdown and its image folder together",
+      "passed": true
+    },
+    {
+      "name": "Moving Markdown with its image folder retains rendered images",
+      "passed": true
+    },
+    {
+      "name": "Existing unrelated image folder is preserved",
+      "passed": true
+    },
+    {
+      "name": "Image-only PDF keeps its page image",
+      "passed": true
+    },
+    {
+      "name": "Text-only PDF does not produce an empty image folder",
+      "passed": true
+    },
+    {
+      "name": "Duplicate artwork is stored once and alternate text is safely escaped",
+      "passed": true
+    },
+    {
+      "name": "Batch PDFs with identical names keep separate valid image references",
+      "passed": true
+    },
+    {
+      "name": "Temporary conversion folders are removed",
+      "passed": true
+    }
+  ],
+  "imageStorage": "Local PNG files in a sibling -images folder; portable relative Markdown image references",
+  "installed": true,
+  "installedApplication": "/Applications/Clémentine.app",
+  "installedExecutableSHA256": "781ae8d68bdd8dad5526ba5e54b88e5657d375ee55e6a2975bf605673fc92993"
+}

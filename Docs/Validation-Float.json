@@ -1,0 +1,142 @@
+[
+  {
+    "name" : "Compact size stays 100 × 115 for 1 files",
+    "passed" : true
+  },
+  {
+    "name" : "Expanded shelf remains bounded for 1 files",
+    "passed" : true
+  },
+  {
+    "name" : "Shelf stays on an external screen with negative coordinates, count 1",
+    "passed" : true
+  },
+  {
+    "name" : "Compact size stays 100 × 115 for 2 files",
+    "passed" : true
+  },
+  {
+    "name" : "Expanded shelf remains bounded for 2 files",
+    "passed" : true
+  },
+  {
+    "name" : "Shelf stays on an external screen with negative coordinates, count 2",
+    "passed" : true
+  },
+  {
+    "name" : "Compact size stays 100 × 115 for 3 files",
+    "passed" : true
+  },
+  {
+    "name" : "Expanded shelf remains bounded for 3 files",
+    "passed" : true
+  },
+  {
+    "name" : "Shelf stays on an external screen with negative coordinates, count 3",
+    "passed" : true
+  },
+  {
+    "name" : "Compact size stays 100 × 115 for 4 files",
+    "passed" : true
+  },
+  {
+    "name" : "Expanded shelf remains bounded for 4 files",
+    "passed" : true
+  },
+  {
+    "name" : "Shelf stays on an external screen with negative coordinates, count 4",
+    "passed" : true
+  },
+  {
+    "name" : "Compact size stays 100 × 115 for 8 files",
+    "passed" : true
+  },
+  {
+    "name" : "Expanded shelf remains bounded for 8 files",
+    "passed" : true
+  },
+  {
+    "name" : "Shelf stays on an external screen with negative coordinates, count 8",
+    "passed" : true
+  },
+  {
+    "name" : "Compact size stays 100 × 115 for 20 files",
+    "passed" : true
+  },
+  {
+    "name" : "Expanded shelf remains bounded for 20 files",
+    "passed" : true
+  },
+  {
+    "name" : "Shelf stays on an external screen with negative coordinates, count 20",
+    "passed" : true
+  },
+  {
+    "name" : "Compact size stays 100 × 115 for 100 files",
+    "passed" : true
+  },
+  {
+    "name" : "Expanded shelf remains bounded for 100 files",
+    "passed" : true
+  },
+  {
+    "name" : "Shelf stays on an external screen with negative coordinates, count 100",
+    "passed" : true
+  },
+  {
+    "name" : "Single-file expanded reference size 112 × 267",
+    "passed" : true
+  },
+  {
+    "name" : "Small pointer motion remains a click",
+    "passed" : true
+  },
+  {
+    "name" : "Dragging the thumbnail moves the island with the pointer",
+    "passed" : true
+  },
+  {
+    "name" : "A completed move does not expand the island on mouse-up",
+    "passed" : true
+  },
+  {
+    "name" : "A click remains available to expand the island",
+    "passed" : true
+  },
+  {
+    "name" : "Dragging stays inside an external display",
+    "passed" : true
+  },
+  {
+    "name" : "Duplicate URL appears once",
+    "passed" : true
+  },
+  {
+    "name" : "Selected files are carried in shelf order",
+    "passed" : true
+  },
+  {
+    "name" : "Removing a file clears selection without deleting the original",
+    "passed" : true
+  },
+  {
+    "name" : "Island has no titlebar or opaque window background",
+    "passed" : true
+  },
+  {
+    "name" : "Floating level, no rectangular system window shadow",
+    "passed" : true
+  },
+  {
+    "name" : "Native panel starts at compact dimensions",
+    "passed" : true
+  },
+  {
+    "name" : "Native panel expands to reference dimensions",
+    "passed" : true
+  },
+  {
+    "name" : "Native panel collapses to compact dimensions",
+    "passed" : true
+  }
+]

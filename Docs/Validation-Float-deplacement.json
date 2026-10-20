@@ -1,0 +1,28 @@
+{
+  "checksPassed": 35,
+  "checksTotal": 35,
+  "nativeDrag": {
+    "compact": {
+      "before": [
+        1268,
+        264
+      ],
+      "after": [
+        1253,
+        274
+      ]
+    },
+    "expanded": {
+      "before": [
+        1247,
+        122
+      ],
+      "after": [
+        1217,
+        92
+      ]
+    }
+  },
+  "clickExpands": true,
+  "expandedRemainsOpenWhileMoving": true
+}

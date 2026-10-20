@@ -1,0 +1,32 @@
+CLÉMENTINE — ÉTAT DE VALIDATION
+19 octobre 2026
+
+Application installée : /Applications/Clémentine.app
+Une seule copie installée. La compilation normale exclut les suites de tests internes.
+La touche des formats est Option dans les préférences locales ; Commande ouvre les outils
+et Contrôle les actions. La signature de l’application installée a été vérifiée.
+
+VÉRIFICATIONS
+• Catalogue Tangerine : 46 formats, 275 conversions dirigées. Clémentine ajoute
+  Numbers → CSV, soit 47 entrées et 276 conversions au total ; 2 351 assertions.
+• Glisser-déposer : 16 794 124 assertions, dont 1 048 576 séquences de touches.
+• Modules : 81 vérifications d’export réussies.
+• Metadata : accès depuis tous les formats ; export JSON en lecture seule si ExifTool
+  ne permet pas l’édition. La roue possède une animation d’ouverture du contenu.
+• Float : 39/39 contrôles. Glissement natif au bord droit ; l’îlot reste épinglé
+  lorsqu’il est déployé. Détail : Validation-Float-ancrage.json.
+• Documents : 22/22 contrôles natifs réussis ; les 275 routes Tangerine ont produit
+  une sortie valide. Numbers → CSV est couvert par Validation-CSV-par-feuille.json.
+• PDF éditable et mise en page : détails dans Validation-PDF-editable.json et
+  Validation-PDF-mise-en-page.json.
+• CSV par feuille, Markdown avec illustrations et stylo libre : rapports dédiés.
+• Finovox : import d’un PDF synthétique validé avec le bouton bleu du SaaS.
+
+LIMITES NON CERTIFIÉES
+La parité visuelle et comportementale de tous les modules avec Tangerine n’a pas
+été démontrée. Les couleurs des fonds, les algorithmes photo, les PDF complexes
+éditables et la comparaison des 275 sorties à Tangerine restent à mesurer.
+L’import Finovox en lot et un nouveau dépôt physique Finder → Option n’ont pas été
+certifiés dans cette campagne. Les tests automatisés ne les remplacent pas.
+
+Les données détaillées sont conservées dans les fichiers Validation*.json.

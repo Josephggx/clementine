@@ -1,0 +1,106 @@
+CLÉMENTINE — APPLICATION MACOS LOCALE
+Préversion mise à jour le 19 octobre 2026 · Apple Silicon · macOS 14 minimum
+
+OUVRIR L’APP
+Ouvrez « Clémentine » depuis le dossier Applications.
+Une icône orange reste dans la barre de menus lorsque la fenêtre est fermée.
+L’application et ses moteurs occupent environ 900 Mo. Aucun compte n’est nécessaire.
+Cette compilation locale est signée ad hoc, sans notarisation Apple.
+
+UTILISATION
+• Déposez des fichiers dans l’atelier ou choisissez « Ajouter des fichiers ».
+• Les sorties reprennent les 46 formats et 275 conversions dirigées de Tangerine,
+  avec l’extension Numbers → CSV demandée ensuite. La page « Fonctionnalités »
+  présente les familles de fichiers, les roues et chaque sens de conversion.
+• Dans le Finder : commencez à glisser un fichier, puis tapez Option pour les formats,
+  Commande pour les outils ou Contrôle pour les actions. Relâchez la touche et
+  continuez à glisser. Une autre touche permet de changer de roue.
+• Tous les choix sont visibles, sans pagination. Les espaces entre les pétales et
+  le centre ne déclenchent aucune opération.
+• Les actions sont AirDrop, Float, Copy, Move, Copy Path, Terminal et Finovox.
+  Finovox apparaît pour les PDF, PNG, JPG, TIFF et ZIP.
+• Les conversions de la roue affichent une petite fenêtre de suivi qui se ferme
+  automatiquement à la fin. Les résultats restent accessibles dans « Traitements ».
+• Les outils disponibles changent selon le format et le nombre de fichiers.
+
+PROTECTION DES FICHIERS
+Les conversions créent des copies. Le dossier par défaut est celui du premier fichier.
+Les doublons reçoivent un numéro. Les résultats sont publiés après réussite du traitement.
+Les commandes explicites de déplacement, proposées dans la roue Actions, déplacent
+les fichiers sélectionnés : elles ne sont pas des conversions.
+Les traitements peuvent être annulés. Le détail des erreurs apparaît dans « Traitements ».
+
+CORRECTIF DES INTERACTIONS
+Option remplace Fn. Maj reste disponible dans les réglages.
+La roue apparaît avec une courte animation d’ouverture. Elle conserve sa fenêtre,
+son ancrage et sa zone de dépôt quand on change de touche.
+Relâcher une touche conserve le menu choisi. Échap et un dépôt hors des pétales annulent.
+Un même dépôt ne peut lancer qu’une opération ; un ancien délai de fermeture ne ferme
+pas une nouvelle roue. Les raccourcis occupés sont échangés automatiquement.
+La même application /Applications/Clémentine.app est mise à jour à chaque compilation.
+
+ÉTAT DE CETTE VERSION
+Le catalogue a été comparé au site public et à l’application Tangerine 2.0.2.
+2 351 assertions de catalogue et 16 794 124 assertions de drag passent, dont
+1 048 576 séquences de modificateurs. 46 vérifications de fenêtres AppKit passent. Le GIF animé vers MP4 a aussi été vérifié.
+
+Les outils de la roue Commande ouvrent maintenant leurs propres modules glass.
+Chaque fenêtre conserve ses réglages indépendamment. Les aperçus et les exports
+utilisent les mêmes paramètres. Les traitements créent des copies.
+Metadata est proposé pour tous les fichiers. Les formats que le moteur ne peut
+pas modifier restent consultables et peuvent être exportés en JSON.
+
+81 vérifications d’export des nouveaux modules passent. La reconstruction reprend
+les fenêtres et paramètres publiés par Tangerine, mais la parité complète des
+interactions et du rendu n’est pas encore certifiée. Les couleurs des 17 préréglages de fond
+et les algorithmes photo restent à comparer. L’îlot Float compact et déployé a été
+revérifié visuellement ; un lâcher près d’un bord horizontal l’y épingle.
+Cliquer sur la miniature déploie le Float ; cliquer-glisser sur elle déplace l’îlot,
+qu’il soit compact ou ouvert. Dans l’îlot ouvert, Option-glisser sur la miniature
+emporte tous les fichiers ; glisser un fichier individuel depuis la liste reste possible.
+Le parcours historique Finder → Fn → JPG avait été confirmé par l’utilisateur.
+Le raccourci de conversion par défaut est Option ; le réglage personnel peut le remplacer.
+
+L’outil Annotate possède un stylo libre : le trait suit le pointeur directement,
+sans cadre de sélection. Un geste correspond à une étape d’annulation.
+
+Les classeurs Excel, ODS et Numbers exportés en CSV créent un fichier par feuille.
+Les noms sont « classeur-feuille.csv » ; les fichiers déjà présents sont conservés.
+Numbers est lu par son application native, qui doit être installée et autorisée dans
+les réglages Automatisation de macOS. Si une feuille Numbers contient plusieurs
+tableaux, leurs lignes sont séparées par une ligne vide dans son CSV.
+
+Dans Réglages → Contenu des conversions, le mode automatique de PDF → DOCX / Pages
+conserve le texte natif sous forme éditable. Les pages sans texte sélectionnable
+restent en images. Un PDF mixte est traité page par page. La conservation de toutes
+les pages en images et l’OCR explicite restent disponibles en option.
+L’EPUB propose également les modes pages fixes et texte ajustable.
+
+Les documents illustrés restent riches lors des conversions DOCX, Pages, EPUB et
+Markdown. Les exports TXT suppriment la mise en forme par nature. Pour un PDF scanné
+sans texte sélectionnable, TXT donne une erreur explicite. Le Markdown conserve
+aussi les illustrations du PDF : le fichier .md référence des PNG dans le dossier
+« nom-du-document-images » placé à côté. Conservez ce dossier avec le Markdown
+pour le déplacer ou le partager. L’HTML est autonome, images incluses.
+
+275 parcours de conversion et 22 contrôles de contenu passent. Les derniers
+changements HTML/Markdown et les métadonnées 300 DPI ont été revérifiés séparément.
+Ces résultats ne certifient pas une identité visuelle de chaque sortie avec Tangerine.
+
+Voir « Rapport-validation.txt » pour les vérifications et leurs limites.
+Les originaux sont conservés lors des conversions.
+
+FINOVOX
+La roue Contrôle propose FINOVOX. Le bouton « Importer dans Finovox » est aussi
+disponible dans l’atelier pour les fichiers compatibles. Chrome et une session
+connectée à https://app.finovox.com/ sont nécessaires. Le bouton bleu « Importer
+des documents » et le sélecteur macOS sont utilisés, jamais la zone de dépôt.
+Les originaux sont envoyés sans modification dans l’organisation active du SaaS.
+L’autorisation macOS Accessibilité est nécessaire pour piloter ce parcours.
+Ne changez pas de fenêtre ni d’organisation pendant l’import. L’app vérifie
+l’apparition d’une nouvelle ligne avant d’annoncer la réussite. Un import remis
+au SaaS n’est jamais retenté automatiquement pour éviter les doublons.
+
+Le parcours complet a été testé avec un PDF synthétique dans Finovox Audit.
+Le document apparaît dans le SaaS et son analyse est terminée. L’import en lot
+n’a pas encore été certifié par ce test unique.

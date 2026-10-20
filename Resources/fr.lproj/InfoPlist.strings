@@ -1,0 +1,9 @@
+"CFBundleDisplayName" = "Clémentine";
+"CFBundleName" = "Clémentine";
+"CFBundleTypeName" = "Fichiers";
+"NSAppleEventsUsageDescription" = "Clémentine utilise Pages, Numbers ou Keynote pour créer les fichiers Apple natifs demandés. Les originaux sont conservés.";
+"NSDesktopFolderUsageDescription" = "Clémentine accède uniquement aux fichiers du Bureau que vous choisissez afin de les convertir ou de créer le résultat à côté de l’original.";
+"NSDocumentsFolderUsageDescription" = "Clémentine accède uniquement aux documents que vous choisissez afin de les convertir ou de créer le résultat à côté de l’original.";
+"NSDownloadsFolderUsageDescription" = "Clémentine accède uniquement aux fichiers téléchargés que vous choisissez afin de les convertir ou de créer le résultat à côté de l’original.";
+"NSRemovableVolumesUsageDescription" = "Clémentine accède uniquement aux fichiers que vous choisissez sur un disque externe.";
+"NSNetworkVolumesUsageDescription" = "Clémentine accède uniquement aux fichiers que vous choisissez sur un volume réseau.";

@@ -1,0 +1,1386 @@
+{
+  "version": "0.2.1",
+  "catalogue": {
+    "formats": 46,
+    "directedConversions": 275,
+    "assertionsPassed": 2343,
+    "homepageMatch": true
+  },
+  "media": [
+    {
+      "name": "GIF animé vers MP4 en conservant l’animation",
+      "passed": true
+    }
+  ],
+  "pending": [
+    "complete module visual and interaction parity",
+    "exact background colors and original photo algorithms",
+    "complex equations, fonts and tables in editable document conversion",
+    "output-by-output visual comparison against Tangerine and performance benchmarks"
+  ],
+  "previousVersionTests": 89,
+  "previousVersionTestsAreNotCurrentCertification": true,
+  "dragFix": {
+    "assertionsPassed": 16794122,
+    "modifierSequences": 1048576,
+    "nativeWindowChecksPassed": 46,
+    "windowAndDestinationRetained": true,
+    "singleCommit": true,
+    "defaultModifiers": {
+      "formats": "option",
+      "tools": "command",
+      "actions": "control"
+    },
+    "globalFinderTriggerValidated": true,
+    "physicalFnValidation": "Historical: user confirmed Fn before the switch back to Option",
+    "nativeDropCurrentRunValidated": false,
+    "previousNativeJPGDrop": {
+      "passed": true,
+      "dimensions": [
+        960,
+        640
+      ]
+    }
+  },
+  "modules": {
+    "dedicatedWindows": 22,
+    "reference": "https://tangerineformac.com/tools",
+    "exportTestsPassed": 81,
+    "exportTestsTotal": 81,
+    "nativeVisualReviewComplete": false,
+    "completeParityCertified": false,
+    "nativeCropDragExport": {
+      "passed": true,
+      "width": 811,
+      "height": 557
+    },
+    "compressionTargetFieldsObserved": true,
+    "photoControlObserved": true,
+    "metadataReadObserved": true,
+    "audioWaveformObserved": true,
+    "backgroundPresets": 17,
+    "backgroundColorsPixelMatched": false
+  },
+  "packaging": {
+    "signatureVerified": true,
+    "installedApp": "/Applications/Clémentine.app",
+    "legacyAppBundlesRemoved": true,
+    "archivesRemovedAsRedundant": true,
+    "singleInstalledCopy": true
+  },
+  "documentConversions": {
+    "contentChecks": {
+      "checks": [
+        {
+          "name": "PDF → DOCX: one 300 DPI image per page; no OCR substituted",
+          "passed": true
+        },
+        {
+          "name": "Preserved DOCX reopens as PDF without blank/extra pages",
+          "passed": true
+        },
+        {
+          "name": "PDF → PPTX: page images and three slides",
+          "passed": true
+        },
+        {
+          "name": "PDF → EPUB fixed layout: image pages, ordered spine, stored mimetype",
+          "passed": true
+        },
+        {
+          "name": "PDF → DOCX editable: text plus actual embedded illustration",
+          "passed": true
+        },
+        {
+          "name": "PDF → EPUB adjustable: text and illustrations",
+          "passed": true
+        },
+        {
+          "name": "PDF → TXT: selected text, without pretending image OCR",
+          "passed": true
+        },
+        {
+          "name": "Image-only PDF → TXT: explicit error instead of empty output",
+          "passed": true
+        },
+        {
+          "name": "Markdown → DOCX retains heading, bold, table and illustration",
+          "passed": true
+        },
+        {
+          "name": "Markdown → PDF retains text and image",
+          "passed": true
+        },
+        {
+          "name": "DOCX → Markdown retains table, bold, hyperlink and image",
+          "passed": true
+        },
+        {
+          "name": "DOCX → EPUB retains embedded image and text",
+          "passed": true
+        },
+        {
+          "name": "EPUB fixed image pages → DOCX retains all artwork",
+          "passed": true
+        },
+        {
+          "name": "EPUB fixed image pages → HTML embeds all images",
+          "passed": true
+        },
+        {
+          "name": "Markdown remote image cannot silently disappear or cause a request",
+          "passed": true
+        },
+        {
+          "name": "PDF → Markdown retains illustrations as embedded images",
+          "passed": true
+        },
+        {
+          "name": "DOCX → HTML is self contained, with embedded artwork",
+          "passed": true
+        },
+        {
+          "name": "Rotated PDF renders upright at 300 DPI",
+          "passed": true
+        },
+        {
+          "name": "RTFD → DOCX retains attached artwork and text",
+          "passed": true
+        },
+        {
+          "name": "PDF → native Pages → PDF: all page images retained",
+          "passed": true
+        },
+        {
+          "name": "Rich DOCX → native Pages → DOCX: text, table and image retained",
+          "passed": true
+        },
+        {
+          "name": "Original PDF content is unchanged",
+          "passed": true
+        }
+      ],
+      "exactTangerineParityCertified": false,
+      "passed": 22,
+      "total": 22
+    },
+    "matrix": {
+      "passed": 275,
+      "total": 275,
+      "lastChangedRoutesRechecked": 9,
+      "checks": [
+        {
+          "name": "aiff → mp3",
+          "passed": true
+        },
+        {
+          "name": "aiff → m4a",
+          "passed": true
+        },
+        {
+          "name": "aiff → wav",
+          "passed": true
+        },
+        {
+          "name": "aiff → flac",
+          "passed": true
+        },
+        {
+          "name": "aiff → ogg",
+          "passed": true
+        },
+        {
+          "name": "aiff → opus",
+          "passed": true
+        },
+        {
+          "name": "aiff → wma",
+          "passed": true
+        },
+        {
+          "name": "avi → mp4",
+          "passed": true
+        },
+        {
+          "name": "avi → mov",
+          "passed": true
+        },
+        {
+          "name": "avi → mkv",
+          "passed": true
+        },
+        {
+          "name": "avi → webm",
+          "passed": true
+        },
+        {
+          "name": "avi → wmv",
+          "passed": true
+        },
+        {
+          "name": "avi → gif",
+          "passed": true
+        },
+        {
+          "name": "avi → mp3",
+          "passed": true
+        },
+        {
+          "name": "avif → jpg",
+          "passed": true
+        },
+        {
+          "name": "avif → png",
+          "passed": true
+        },
+        {
+          "name": "avif → webp",
+          "passed": true
+        },
+        {
+          "name": "avif → heic",
+          "passed": true
+        },
+        {
+          "name": "avif → tiff",
+          "passed": true
+        },
+        {
+          "name": "avif → bmp",
+          "passed": true
+        },
+        {
+          "name": "avif → pdf",
+          "passed": true
+        },
+        {
+          "name": "bmp → jpg",
+          "passed": true
+        },
+        {
+          "name": "bmp → png",
+          "passed": true
+        },
+        {
+          "name": "bmp → webp",
+          "passed": true
+        },
+        {
+          "name": "bmp → heic",
+          "passed": true
+        },
+        {
+          "name": "bmp → tiff",
+          "passed": true
+        },
+        {
+          "name": "bmp → avif",
+          "passed": true
+        },
+        {
+          "name": "bmp → pdf",
+          "passed": true
+        },
+        {
+          "name": "csv → xlsx",
+          "passed": true
+        },
+        {
+          "name": "csv → ods",
+          "passed": true
+        },
+        {
+          "name": "csv → tsv",
+          "passed": true
+        },
+        {
+          "name": "csv → pdf",
+          "passed": true
+        },
+        {
+          "name": "docx → pages",
+          "passed": true
+        },
+        {
+          "name": "docx → pdf",
+          "passed": true
+        },
+        {
+          "name": "docx → txt",
+          "passed": true
+        },
+        {
+          "name": "docx → md",
+          "passed": true
+        },
+        {
+          "name": "docx → html",
+          "passed": true
+        },
+        {
+          "name": "docx → epub",
+          "passed": true
+        },
+        {
+          "name": "docx → png",
+          "passed": true
+        },
+        {
+          "name": "docx → jpg",
+          "passed": true
+        },
+        {
+          "name": "epub → pdf",
+          "passed": true
+        },
+        {
+          "name": "epub → docx",
+          "passed": true
+        },
+        {
+          "name": "epub → pages",
+          "passed": true
+        },
+        {
+          "name": "epub → txt",
+          "passed": true
+        },
+        {
+          "name": "epub → md",
+          "passed": true
+        },
+        {
+          "name": "epub → html",
+          "passed": true
+        },
+        {
+          "name": "flac → mp3",
+          "passed": true
+        },
+        {
+          "name": "flac → m4a",
+          "passed": true
+        },
+        {
+          "name": "flac → wav",
+          "passed": true
+        },
+        {
+          "name": "flac → ogg",
+          "passed": true
+        },
+        {
+          "name": "flac → opus",
+          "passed": true
+        },
+        {
+          "name": "flac → aiff",
+          "passed": true
+        },
+        {
+          "name": "flac → wma",
+          "passed": true
+        },
+        {
+          "name": "gif → mp4",
+          "passed": true
+        },
+        {
+          "name": "gif → mov",
+          "passed": true
+        },
+        {
+          "name": "gif → mkv",
+          "passed": true
+        },
+        {
+          "name": "gif → webm",
+          "passed": true
+        },
+        {
+          "name": "gif → avi",
+          "passed": true
+        },
+        {
+          "name": "gif → wmv",
+          "passed": true
+        },
+        {
+          "name": "gz → zip",
+          "passed": true
+        },
+        {
+          "name": "gz → tar",
+          "passed": true
+        },
+        {
+          "name": "heic → jpg",
+          "passed": true
+        },
+        {
+          "name": "heic → png",
+          "passed": true
+        },
+        {
+          "name": "heic → webp",
+          "passed": true
+        },
+        {
+          "name": "heic → tiff",
+          "passed": true
+        },
+        {
+          "name": "heic → avif",
+          "passed": true
+        },
+        {
+          "name": "heic → bmp",
+          "passed": true
+        },
+        {
+          "name": "heic → pdf",
+          "passed": true
+        },
+        {
+          "name": "jpg → png",
+          "passed": true
+        },
+        {
+          "name": "jpg → webp",
+          "passed": true
+        },
+        {
+          "name": "jpg → heic",
+          "passed": true
+        },
+        {
+          "name": "jpg → tiff",
+          "passed": true
+        },
+        {
+          "name": "jpg → avif",
+          "passed": true
+        },
+        {
+          "name": "jpg → bmp",
+          "passed": true
+        },
+        {
+          "name": "jpg → pdf",
+          "passed": true
+        },
+        {
+          "name": "m4a → mp3",
+          "passed": true
+        },
+        {
+          "name": "m4a → wav",
+          "passed": true
+        },
+        {
+          "name": "m4a → flac",
+          "passed": true
+        },
+        {
+          "name": "m4a → ogg",
+          "passed": true
+        },
+        {
+          "name": "m4a → opus",
+          "passed": true
+        },
+        {
+          "name": "m4a → aiff",
+          "passed": true
+        },
+        {
+          "name": "m4a → wma",
+          "passed": true
+        },
+        {
+          "name": "md → docx",
+          "passed": true
+        },
+        {
+          "name": "md → pages",
+          "passed": true
+        },
+        {
+          "name": "md → pdf",
+          "passed": true
+        },
+        {
+          "name": "md → txt",
+          "passed": true
+        },
+        {
+          "name": "md → html",
+          "passed": true
+        },
+        {
+          "name": "md → epub",
+          "passed": true
+        },
+        {
+          "name": "md → png",
+          "passed": true
+        },
+        {
+          "name": "md → jpg",
+          "passed": true
+        },
+        {
+          "name": "mkv → mp4",
+          "passed": true
+        },
+        {
+          "name": "mkv → mov",
+          "passed": true
+        },
+        {
+          "name": "mkv → webm",
+          "passed": true
+        },
+        {
+          "name": "mkv → avi",
+          "passed": true
+        },
+        {
+          "name": "mkv → wmv",
+          "passed": true
+        },
+        {
+          "name": "mkv → gif",
+          "passed": true
+        },
+        {
+          "name": "mkv → mp3",
+          "passed": true
+        },
+        {
+          "name": "mov → mp4",
+          "passed": true
+        },
+        {
+          "name": "mov → mkv",
+          "passed": true
+        },
+        {
+          "name": "mov → webm",
+          "passed": true
+        },
+        {
+          "name": "mov → avi",
+          "passed": true
+        },
+        {
+          "name": "mov → wmv",
+          "passed": true
+        },
+        {
+          "name": "mov → gif",
+          "passed": true
+        },
+        {
+          "name": "mov → mp3",
+          "passed": true
+        },
+        {
+          "name": "mp3 → m4a",
+          "passed": true
+        },
+        {
+          "name": "mp3 → wav",
+          "passed": true
+        },
+        {
+          "name": "mp3 → flac",
+          "passed": true
+        },
+        {
+          "name": "mp3 → ogg",
+          "passed": true
+        },
+        {
+          "name": "mp3 → opus",
+          "passed": true
+        },
+        {
+          "name": "mp3 → aiff",
+          "passed": true
+        },
+        {
+          "name": "mp3 → wma",
+          "passed": true
+        },
+        {
+          "name": "mp4 → mov",
+          "passed": true
+        },
+        {
+          "name": "mp4 → mkv",
+          "passed": true
+        },
+        {
+          "name": "mp4 → webm",
+          "passed": true
+        },
+        {
+          "name": "mp4 → avi",
+          "passed": true
+        },
+        {
+          "name": "mp4 → wmv",
+          "passed": true
+        },
+        {
+          "name": "mp4 → gif",
+          "passed": true
+        },
+        {
+          "name": "mp4 → mp3",
+          "passed": true
+        },
+        {
+          "name": "ods → xlsx",
+          "passed": true
+        },
+        {
+          "name": "ods → csv",
+          "passed": true
+        },
+        {
+          "name": "ods → tsv",
+          "passed": true
+        },
+        {
+          "name": "ods → pdf",
+          "passed": true
+        },
+        {
+          "name": "ogg → mp3",
+          "passed": true
+        },
+        {
+          "name": "ogg → m4a",
+          "passed": true
+        },
+        {
+          "name": "ogg → wav",
+          "passed": true
+        },
+        {
+          "name": "ogg → flac",
+          "passed": true
+        },
+        {
+          "name": "ogg → opus",
+          "passed": true
+        },
+        {
+          "name": "ogg → aiff",
+          "passed": true
+        },
+        {
+          "name": "ogg → wma",
+          "passed": true
+        },
+        {
+          "name": "opus → mp3",
+          "passed": true
+        },
+        {
+          "name": "opus → m4a",
+          "passed": true
+        },
+        {
+          "name": "opus → wav",
+          "passed": true
+        },
+        {
+          "name": "opus → flac",
+          "passed": true
+        },
+        {
+          "name": "opus → ogg",
+          "passed": true
+        },
+        {
+          "name": "opus → aiff",
+          "passed": true
+        },
+        {
+          "name": "opus → wma",
+          "passed": true
+        },
+        {
+          "name": "pages → docx",
+          "passed": true
+        },
+        {
+          "name": "pages → pdf",
+          "passed": true
+        },
+        {
+          "name": "pages → txt",
+          "passed": true
+        },
+        {
+          "name": "pages → md",
+          "passed": true
+        },
+        {
+          "name": "pages → html",
+          "passed": true
+        },
+        {
+          "name": "pages → epub",
+          "passed": true
+        },
+        {
+          "name": "pages → png",
+          "passed": true
+        },
+        {
+          "name": "pages → jpg",
+          "passed": true
+        },
+        {
+          "name": "pdf → docx",
+          "passed": true
+        },
+        {
+          "name": "pdf → pages",
+          "passed": true
+        },
+        {
+          "name": "pdf → pptx",
+          "passed": true
+        },
+        {
+          "name": "pdf → xlsx",
+          "passed": true
+        },
+        {
+          "name": "pdf → jpg",
+          "passed": true
+        },
+        {
+          "name": "pdf → png",
+          "passed": true
+        },
+        {
+          "name": "pdf → epub",
+          "passed": true
+        },
+        {
+          "name": "pdf → txt",
+          "passed": true
+        },
+        {
+          "name": "pdf → md",
+          "passed": true
+        },
+        {
+          "name": "png → jpg",
+          "passed": true
+        },
+        {
+          "name": "png → webp",
+          "passed": true
+        },
+        {
+          "name": "png → heic",
+          "passed": true
+        },
+        {
+          "name": "png → tiff",
+          "passed": true
+        },
+        {
+          "name": "png → avif",
+          "passed": true
+        },
+        {
+          "name": "png → bmp",
+          "passed": true
+        },
+        {
+          "name": "png → pdf",
+          "passed": true
+        },
+        {
+          "name": "ppt → pdf",
+          "passed": true
+        },
+        {
+          "name": "ppt → jpg",
+          "passed": true
+        },
+        {
+          "name": "ppt → png",
+          "passed": true
+        },
+        {
+          "name": "pptx → pdf",
+          "passed": true
+        },
+        {
+          "name": "pptx → jpg",
+          "passed": true
+        },
+        {
+          "name": "pptx → png",
+          "passed": true
+        },
+        {
+          "name": "rar → zip",
+          "passed": true
+        },
+        {
+          "name": "rar → tar",
+          "passed": true
+        },
+        {
+          "name": "rar → gz",
+          "passed": true
+        },
+        {
+          "name": "rtf → docx",
+          "passed": true
+        },
+        {
+          "name": "rtf → pages",
+          "passed": true
+        },
+        {
+          "name": "rtf → pdf",
+          "passed": true
+        },
+        {
+          "name": "rtf → txt",
+          "passed": true
+        },
+        {
+          "name": "rtf → md",
+          "passed": true
+        },
+        {
+          "name": "rtf → html",
+          "passed": true
+        },
+        {
+          "name": "rtf → epub",
+          "passed": true
+        },
+        {
+          "name": "rtf → png",
+          "passed": true
+        },
+        {
+          "name": "rtf → jpg",
+          "passed": true
+        },
+        {
+          "name": "rtfd → docx",
+          "passed": true
+        },
+        {
+          "name": "rtfd → pages",
+          "passed": true
+        },
+        {
+          "name": "rtfd → pdf",
+          "passed": true
+        },
+        {
+          "name": "rtfd → txt",
+          "passed": true
+        },
+        {
+          "name": "rtfd → md",
+          "passed": true
+        },
+        {
+          "name": "rtfd → html",
+          "passed": true
+        },
+        {
+          "name": "rtfd → epub",
+          "passed": true
+        },
+        {
+          "name": "rtfd → png",
+          "passed": true
+        },
+        {
+          "name": "rtfd → jpg",
+          "passed": true
+        },
+        {
+          "name": "srt → vtt",
+          "passed": true
+        },
+        {
+          "name": "srt → txt",
+          "passed": true
+        },
+        {
+          "name": "svg → jpg",
+          "passed": true
+        },
+        {
+          "name": "svg → png",
+          "passed": true
+        },
+        {
+          "name": "svg → webp",
+          "passed": true
+        },
+        {
+          "name": "svg → heic",
+          "passed": true
+        },
+        {
+          "name": "svg → tiff",
+          "passed": true
+        },
+        {
+          "name": "svg → avif",
+          "passed": true
+        },
+        {
+          "name": "svg → bmp",
+          "passed": true
+        },
+        {
+          "name": "svg → pdf",
+          "passed": true
+        },
+        {
+          "name": "tar → zip",
+          "passed": true
+        },
+        {
+          "name": "tar → gz",
+          "passed": true
+        },
+        {
+          "name": "textclipping → docx",
+          "passed": true
+        },
+        {
+          "name": "textclipping → pages",
+          "passed": true
+        },
+        {
+          "name": "textclipping → pdf",
+          "passed": true
+        },
+        {
+          "name": "textclipping → txt",
+          "passed": true
+        },
+        {
+          "name": "textclipping → md",
+          "passed": true
+        },
+        {
+          "name": "textclipping → html",
+          "passed": true
+        },
+        {
+          "name": "textclipping → epub",
+          "passed": true
+        },
+        {
+          "name": "textclipping → png",
+          "passed": true
+        },
+        {
+          "name": "textclipping → jpg",
+          "passed": true
+        },
+        {
+          "name": "tiff → jpg",
+          "passed": true
+        },
+        {
+          "name": "tiff → png",
+          "passed": true
+        },
+        {
+          "name": "tiff → webp",
+          "passed": true
+        },
+        {
+          "name": "tiff → heic",
+          "passed": true
+        },
+        {
+          "name": "tiff → avif",
+          "passed": true
+        },
+        {
+          "name": "tiff → bmp",
+          "passed": true
+        },
+        {
+          "name": "tiff → pdf",
+          "passed": true
+        },
+        {
+          "name": "tsv → xlsx",
+          "passed": true
+        },
+        {
+          "name": "tsv → ods",
+          "passed": true
+        },
+        {
+          "name": "tsv → csv",
+          "passed": true
+        },
+        {
+          "name": "tsv → pdf",
+          "passed": true
+        },
+        {
+          "name": "txt → docx",
+          "passed": true
+        },
+        {
+          "name": "txt → pages",
+          "passed": true
+        },
+        {
+          "name": "txt → pdf",
+          "passed": true
+        },
+        {
+          "name": "txt → md",
+          "passed": true
+        },
+        {
+          "name": "txt → html",
+          "passed": true
+        },
+        {
+          "name": "txt → epub",
+          "passed": true
+        },
+        {
+          "name": "txt → jpg",
+          "passed": true
+        },
+        {
+          "name": "txt → png",
+          "passed": true
+        },
+        {
+          "name": "vtt → srt",
+          "passed": true
+        },
+        {
+          "name": "vtt → txt",
+          "passed": true
+        },
+        {
+          "name": "wav → mp3",
+          "passed": true
+        },
+        {
+          "name": "wav → m4a",
+          "passed": true
+        },
+        {
+          "name": "wav → flac",
+          "passed": true
+        },
+        {
+          "name": "wav → ogg",
+          "passed": true
+        },
+        {
+          "name": "wav → opus",
+          "passed": true
+        },
+        {
+          "name": "wav → aiff",
+          "passed": true
+        },
+        {
+          "name": "wav → wma",
+          "passed": true
+        },
+        {
+          "name": "webm → mp4",
+          "passed": true
+        },
+        {
+          "name": "webm → mov",
+          "passed": true
+        },
+        {
+          "name": "webm → mkv",
+          "passed": true
+        },
+        {
+          "name": "webm → avi",
+          "passed": true
+        },
+        {
+          "name": "webm → wmv",
+          "passed": true
+        },
+        {
+          "name": "webm → gif",
+          "passed": true
+        },
+        {
+          "name": "webm → mp3",
+          "passed": true
+        },
+        {
+          "name": "webp → jpg",
+          "passed": true
+        },
+        {
+          "name": "webp → png",
+          "passed": true
+        },
+        {
+          "name": "webp → heic",
+          "passed": true
+        },
+        {
+          "name": "webp → tiff",
+          "passed": true
+        },
+        {
+          "name": "webp → avif",
+          "passed": true
+        },
+        {
+          "name": "webp → bmp",
+          "passed": true
+        },
+        {
+          "name": "webp → pdf",
+          "passed": true
+        },
+        {
+          "name": "wma → mp3",
+          "passed": true
+        },
+        {
+          "name": "wma → m4a",
+          "passed": true
+        },
+        {
+          "name": "wma → wav",
+          "passed": true
+        },
+        {
+          "name": "wma → flac",
+          "passed": true
+        },
+        {
+          "name": "wma → ogg",
+          "passed": true
+        },
+        {
+          "name": "wma → opus",
+          "passed": true
+        },
+        {
+          "name": "wma → aiff",
+          "passed": true
+        },
+        {
+          "name": "wmv → mp4",
+          "passed": true
+        },
+        {
+          "name": "wmv → mov",
+          "passed": true
+        },
+        {
+          "name": "wmv → mkv",
+          "passed": true
+        },
+        {
+          "name": "wmv → webm",
+          "passed": true
+        },
+        {
+          "name": "wmv → avi",
+          "passed": true
+        },
+        {
+          "name": "wmv → gif",
+          "passed": true
+        },
+        {
+          "name": "wmv → mp3",
+          "passed": true
+        },
+        {
+          "name": "xls → xlsx",
+          "passed": true
+        },
+        {
+          "name": "xls → ods",
+          "passed": true
+        },
+        {
+          "name": "xls → csv",
+          "passed": true
+        },
+        {
+          "name": "xls → tsv",
+          "passed": true
+        },
+        {
+          "name": "xls → pdf",
+          "passed": true
+        },
+        {
+          "name": "xlsx → ods",
+          "passed": true
+        },
+        {
+          "name": "xlsx → csv",
+          "passed": true
+        },
+        {
+          "name": "xlsx → tsv",
+          "passed": true
+        },
+        {
+          "name": "xlsx → pdf",
+          "passed": true
+        },
+        {
+          "name": "zip → tar",
+          "passed": true
+        },
+        {
+          "name": "zip → gz",
+          "passed": true
+        }
+      ]
+    },
+    "pdfImageDensityChecks": [
+      {
+        "name": "PDF → PNG: three pages and 300 DPI metadata",
+        "passed": true
+      },
+      {
+        "name": "PDF → JPG: three pages and 300 DPI metadata",
+        "passed": true
+      }
+    ],
+    "pageImageRoundTrips": [
+      {
+        "file": "Mixed (4) (1).pdf",
+        "pageMeanAbsoluteErrors": [
+          0.7589077380952381,
+          0.2143482142857143,
+          0.765327380952381
+        ],
+        "passed": true
+      },
+      {
+        "file": "Mixed (9).pdf",
+        "pageMeanAbsoluteErrors": [
+          0.5955396825396826,
+          0.23920039682539682,
+          0.6004652777777778
+        ],
+        "passed": true
+      },
+      {
+        "file": "Mixed (4).pdf",
+        "pageMeanAbsoluteErrors": [
+          0.46375198412698415,
+          0.19431448412698413,
+          0.46811210317460317
+        ],
+        "passed": true
+      }
+    ],
+    "pdfOfficeDefault": "preservePages",
+    "epubDefault": "adjustableText",
+    "exactTangerineParityCertified": false,
+    "nativePagesUsesInstalledAppleApp": true
+  },
+  "engineSourceSHA256": "02fb74c5f8ef15411f28e987d45b305e2bd39245a8584740ce462ba432cd7001",
+  "finovox": {
+    "entryPoints": [
+      "Control action wheel",
+      "Workshop button"
+    ],
+    "url": "https://app.finovox.com/",
+    "browser": "Google Chrome, existing session",
+    "uploadPath": "Blue Importer des documents button and macOS Open panel",
+    "dropZoneUsed": false,
+    "apiCredentialsRead": false,
+    "originalBytesPreserved": true,
+    "supportedExtensions": [
+      "pdf",
+      "png",
+      "jpg",
+      "jpeg",
+      "tif",
+      "tiff",
+      "zip"
+    ],
+    "nativeWindowAssertionsPassed": 46,
+    "endToEndUploadVerified": true,
+    "demoFile": "Clementine-test-Finovox-20261018.pdf",
+    "organization": "Finovox Audit",
+    "saasRowVisible": true,
+    "saasAnalysisCompleted": true,
+    "demoOnly": true,
+    "bulkUploadNotYetCertified": true,
+    "screenshot": "Finovox-import-valide.png"
+  },
+  "cleanup": {
+    "removedFiles": 21892,
+    "removedBytes": 3511619935,
+    "kept": [
+      "Sources",
+      "Resources",
+      "Tests",
+      "Scripts",
+      "Docs",
+      "build.sh",
+      "prepare-runtime.sh",
+      "Info.plist",
+      "Entitlements.plist",
+      "THIRDPARTY.txt",
+      "README.md"
+    ],
+    "icon": "Original citrus wheel, eight orange segments on a light rounded tile"
+  },
+  "pdfOfficeAutomatic": {
+    "default": "automatic",
+    "nativeTextEditable": true,
+    "scanPagesRemainImages": true,
+    "mixedPDFPageByPage": true,
+    "explicitPagePreservationAvailable": true,
+    "docxChecksPassed": 4,
+    "nativePagesVerified": true,
+    "layoutReflowPossible": true,
+    "pagesVerification": "Native Pages created through installed app; original text stored in Index/Document.iwa, no full-page image substitute",
+    "manualPagesTextEditingUITested": false
+  },
+  "confirmationPopup": {
+    "revealOutputsThenCloseOwnPanel": true,
+    "installedExecutableSHA256": "7fbd764c548d61e6406335ec95eda2ab6d516fd1307d67100fda987ab1e8dda7",
+    "buildAndSignatureVerified": true,
+    "manualGUIVerificationCompleted": false,
+    "manualGUIVerificationLimit": "Concurrent window changes interrupted the final CTA check"
+  }
+}

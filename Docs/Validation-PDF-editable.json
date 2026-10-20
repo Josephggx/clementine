@@ -1,0 +1,39 @@
+{
+  "checks": [
+    {
+      "editableText": true,
+      "fullPageImages": 0,
+      "originalUnchanged": true,
+      "passed": true,
+      "source": "Native.pdf"
+    },
+    {
+      "editableText": false,
+      "fullPageImages": 1,
+      "originalUnchanged": true,
+      "passed": true,
+      "source": "Scan.pdf"
+    },
+    {
+      "editableText": true,
+      "fullPageImages": 1,
+      "originalUnchanged": true,
+      "passed": true,
+      "source": "Mixed.pdf"
+    },
+    {
+      "explicitPreservePages": true,
+      "passed": true,
+      "source": "Native.pdf"
+    }
+  ],
+  "passed": 4,
+  "nativePages": {
+    "createdByInstalledApp": true,
+    "nativeBodyContainsOriginalText": true,
+    "fullTextMarker": "Native PDF text remains editable 24681357",
+    "pageImageReplacement": false,
+    "sha256": "b10f1d382cba0a623cba87414261891661d4b8b8691cb862ed664899aa931bac",
+    "manualTextEditingUITested": false
+  }
+}

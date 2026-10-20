@@ -1,0 +1,20 @@
+{
+  "checks": {
+    "odsSheets": true,
+    "originalUnchanged": true,
+    "safeCollisionNames": true,
+    "sheetContents": true,
+    "sheetNames": true,
+    "twoCSVFiles": true,
+    "xlsSheets": true
+  },
+  "passed": 7,
+  "total": 7,
+  "numbersInstalledApp": {
+    "twoCSVFiles": true,
+    "sheetNames": true,
+    "sheetContents": true,
+    "finderReveal": true,
+    "testedWith": "Classeur.numbers, deux feuilles et un tableau par feuille"
+  }
+}

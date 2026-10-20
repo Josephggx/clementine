@@ -1,0 +1,31 @@
+{
+  "destinationRetainedAcrossModes": true,
+  "duplicateDropRejected": true,
+  "failures": 0,
+  "oldCleanupIgnored": true,
+  "passed": 51,
+  "windowRetainedAcrossModes": true,
+  "scope": "Wheel visual alignment and hover feedback",
+  "reference": "https://tangerineformac.com/#details",
+  "installedApplication": "/Applications/Clémentine.app",
+  "installedExecutableSHA256": "c5375a57a9236f3e7d57eda5eb3a6b15cebbc4ddf1d7f329c870ec56f25f7ceb",
+  "hoverAudioStarted": true,
+  "nativeDragWithCUACompleted": false,
+  "nativeDragLimitation": "The GUI driver returned noWindowsAvailable for native drag; AppKit selection and drop regression checks passed.",
+  "pixelPerfectNativeTangerineParityCertified": false,
+  "changes": [
+    "continuous glass ring with empty centre",
+    "stable glass selection model",
+    "18pt vector pictograms with consistent stroke",
+    "14pt format labels and 8.5pt tool labels",
+    "centred 70pt glass label",
+    "short custom click once per petal entry, enabled by default"
+  ],
+  "openingAnimation": {
+    "kind": "window opacity ease-out",
+    "durationSeconds": 0.16,
+    "frameAndDropGeometryUnchanged": true,
+    "respectsReduceMotion": true,
+    "regressionChecksPassed": 51
+  }
+}

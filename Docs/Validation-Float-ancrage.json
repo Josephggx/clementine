@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-18",
+  "checksPassed": 39,
+  "checksTotal": 39,
+  "nativeDrag": {
+    "before": { "x": 1281, "y": 127, "width": 100, "height": 115 },
+    "afterRightEdge": { "x": 1370, "y": 127, "width": 100, "height": 115 },
+    "expandedAtRightEdge": { "x": 1358, "y": 81, "width": 112, "height": 267 },
+    "screenRightEdge": 1470
+  },
+  "freePlacementAwayFromEdge": true,
+  "externalDisplayCoordinatesTested": true
+}

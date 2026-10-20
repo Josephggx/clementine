@@ -1,0 +1,17 @@
+{
+  "checks" : {
+    "improvesVisualFidelity" : true,
+    "lowVisualError" : true,
+    "nativeTextEditable" : true,
+    "originalUnchanged" : true,
+    "pageCountPreserved" : true,
+    "stylesRetained" : true,
+    "textSurvivesReopen" : true,
+    "visibleContentRetained" : true
+  },
+  "meanPixelError" : 2.5728680555555554,
+  "pageCount" : 2,
+  "passed" : 8,
+  "previousMeanPixelError" : 255,
+  "total" : 8
+}

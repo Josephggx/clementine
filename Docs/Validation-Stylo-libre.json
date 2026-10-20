@@ -1,0 +1,78 @@
+{
+  "checks" : [
+    {
+      "name" : "Pen mode hides the selected rectangle and resize handles",
+      "passed" : true
+    },
+    {
+      "name" : "Drawing inside a rectangle creates a stroke instead of moving it",
+      "passed" : true
+    },
+    {
+      "name" : "Existing annotation stays unchanged",
+      "passed" : true
+    },
+    {
+      "name" : "Finished stroke has no bounding box selection",
+      "passed" : true
+    },
+    {
+      "name" : "Freehand keeps the sampled pointer path",
+      "passed" : true
+    },
+    {
+      "name" : "One undo step per stroke",
+      "passed" : true
+    },
+    {
+      "name" : "Crossing an existing stroke starts an independent stroke",
+      "passed" : true
+    },
+    {
+      "name" : "Crossing does not reshape the previous stroke",
+      "passed" : true
+    },
+    {
+      "name" : "Undo removes the entire last stroke",
+      "passed" : true
+    },
+    {
+      "name" : "Edge-clamped strokes remain valid for export",
+      "passed" : true
+    },
+    {
+      "name" : "Stroke bounds do not extend beyond the image",
+      "passed" : true
+    },
+    {
+      "name" : "Click without dragging creates a one-point stroke",
+      "passed" : true
+    },
+    {
+      "name" : "A single pen click produces a visible exported dot",
+      "passed" : true
+    },
+    {
+      "name" : "Highlighter also remains freehand without resize handles",
+      "passed" : true
+    },
+    {
+      "name" : "Highlighter adds an independent deselected stroke",
+      "passed" : true
+    },
+    {
+      "name" : "Explicit Select mode enables editing frames",
+      "passed" : true
+    },
+    {
+      "name" : "Clicking empty space in Select mode does not draw or add undo history",
+      "passed" : true
+    },
+    {
+      "name" : "New strokes use the chosen pen width",
+      "passed" : true
+    }
+  ],
+  "passed" : 18,
+  "total" : 18
+}
