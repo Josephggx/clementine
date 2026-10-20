@@ -279,11 +279,9 @@ final class WheelController {
     let panel = WheelPanel(contentRect: NSRect(origin: origin, size: NSSize(width: side, height: side)),
       styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
     panel.preview = session == nil
-    // Finder's multi-file drag preview uses the dragging window level, above
-    // pop-up menus. Keep the live drop targets above that preview so the file
-    // list cannot cover them. Ordinary demos retain the normal pop-up level.
-    panel.level = session == nil ? .popUpMenu
-      : NSWindow.Level(rawValue:Int(CGWindowLevelForKey(.draggingWindow))+1)
+    // Keep native drag feedback above the wheel. Raising this panel above the
+    // system dragging level also covers other drag UI and breaks its layering.
+    panel.level = .popUpMenu
     // The glass disc draws its own circular shadow. A window shadow follows the
     // panel's square bounds and leaves a gray edge below the transparent wheel.
     panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = false
