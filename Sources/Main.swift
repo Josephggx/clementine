@@ -189,11 +189,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   }
   func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool
   {
-    // A drag panel can cause an incidental reopen event. It must never bring
-    // the main window (and its Space) forward while the wheel is visible.
-    guard wheel?.panel == nil else { return false }
-    show()
-    return true
+    // Sample the gesture before deciding: a reopen can precede panel creation,
+    // or arrive just after the native drop has destroyed that panel.
+    guard window != nil, let wheel else {return false}
+    return wheel.handleWorkspaceReopen(workspace:window) {self.show()}
   }
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
   func application(_ sender: NSApplication, openFiles filenames: [String]) {

@@ -84,6 +84,7 @@ final class WheelController {
   private(set) var shownMode: String?
   private var panelSession: UInt64?
   private var files: [URL] = []
+  private var reopenPolicy = WorkspaceReopenPolicy()
   private var drag = WheelDragSession(pasteboardGeneration: NSPasteboard(name: .drag).changeCount)
   private var monitors: [Any] = []
   private var observers: [NSObjectProtocol] = []
@@ -226,8 +227,25 @@ final class WheelController {
     pendingClose?.cancel(); pendingClose = nil
     close()
   }
+  func handleWorkspaceReopen(workspace:NSWindow,show:()->Void) -> Bool {
+    refresh()
+    guard allowsWorkspaceReopen else {return false}
+    // An existing Atelier may live on another Desktop. A generic reopen is
+    // not an explicit request to order that window (or its Desktop) forward.
+    if WorkspaceReopenPolicy.shouldPresentWorkspace(isVisible:workspace.isVisible,isMiniaturized:workspace.isMiniaturized) {
+      show()
+    }
+    // This event has been handled explicitly. Do not let AppKit perform a
+    // second, implicit reopen after our decision.
+    return false
+  }
+  var allowsWorkspaceReopen:Bool {
+    reopenPolicy.allowsReopen(phase:drag.phase,hasOverlay:panel != nil,
+      at:ProcessInfo.processInfo.systemUptime)
+  }
   func close() {
     if let panel {
+      reopenPolicy.overlayDismissed(at:ProcessInfo.processInfo.systemUptime)
       panel.orderOut(nil)
       DispatchQueue.main.async { panel.close() }
     }
@@ -238,7 +256,7 @@ final class WheelController {
       styleMask: [.titled, .closable, .utilityWindow, .nonactivatingPanel], backing: .buffered, defer: false)
     progress.title = trString(job.title)
     progress.level = .floating
-    progress.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
+    progress.collectionBehavior = FloatingWindowPresentation.tool
     progress.hidesOnDeactivate = false
     progress.isReleasedWhenClosed = false
     progress.contentView = NSHostingView(rootView: WheelProgress(state: state, id: job.id, onDismiss: { [weak self, weak progress] in
@@ -286,7 +304,9 @@ final class WheelController {
     // The glass disc draws its own circular shadow. A window shadow follows the
     // panel's square bounds and leaves a gray edge below the transparent wheel.
     panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = false
-    panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    panel.collectionBehavior = FloatingWindowPresentation.wheel
+    panel.becomesKeyOnlyIfNeeded = true
+    panel.isFloatingPanel = true
     panel.hidesOnDeactivate = false
     panel.isReleasedWhenClosed = false
     let surface = WheelSurface(frame: NSRect(x: 0, y: 0, width: side, height: side), files: urls,

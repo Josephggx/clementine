@@ -22,7 +22,7 @@ final class ModuleWindowController: NSObject, NSWindowDelegate {
     window.title = trString(spec.title); window.isOpaque = false; window.backgroundColor = .clear
     window.hasShadow = true; window.isMovableByWindowBackground = false; window.isReleasedWhenClosed = false
     window.hidesOnDeactivate = false; window.level = .floating; window.delegate = self
-    window.collectionBehavior = [.fullScreenAuxiliary,.moveToActiveSpace]
+    window.collectionBehavior = FloatingWindowPresentation.tool
     window.contentView = NSHostingView(rootView:ModuleRoot(session:session, movableHeader:true))
     session.close = { [weak self] in self?.window.close() }
     window.center()
