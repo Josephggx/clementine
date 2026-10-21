@@ -137,14 +137,14 @@ struct Tool: Identifiable, Hashable {
     Tool("visualize", "Audio vers vidéo", "waveform.path.ecg.rectangle", [.audio]),
     Tool("mergepdf", "Merge", "doc.on.doc", [.pdf, .image], group: true),
     Tool("organize", "Réorganiser les pages", "rectangle.3.group", [.pdf]),
-    Tool("extract", "Extraire l’archive", "archivebox", [.archive]),
+    Tool("extract", "Dézip", "archivebox", [.archive]),
     Tool("archive", "ZIP", "doc.zipper", Array(Family.allCases), group: true),
   ]
   var wheelTitle: String {
     ["compress": "COMPRESS", "strip": "METADATA", "adjust": "EDIT", "annotate": "ANNOTATE",
      "frame": "ADD BG", "crop": "CROP", "redact": "REDACT", "normalize": "NORMALIZE",
      "mute": "MUTE", "trim": "TRIM", "split": "SPLIT", "organize": "ORGANIZE",
-     "extract": "EXTRACT", "mergepdf": "MERGE", "speed": "SPEED", "join": "JOIN",
+     "extract": trString("Dézip").uppercased(), "mergepdf": "MERGE", "speed": "SPEED", "join": "JOIN",
      "snapshot": "SNAPSHOT", "visualize": "VISUALIZE", "channels": "CHANNELS",
      "collage": "COLLAGE", "archive": "ZIP", "qr": "READ QR", "bleep": "BLEEP"][id] ?? name.uppercased()
   }
@@ -167,7 +167,7 @@ struct Tool: Identifiable, Hashable {
       case "gif": return ["strip"]
       case "pdf": return group ? ["compress", "strip", "mergepdf", "split"]
         : ["compress", "strip", "split", "organize"]
-      case "zip", "tar", "gz", "rar": return ["strip", "extract"]
+      case "zip", "tar", "gz", "rar", "tgz", "bz2", "xz", "7z": return ["strip", "extract"]
       default: return ["strip"]
       }
     }

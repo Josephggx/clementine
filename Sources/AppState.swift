@@ -11,6 +11,7 @@ final class AppState: ObservableObject {
   @Published var files: [URL] = []
   @Published var jobs: [Job] = []
   @Published var options = Options()
+  @Published var pinnedFileOperations: [URL:String] = [:]
   @Published var selectedTool: String? = nil
   @Published var format = "jpg"
   @Published var page = "workspace"
@@ -188,18 +189,24 @@ final class AppState: ObservableObject {
     guard !files.isEmpty else { return }
     showModule?(tool, files)
   }
-  func submit(_ action: String, files selected: [URL]? = nil, overrideOptions: Options? = nil) {
+  func submit(_ action: String, files selected: [URL]? = nil, overrideOptions: Options? = nil,
+    revealOutputs: Bool = true, completion: ((Result<[URL],Error>)->Void)? = nil) {
     let inputs = selected ?? files
-    guard !inputs.isEmpty else { return }
+    guard !inputs.isEmpty else {
+      completion?(.failure(ClementineError(tr("Ajoutez au moins un fichier"))))
+      return
+    }
     if action.hasPrefix("convert:") {
       let target = String(action.dropFirst(8))
       guard Compatibility.targets(inputs).contains(target) else {
         error = "Cette conversion n’est pas proposée pour cette sélection."
+        completion?(.failure(ClementineError(error!)))
         return
       }
     }
     if !action.hasPrefix("convert:"), !Tool.available(inputs).contains(where: { $0.id == action }) {
       error = "Cet outil n’est pas proposé pour cette sélection."
+      completion?(.failure(ClementineError(error!)))
       return
     }
     let settings = overrideOptions ?? options
@@ -230,7 +237,8 @@ final class AppState: ObservableObject {
           self.jobs[i].outputs = outputs
           self.tokens.removeValue(forKey: id)
           self.writeNativeVerification()
-          if self.reveal { NSWorkspace.shared.activateFileViewerSelecting(outputs) }
+          completion?(.success(outputs))
+          if self.reveal && revealOutputs { NSWorkspace.shared.activateFileViewerSelecting(outputs) }
           if self.sound { NSSound(named: "Glass")?.play() }
         }
       } catch {
@@ -241,6 +249,7 @@ final class AppState: ObservableObject {
           self.jobs[i].failed = true
           self.jobs[i].state = message
           self.jobs[i].log = message
+          completion?(.failure(error))
           self.tokens.removeValue(forKey: id)
           self.writeNativeVerification()
         }

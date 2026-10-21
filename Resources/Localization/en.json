@@ -504,5 +504,15 @@
   "Réuni.pdf": "Merged.pdf",
   "{0} : {1}": "{0}: {1}",
   "1 par 1": "One by one",
-  "Une image JPEG par page.": "One JPEG image per page."
+  "Une image JPEG par page.": "One JPEG image per page.",
+  "Dézip": "Unzip",
+  "Renommer": "Rename",
+  "Nouveau nom": "New name",
+  "Supprimer": "Delete",
+  "Supprimer le document ?": "Delete this document?",
+  "Mettre à la Corbeille": "Move to Trash",
+  "« {0} » sera déplacé dans la Corbeille. Vous pourrez le restaurer depuis le Finder.": "“{0}” will be moved to the Trash. You can restore it from Finder.",
+  "Choisissez un nom valide, sans / ni :.": "Choose a valid name without / or :.",
+  "Un élément porte déjà ce nom. Choisissez un autre nom.": "An item already has this name. Choose another name.",
+  "Ce document est en cours d’utilisation. Réessayez après l’opération.": "This document is in use. Try again when the operation has finished."
 }
