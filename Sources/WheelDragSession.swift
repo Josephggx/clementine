@@ -95,7 +95,17 @@ struct WheelDragSession {
 enum WheelShortcutAssignments {
   static let roles = ["formats", "tools", "actions"]
   static let choices = ["option", "fn", "shift", "command", "control", "fnShift", "none"]
-  static let defaults = ["formats": "shift", "tools": "command", "actions": "option"]
+  static let defaults = ["formats": "shift", "tools": "option", "actions": "command"]
+  static let commandOptionMigrationKey = "didSwapToolActionModifiers20261021"
+  static func migrateCommandOption(in preferences:UserDefaults) {
+    guard !preferences.bool(forKey:commandOptionMigrationKey) else {return}
+    for key in ["conversionModifier","toolModifier","actionModifier"] {
+      guard let old=preferences.string(forKey:key) else {continue}
+      if old == "command" {preferences.set("option",forKey:key)}
+      else if old == "option" {preferences.set("command",forKey:key)}
+    }
+    preferences.set(true,forKey:commandOptionMigrationKey)
+  }
   static func symbol(_ name: String) -> String {
     ["option":"⌥", "fn":"fn", "shift":"⇧", "command":"⌘", "control":"⌃", "fnShift":"fn ⇧", "none":"—"][name] ?? "—"
   }

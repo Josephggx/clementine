@@ -206,7 +206,7 @@ final class WheelUIFixture: NSObject, NSApplicationDelegate, NSWindowDelegate {
       require(test.shownMode == "actions", "Control switches Option wheel to actions")
       require(test.panel?.windowNumber == optionWindow && test.panel?.frame == optionFrame, "Option to actions retains geometry")
       require(test.surface!.wheel.items.contains(where: { $0.action == "action:finovox" }), "Supported image offers Finovox")
-      require(test.surface!.wheel.items.count == 7, "Seven action petals without pagination")
+      require(test.surface!.wheel.items.count == 9, "Nine action petals including Duplicate and Atelier")
       require(test.matches("option", .option) && !test.matches("option", [.option, .shift]), "Option only matches unambiguous key")
       test.refresh(down: false, flags: [])
       record("RESULT \(checks) checks, \(failures) failures")

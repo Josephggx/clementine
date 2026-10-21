@@ -1054,7 +1054,35 @@ final class Engine {
     // Finder-launched apps often inherit the C locale. bsdtar then escapes
     // accents as backslash-octal sequences, which are not archive path separators.
     let archiveLocale = ["LC_ALL":"en_US.UTF-8"]
-    let names = try process("/usr/bin/tar", ["-tf", u.path], environment:archiveLocale).split(separator: "\n").map(String.init)
+    let entries:String
+    do { entries=try process("/usr/bin/tar", ["-tf", u.path], environment:archiveLocale) }
+    catch {
+      // A plain .gz wraps one file, whereas .tar.gz/.tgz wraps a tar archive.
+      // Never interpret the gzip header's optional filename as an output path.
+      guard ["gz","gzip"].contains(u.pathExtension.lowercased()) else {throw error}
+      try token.check()
+      let folder=stage.appendingPathComponent(u.deletingPathExtension().lastPathComponent+"-extrait",isDirectory:true)
+      try fm.createDirectory(at:folder,withIntermediateDirectories:true)
+      let destination=folder.appendingPathComponent(u.deletingPathExtension().lastPathComponent)
+      fm.createFile(atPath:destination.path,contents:nil)
+      let handle=try FileHandle(forWritingTo:destination)
+      defer {try? handle.close()}
+      let task=Process()
+      task.executableURL=URL(fileURLWithPath:"/usr/bin/gzip")
+      task.arguments=["-d","-c",u.path]
+      task.standardOutput=handle;task.standardError=FileHandle.nullDevice;task.standardInput=FileHandle.nullDevice
+      try token.attach(task);try task.run()
+      let timeout=DispatchWorkItem {if task.isRunning {task.terminate()}}
+      DispatchQueue.global().asyncAfter(deadline:.now()+900,execute:timeout)
+      task.waitUntilExit();timeout.cancel()
+      do {
+        try token.check()
+        guard task.terminationStatus == 0 else {throw ClementineError(tr("Archive illisible"))}
+        try handle.synchronize()
+        return folder
+      } catch {try? fm.removeItem(at:folder);throw error}
+    }
+    let names = entries.split(separator: "\n").map(String.init)
     guard names.count <= 100000 else { throw ClementineError(tr("Archive trop volumineuse")) }
     guard
       names.allSatisfy({

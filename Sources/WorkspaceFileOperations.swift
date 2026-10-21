@@ -2,6 +2,36 @@ import AppKit
 import SwiftUI
 
 enum WorkspaceFileOperations {
+  static func canExtract(_ url:URL) -> Bool {
+    !Family.isFolder(url) && ["zip","tar","gz","gzip","tgz"].contains(url.pathExtension.lowercased())
+  }
+
+  /// Finder-style independent copies, beside each original, without overwriting.
+  static func duplicate(_ urls:[URL]) throws -> [URL] {
+    let fm=FileManager.default
+    var outputs:[URL]=[]
+    do {
+      for source in TrackedFiles.unique(urls) {
+        let folder=source.deletingLastPathComponent()
+        let ext=Family.isFolder(source) ? "" : source.pathExtension
+        let stem=ext.isEmpty ? source.lastPathComponent : source.deletingPathExtension().lastPathComponent
+        var count=1
+        var destination:URL
+        repeat {
+          let suffix=count == 1 ? " copie" : " copie \(count)"
+          destination=folder.appendingPathComponent(stem+suffix+(ext.isEmpty ? "" : "."+ext))
+          count += 1
+        } while fm.fileExists(atPath:destination.path) || (try? fm.destinationOfSymbolicLink(atPath:destination.path)) != nil
+        try fm.copyItem(at:source,to:destination)
+        outputs.append(destination)
+      }
+      return outputs
+    } catch {
+      for output in outputs {try? fm.removeItem(at:output)}
+      throw error
+    }
+  }
+
   static func editableName(_ source:URL) -> String {
     Family.isFolder(source) || source.pathExtension.isEmpty
       ? source.lastPathComponent : source.deletingPathExtension().lastPathComponent
@@ -89,7 +119,7 @@ extension AppState {
 
   func unzipPinnedFile(_ source:URL, completion: (([URL])->Void)? = nil) {
     guard files.contains(source), !isPinnedFileBusy(source),
-      !Family.isFolder(source), source.pathExtension.lowercased() == "zip" else { return }
+      WorkspaceFileOperations.canExtract(source) else { return }
     pinnedFileOperations[source] = "unzip"
     var settings = options
     settings.outputFolder = source.deletingLastPathComponent().path

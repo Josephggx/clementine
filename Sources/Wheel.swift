@@ -20,6 +20,8 @@ enum WheelActionItems {
       WheelItem(title: "AIRDROP", icon: "wheel:airdrop", action: "action:airdrop"),
       WheelItem(title: "FLOAT", icon: "wheel:float", action: "action:float"),
       WheelItem(title: "COPY", icon: "wheel:copy", action: "action:copy"),
+      WheelItem(title: "DUPLICATE", icon: "wheel:duplicate", action: "action:duplicate"),
+      WheelItem(title: "ATELIER", icon: "wheel:workspace", action: "action:workspace"),
       WheelItem(title: "MOVE", icon: "wheel:moveto", action: "action:moveto"),
       WheelItem(title: "COPY PATH", icon: "wheel:path", action: "action:path"),
       WheelItem(title: "TERMINAL", icon: "wheel:terminal", action: "action:terminal"),

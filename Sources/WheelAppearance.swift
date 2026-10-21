@@ -58,6 +58,8 @@ enum WheelGlyph {
       c.addArc(center:CGPoint(x:12,y:6.5),radius:8.5,startAngle:.pi*0.25,endAngle:.pi*0.75,clockwise:true);c.strokePath();polygon([12,12,17,20,7,20])
     case "float": polygon([8,3,16,3,15,9,19,13,19,15,5,15,5,13,9,9]);line([12,15,12,22])
     case "copy": box(8,8,12,13);line([15,8,15,5]);curve(CGPoint(x:15,y:5),CGPoint(x:15,y:3),CGPoint(x:14,y:3),CGPoint(x:13,y:3));line([13,3,5,3]);curve(CGPoint(x:5,y:3),CGPoint(x:3,y:3),CGPoint(x:3,y:4),CGPoint(x:3,y:5));line([3,5,3,15]);curve(CGPoint(x:3,y:15),CGPoint(x:3,y:17),CGPoint(x:4,y:17),CGPoint(x:5,y:17));line([5,17,8,17])
+    case "duplicate": box(8,8,13,13);line([5,16,3,16,3,3,16,3,16,5]);line([11,14.5,18,14.5]);line([14.5,11,14.5,18])
+    case "workspace": polygon([2,7,12,2,22,7,12,12]);line([2,12,12,17,22,12]);line([2,17,12,22,22,17])
     case "moveto":
       line([3,8,3,5,5,3,10,3,12,6,19,6,21,8,21,19,19,21,5,21,3,19,3,16]);line([1,12,14,12]);line([10,8,14,12,10,16])
     case "path": polygon([14,2,5,2,3,4,3,20,5,22,19,22,21,20,21,9]);line([14,2,14,9,21,9]);line([7,13,17,13]);line([7,17,14,17])

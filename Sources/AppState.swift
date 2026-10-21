@@ -36,9 +36,9 @@ final class AppState: ObservableObject {
   @Published var floatBehavior = UserDefaults.standard.string(forKey: "floatBehavior") ?? "append"
   @Published var conversionModifier =
     UserDefaults.standard.string(forKey: "conversionModifier") ?? "shift"
-  @Published var toolModifier = UserDefaults.standard.string(forKey: "toolModifier") ?? "command"
+  @Published var toolModifier = UserDefaults.standard.string(forKey: "toolModifier") ?? "option"
   @Published var actionModifier =
-    UserDefaults.standard.string(forKey: "actionModifier") ?? "option"
+    UserDefaults.standard.string(forKey: "actionModifier") ?? "command"
   @Published var showingOnboarding =
     !UserDefaults.standard.bool(forKey: AppState.productOnboardingKey)
   @Published var onboardingPage = 0
@@ -50,6 +50,10 @@ final class AppState: ObservableObject {
   private let queue = DispatchQueue(label: "io.joseph.clementine.jobs", qos: .userInitiated)
   init() {
     let defaults = UserDefaults.standard
+    WheelShortcutAssignments.migrateCommandOption(in:defaults)
+    conversionModifier=defaults.string(forKey:"conversionModifier") ?? "shift"
+    toolModifier=defaults.string(forKey:"toolModifier") ?? "option"
+    actionModifier=defaults.string(forKey:"actionModifier") ?? "command"
     // These two behaviours are part of Clémentine's core Finder workflow and
     // are no longer optional preferences.
     wheelEnabled = true
@@ -289,10 +293,24 @@ final class AppState: ObservableObject {
     case "reveal": NSWorkspace.shared.activateFileViewerSelecting(urls)
     case "path":
       NSPasteboard.general.clearContents()
-      NSPasteboard.general.setString(urls.map(\.path).joined(separator: "\n"), forType: .string)
+      if NSPasteboard.general.setString(urls.map(\.path).joined(separator: "\n"), forType: .string) { PointerToast.shared.show() }
     case "copy":
       NSPasteboard.general.clearContents()
-      NSPasteboard.general.writeObjects(urls as [NSURL])
+      if NSPasteboard.general.writeObjects(urls as [NSURL]) { PointerToast.shared.show() }
+    case "workspace":
+      add(urls)
+      page = "workspace"
+      showWindow?()
+    case "duplicate":
+      DispatchQueue.global(qos:.userInitiated).async { [weak self] in
+        let result=Result {try WorkspaceFileOperations.duplicate(urls)}
+        DispatchQueue.main.async {
+          switch result {
+          case .success(let copies): NSWorkspace.shared.activateFileViewerSelecting(copies)
+          case .failure(let error): self?.error=error.localizedDescription
+          }
+        }
+      }
     case "airdrop": NSSharingService(named: .sendViaAirDrop)?.perform(withItems: urls)
     case "terminal":
       TerminalAction.open(urls) { [weak self] error in

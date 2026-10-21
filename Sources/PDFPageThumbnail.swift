@@ -30,9 +30,9 @@ struct PDFPageThumbnailCard: View {
         if editable {
           HStack(spacing:2) {
             if hover.menu {
+              control("trash",title:"Supprimer",action:remove)
               control("arrow.clockwise",title:"Pivoter",action:rotate)
               control("plus.square.on.square",title:"Dupliquer",action:duplicate)
-              control("trash",title:"Supprimer",action:remove)
             } else {
               Button {hover.menu=true} label:{Image(systemName:"ellipsis").frame(width:22,height:24)}
                 .buttonStyle(.plain).help(tr("Options de la page"))

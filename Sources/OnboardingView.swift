@@ -103,8 +103,6 @@ struct OnboardingView: View {
       navButton(id: "back", icon: "chevron.left", title: "Retour", visible: state.onboardingPage > 0) {
         move(to: state.onboardingPage - 1)
       }
-      LanguagePicker(compact:true).controlSize(.small)
-        .disabled(permissions.isRequestingAll)
       Spacer()
       navButton(id: "next", icon: nextIcon, title: nextTitle, trailingIcon: true) {
         if state.onboardingPage == pageCount - 1 {
@@ -175,6 +173,7 @@ struct OnboardingView: View {
 }
 
 private struct OnboardingSlideShell<Content: View>: View {
+  @ObservedObject private var permissions = PermissionCenter.shared
   let eyebrow: String
   let title: String
   let detail: String
@@ -192,6 +191,10 @@ private struct OnboardingSlideShell<Content: View>: View {
           .font(.system(size: 16)).foregroundStyle(.secondary)
           .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
         Spacer(minLength: 0)
+        LanguagePicker(compact:true)
+          .controlSize(.small)
+          .disabled(permissions.isRequestingAll)
+          .frame(maxWidth:.infinity,alignment:.leading)
       }
       .frame(width: 270, alignment: .topLeading)
       content.frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
@@ -327,12 +330,12 @@ private struct OnboardingDragDemo: View {
             .shadow(color: .black.opacity(0.45), radius: 3, y: 2)
             .position(x: point.x + NSCursor.arrow.image.size.width / 2 - NSCursor.arrow.hotSpot.x,
               y: point.y + NSCursor.arrow.image.size.height / 2 - NSCursor.arrow.hotSpot.y)
-          ShortcutBadge(symbol: actions ? "⌥" : "⇧", title: actions ? "Option" : "Maj")
+          ShortcutBadge(symbol: actions ? "⌘" : "⇧", title: actions ? "Commande" : "Maj")
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 11))
             .overlay(RoundedRectangle(cornerRadius: 11).stroke(citrus.opacity(visible ? 1 : 0), lineWidth: 2))
             .padding(.leading, 16).padding(.top, 40)
           Text(trString(time < 0.6 ? "Cliquez et maintenez" : time < 1.9 ? "Glissez le fichier" :
-            time < 2.5 ? (actions ? "Appuyez sur Option" : "Appuyez sur Maj") :
+            time < 2.5 ? (actions ? "Appuyez sur Commande" : "Appuyez sur Maj") :
             time < 4.65 ? "Choisissez puis relâchez" : actions ? "Action lancée !" : "C’est fait !"))
             .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
             .padding(.horizontal, 14).padding(.vertical, 9)
@@ -378,7 +381,7 @@ private struct OnboardingToolsSlide: View {
             allowsPointerInteraction: false, animateOpening: true)
             .frame(width: WheelGeometry.side, height: WheelGeometry.side)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-          ShortcutBadge(symbol: "⌘", title: "Commande").padding(14)
+          ShortcutBadge(symbol: "⌥", title: "Option").padding(14)
         }.frame(width: 280)
         ScrollViewReader { proxy in
           ScrollView {

@@ -25,7 +25,7 @@ enum Family: String, CaseIterable {
     if ["pdf"].contains(e) { return .pdf }
     if ["ppt", "pptx", "odp", "key"].contains(e) { return .presentation }
     if ["srt", "vtt"].contains(e) { return .subtitle }
-    if ["zip", "tar", "gz", "tgz", "bz2", "xz", "rar", "7z"].contains(e) { return .archive }
+    if ["zip", "tar", "gz", "gzip", "tgz", "bz2", "xz", "rar", "7z"].contains(e) { return .archive }
     if ["csv", "tsv", "xlsx", "xls", "ods", "numbers"].contains(e) { return .sheet }
     if [
       "jpg", "jpeg", "png", "webp", "heic", "heif", "tiff", "tif", "bmp", "gif", "avif", "svg",
@@ -168,7 +168,7 @@ struct Tool: Identifiable, Hashable {
       case "gif": return ["strip"]
       case "pdf": return group ? ["compress", "strip", "mergepdf", "split"]
         : ["compress", "strip", "split", "organize"]
-      case "zip", "tar", "gz", "rar", "tgz", "bz2", "xz", "7z": return ["strip", "extract"]
+      case "zip", "tar", "gz", "gzip", "rar", "tgz", "bz2", "xz", "7z": return ["strip", "extract"]
       default: return ["strip"]
       }
     }

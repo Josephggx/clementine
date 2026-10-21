@@ -151,7 +151,9 @@ struct WorkspaceView: View {
     return (Tool.available(state.files) + Tool.batchCandidates(state.files))
       .filter { seen.insert($0.id).inserted }
   }
-  private var workspaceActions: [WheelItem] { WheelActionItems.forURLs(state.files) }
+  private var workspaceActions: [WheelItem] {
+    WheelActionItems.forURLs(state.files).filter { $0.action != "action:workspace" }
+  }
   var body: some View {
     VStack(alignment: .leading, spacing: 22) {
       if state.files.isEmpty {
@@ -199,7 +201,13 @@ struct WorkspaceView: View {
                   .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                   .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(citrus.opacity(0.24)))
                   .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                  .onTapGesture(count: 2) { NSWorkspace.shared.open(previewFile) }
+                  .overlay {
+                    if WorkspacePreviewController.canPreview(previewFile) {
+                      Color.clear.contentShape(Rectangle()).onTapGesture {
+                        WorkspacePreviewController.shared.show(previewFile, appearance:state.appearance)
+                      }
+                    }
+                  }
               }
             }
             .frame(height: 220)
@@ -219,7 +227,7 @@ struct WorkspaceView: View {
                   if leftRank != rightRank { return leftRank < rightRank }
                   return Compatibility.label(lhs).localizedStandardCompare(Compatibility.label(rhs)) == .orderedAscending
                 }, id: \.self) { format in
-                  workspaceButton(Compatibility.label(format), icon: Compatibility.categoryIcon(format)) {
+                  workspaceButton(Compatibility.label(format), id:"convert:"+format, icon: Compatibility.categoryIcon(format)) {
                     state.submit("convert:" + format)
                   }
                 }
@@ -231,7 +239,7 @@ struct WorkspaceView: View {
                 ForEach(workspaceTools.sorted {
                   $0.wheelTitle.localizedStandardCompare($1.wheelTitle) == .orderedAscending
                 }) { tool in
-                  workspaceButton(tool.wheelTitle, icon: tool.icon) { state.configure(tool.id) }
+                  workspaceButton(tool.wheelTitle, id:"tool:"+tool.id, icon: tool.icon) { state.configure(tool.id) }
                 }
               }
             }
@@ -241,7 +249,7 @@ struct WorkspaceView: View {
                 ForEach(workspaceActions.sorted {
                   $0.title.localizedStandardCompare($1.title) == .orderedAscending
                 }, id: \.action) { item in
-                  workspaceButton(item.title, wheelIcon: item.icon) {
+                  workspaceButton(item.title, id:item.action, wheelIcon: item.icon) {
                     state.fileAction(String(item.action.dropFirst(7)), urls: state.files)
                   }
                 }
@@ -383,7 +391,7 @@ struct WorkspaceView: View {
       .accessibilityLabel(tr("Afficher dans le Finder : \(url.lastPathComponent)"))
       .onHover { fileSelection.hoveredControlID = $0 ? finderHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: finderHovered)
-      if !Family.isFolder(url), url.pathExtension.lowercased() == "zip" {
+      if WorkspaceFileOperations.canExtract(url) {
         pinnedFileButton(url,role:"unzip",icon:"archivebox",title:tr("Dézip")) {
           let selected = previewFile == url
           state.unzipPinnedFile(url) { contents in
@@ -480,9 +488,9 @@ struct WorkspaceView: View {
       .frame(maxWidth:.infinity,alignment:.leading)
   }
 
-  private func workspaceButton(_ title: String, icon: String? = nil, wheelIcon: String? = nil,
+  private func workspaceButton(_ title: String, id: String, icon: String? = nil, wheelIcon: String? = nil,
                                action: @escaping () -> Void) -> some View {
-    let hoverID = "workspace:" + title
+    let hoverID = "workspace:" + id
     let isHovered = fileSelection.hoveredControlID == hoverID
     return Button(action: action) {
       HStack(spacing: 9) {

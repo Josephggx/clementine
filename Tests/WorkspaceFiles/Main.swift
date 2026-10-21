@@ -36,6 +36,7 @@ import PDFKit
     state.showingOnboarding=false; state.page="workspace"; state.files=[zip,a,folder]
     if CommandLine.arguments.contains("--ui") || Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String == "WorkspaceRevisionPreview" {
       state.appearance="dark"; state.applyAppearance()
+      if let image=Bundle.main.url(forResource:"clementine-demo",withExtension:"jpg",subdirectory:"Demo") {state.add([image],replace:true)}
       let window = NSWindow(contentRect:NSRect(x:0,y:0,width:1136,height:790),
         styleMask:[.titled,.closable,.resizable],backing:.buffered,defer:false)
       window.title="WorkspaceFilesCheck"; window.isReleasedWhenClosed=false
@@ -179,6 +180,7 @@ with zipfile.ZipFile(root / 'link.zip', 'w') as z:
     precondition(loadingSession.files == [loadingPDFs[1]] && loadingSession.canSave)
     precondition(loadingSession.splitThumbnails[loadingPDFs[0]] == nil)
     try coherence(root)
+    try refinements(root)
     print("PASS: rename/extension/collision/invalid names, real ZIP contents and preserved original, duplicate click, corrupt archive, recycle success/refusal, late results and archive tools")
   }
 }

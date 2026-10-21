@@ -4,11 +4,17 @@ Application macOS de conversion et de traitement de fichiers. Apple Silicon, mac
 
 L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
 
-## En préparation — 1.0.8
+## Version 1.0.10
 
-Version 1.0.9 publiée le 21 octobre 2026, avec installateur signé et correctifs différentiels vérifiés depuis les versions 1.0.6, 1.0.7 et 1.0.8.
+Version 1.0.10 du 21 octobre 2026 : Maj ouvre les conversions, Option les outils, Commande les actions. Les préférences existantes sont migrées une seule fois.
 
-- Interface disponible en français et en anglais, avec choix de langue dans Réglages et en bas à droite de l’onboarding. Le français reste la langue par défaut.
+- Float : fond glass compact, animation d’ouverture/repli, clic et déplacement sur tout le fond, document et trombone ; les fichiers restent sélectionnables séparément.
+- Aperçu Atelier : grande fenêtre native, défilement, déplacement, redimensionnement et vrai plein écran via le bouton vert.
+- Actions : Duplicate et Atelier (Atelier reste absent des boutons de l’Atelier). Copie et copie du chemin affichent un bref « Copié ! » au-dessus du pointeur.
+- Dézip Atelier : ZIP, TAR et GZIP remplacés par leurs vrais fichiers extraits. Survols des deux boutons ZIP indépendants.
+- Onboarding : langue en bas à gauche du bloc de titre ; touches des illustrations mises à jour.
+
+- Interface disponible en français et en anglais, avec choix de langue dans Réglages et en bas à gauche du bloc de titre de l’onboarding. Le français reste la langue par défaut.
 - Onboarding : roue des outils animée sans interaction ; demandes d’autorisation fiabilisées, apps Apple absentes ignorées et boutons débloqués après refus ou expiration.
 - PDF : « Merge PDF » devient « Merge ». Split propose un dropdown PDF/JPEG/PNG ; pour PDF, choix « 1 par 1 » ou regroupement personnalisé des pages par glisser-déposer.
 - Archives : action Dézip. Le bouton Dézip d’un ZIP épinglé le remplace dans l’Atelier par ses fichiers et dossiers après extraction réussie, en conservant le ZIP original sur le disque.
@@ -19,7 +25,7 @@ Version 1.0.9 publiée le 21 octobre 2026, avec installateur signé et correctif
 
 - Split : miniatures PDF/Image, insertion discrète de PDF avant/entre/après les groupes, rotation/duplication/suppression, suppression du groupe vidé après déplacement et cadres de hauteur constante. Split est masqué pour les PDF d’une seule page.
 - Atelier : renommage inline, suivi des fichiers déplacés dans la Corbeille ou renommés dans le Finder, déduplication par identité du fichier et aperçu actualisé. Dézip épingle uniquement les fichiers réellement extraits sur disque.
-- Langue : sélecteur sans globe ; dans l’onboarding il reste seul à droite de Retour. Rotation des outils accélérée.
+- Langue : sélecteur sans globe ; dans l’onboarding il reste seul en bas à gauche du bloc de titre. Rotation des outils accélérée.
 - Validation : exports PDF éditables et rotations/duplications, 500 déplacements, scénarios de suivi des fichiers et Corbeille, 2401 assertions de compatibilité, traductions FR/EN et essais graphiques clair/sombre.
 
 ## Construire et mettre à jour

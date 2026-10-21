@@ -178,3 +178,26 @@ for anchor in [CGPoint.zero, CGPoint(x:0.5,y:0.5)] {
   }
 }
 print("PASS \(assertions) drag assertions; 1,048,576 modifier sequences; release, cancellation, delayed callbacks and exactly-once commits")
+
+// Upgrade saved assignments once, leaving other shortcuts intact.
+let shortcutSuite="clementine-shortcut-tests-"+UUID().uuidString
+let shortcutPrefs=UserDefaults(suiteName:shortcutSuite)!
+defer {shortcutPrefs.removePersistentDomain(forName:shortcutSuite)}
+precondition(WheelShortcutAssignments.defaults == ["formats":"shift","tools":"option","actions":"command"])
+WheelShortcutAssignments.migrateCommandOption(in:shortcutPrefs)
+precondition(shortcutPrefs.string(forKey:"toolModifier") == nil)
+shortcutPrefs.removePersistentDomain(forName:shortcutSuite)
+shortcutPrefs.set("shift",forKey:"conversionModifier");shortcutPrefs.set("command",forKey:"toolModifier");shortcutPrefs.set("option",forKey:"actionModifier")
+WheelShortcutAssignments.migrateCommandOption(in:shortcutPrefs)
+precondition(shortcutPrefs.string(forKey:"toolModifier") == "option")
+precondition(shortcutPrefs.string(forKey:"actionModifier") == "command")
+precondition(shortcutPrefs.string(forKey:"conversionModifier") == "shift")
+WheelShortcutAssignments.migrateCommandOption(in:shortcutPrefs)
+precondition(shortcutPrefs.string(forKey:"toolModifier") == "option","Migration must not swap again")
+shortcutPrefs.removePersistentDomain(forName:shortcutSuite)
+shortcutPrefs.set("option",forKey:"conversionModifier");shortcutPrefs.set("fn",forKey:"toolModifier");shortcutPrefs.set("command",forKey:"actionModifier")
+WheelShortcutAssignments.migrateCommandOption(in:shortcutPrefs)
+precondition(shortcutPrefs.string(forKey:"conversionModifier") == "command")
+precondition(shortcutPrefs.string(forKey:"toolModifier") == "fn")
+precondition(shortcutPrefs.string(forKey:"actionModifier") == "option")
+print("PASS: Command/Option defaults, fresh preferences, upgrade migration, custom assignments and idempotence")

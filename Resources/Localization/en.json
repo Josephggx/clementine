@@ -526,5 +526,10 @@
   "Les fichiers extraits ne sont pas disponibles sur le disque.": "The extracted files are not available on disk.",
   "Placez au moins une page valide dans les PDF à créer.": "Place at least one valid page in the PDFs to create.",
   "Pivoter": "Rotate",
-  "Dupliquer": "Duplicate"
+  "Dupliquer": "Duplicate",
+  "Copié !": "Copied!",
+  "DUPLICATE": "DUPLICATE",
+  "ATELIER": "WORKSPACE",
+  "Appuyez sur Commande": "Press Command",
+  "⌥ Option": "⌥ Option"
 }
