@@ -6,7 +6,7 @@ L’application installée est **`/Applications/Clémentine.app`**. Le dépôt c
 
 ## En préparation — 1.0.8
 
-Sources synchronisées le 21 octobre 2026. Cette version n’est pas encore publiée en téléchargement : l’installateur et le flux de mise à jour restent sur la version 1.0.7.
+Version 1.0.8 publiée le 21 octobre 2026, avec installateur signé et correctifs différentiels vérifiés depuis les versions 1.0.5, 1.0.6 et 1.0.7.
 
 - Interface disponible en français et en anglais, avec choix de langue dans Réglages et en bas à droite de l’onboarding. Le français reste la langue par défaut.
 - Onboarding : roue des outils animée sans interaction ; demandes d’autorisation fiabilisées, apps Apple absentes ignorées et boutons débloqués après refus ou expiration.
