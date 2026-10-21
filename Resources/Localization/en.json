@@ -502,5 +502,7 @@
   "Ouverture de Finovox…": "Opening Finovox…",
   "Copie dans Applications…": "Copying to Applications…",
   "Réuni.pdf": "Merged.pdf",
-  "{0} : {1}": "{0}: {1}"
+  "{0} : {1}": "{0}: {1}",
+  "1 par 1": "One by one",
+  "Une image JPEG par page.": "One JPEG image per page."
 }

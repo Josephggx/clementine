@@ -67,6 +67,15 @@ import CoreText
       let bitmap = NSBitmapImageRep(data:try Data(contentsOf:image))!
       precondition(image.pathExtension == "png" && bitmap.pixelsWide == 600 && bitmap.pixelsHigh == 840)
     }
+    options.pdfSplitFormat = "jpg"
+    let jpegs = try export("jpeg")
+    precondition(jpegs.count == 4)
+    for image in jpegs {
+      let data = try Data(contentsOf:image)
+      let bitmap = NSBitmapImageRep(data:data)!
+      precondition(image.pathExtension == "jpg" && Array(data.prefix(2)) == [0xff,0xd8])
+      precondition(bitmap.pixelsWide == 600 && bitmap.pixelsHigh == 840)
+    }
     var layout = PDFSplitLayout.individual(count:4)
     layout = PDFSplitLayout.moving(2,in:layout,to:0,before:0)
     precondition(layout == [[2,0],[1],[],[3]])
@@ -86,6 +95,12 @@ import CoreText
     precondition(session.canSave && session.options.pdfSplitFormat == "pdf" && session.options.pdfSplitMode == "pages")
     session.options.pdfSplitMode = "custom"
     precondition(session.canSave)
-    print("PASS: editable PDF pages, custom groups/order, batch sources, PNG pages, invalid groups, 500 page moves, wheel adjacency and defaults")
+    session.options.pdfSplitGroups[source.path] = []
+    precondition(!session.canSave)
+    for format in ["png","jpg"] {
+      session.options.pdfSplitFormat = format
+      precondition(session.canSave)
+    }
+    print("PASS: editable PDF pages, custom groups/order, batch sources, PNG/JPEG pages, invalid groups, 500 page moves, wheel adjacency and defaults")
   }
 }

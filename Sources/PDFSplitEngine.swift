@@ -22,14 +22,14 @@ enum PDFSplitLayout {
 
 extension Engine {
   func splitPDF(_ document: PDFDocument, source: URL, stage: URL, options: Options) throws -> [URL] {
-    guard document.pageCount > 0, ["pdf","png"].contains(options.pdfSplitFormat) else {
+    guard document.pageCount > 0, ["pdf","jpg","png"].contains(options.pdfSplitFormat) else {
       throw ClementineError(tr("Choisissez PDF ou Image pour séparer les pages."))
     }
-    if options.pdfSplitFormat == "png" {
+    if options.pdfSplitFormat != "pdf" {
       return try (0..<document.pageCount).map { index in
         try token.check()
         guard let page = document.page(at:index) else { throw ClementineError(tr("Page PDF illisible")) }
-        let destination = output(source,"png",stage,suffix:"-page-\(index+1)")
+        let destination = output(source,options.pdfSplitFormat,stage,suffix:"-page-\(index+1)")
         try saveImage(renderPage(page,scale:2),to:destination,o:options)
         return destination
       }

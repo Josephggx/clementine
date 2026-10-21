@@ -22,11 +22,12 @@ struct PDFSplitControls: View {
       }
       Picker(tr("Format de sortie"),selection:$session.options.pdfSplitFormat) {
         Text(tr("PDF")).tag("pdf")
-        Text(tr("Image · PNG")).tag("png")
-      }.pickerStyle(.segmented)
+        Text("JPEG").tag("jpg")
+        Text("PNG").tag("png")
+      }.pickerStyle(.menu)
       if session.options.pdfSplitFormat == "pdf" {
         Picker(tr("Séparation"),selection:$session.options.pdfSplitMode) {
-          Text(tr("Une page par PDF")).tag("pages")
+          Text(tr("1 par 1")).tag("pages")
           Text(tr("Personnalisé")).tag("custom")
         }.pickerStyle(.segmented)
         if custom {
@@ -47,7 +48,9 @@ struct PDFSplitControls: View {
         }
       } else {
         pageGrid
-        Text(tr("Une image PNG par page, en haute résolution.")).foregroundStyle(.secondary)
+        Text(session.options.pdfSplitFormat == "jpg"
+          ? tr("Une image JPEG par page.")
+          : tr("Une image PNG par page, en haute résolution.")).foregroundStyle(.secondary)
       }
     }
     .disabled(session.loading || session.busy)

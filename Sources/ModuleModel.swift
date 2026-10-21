@@ -149,7 +149,7 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
       if family == .pdf {
         return files.allSatisfy { file in
           guard let thumbs = splitThumbnails[file], !thumbs.isEmpty else { return false }
-          return options.pdfSplitFormat == "png" || options.pdfSplitMode == "pages" ||
+          return ["png","jpg"].contains(options.pdfSplitFormat) || options.pdfSplitMode == "pages" ||
             PDFSplitLayout.isComplete(options.pdfSplitGroups[file.path] ?? [], count: thumbs.count)
         }
       }
