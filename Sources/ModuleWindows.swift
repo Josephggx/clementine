@@ -507,21 +507,47 @@ struct ModuleContent: View {
       }
       .padding(.horizontal,2).padding(.bottom,12)
 
-      LazyVGrid(columns:[GridItem(.adaptive(minimum:112,maximum:132),spacing:12,alignment:.top)],alignment:.leading,spacing:14) {
+      LazyVGrid(columns:[GridItem(.adaptive(minimum:104,maximum:132),spacing:10,alignment:.top)],alignment:.leading,spacing:12) {
         ForEach(Array(session.options.modulePages.enumerated()),id:\.element.id) { offset,page in
-          PDFPageCard(session:session,page:page,offset:offset)
-            .onDrag {session.draggedPage=page;return NSItemProvider(object:page.id.uuidString as NSString)}
-            .onDrop(of:["public.text"],delegate:PDFPageDropDelegate(target:page,session:session))
+          PDFPageThumbnailCard(image:session.pageThumbnails[page.index],rotation:page.rotation,
+            title:tr("Page \(offset+1)"),editable:true,
+            rotate:{session.editOrganizedPage(page.id,action:"rotate")},
+            duplicate:{session.editOrganizedPage(page.id,action:"duplicate")},
+            remove:{session.editOrganizedPage(page.id,action:"remove")})
+            .draggable("clementine-organize:\(session.id):\(page.id)")
+            .modifier(PDFPageInsertionHighlight(active:session.organizeInsertion == page.id))
+            .dropDestination(for:String.self) {items,_ in
+              guard items.count == 1, let dragged=session.options.modulePages.first(where:{
+                "clementine-organize:\(session.id):\($0.id)" == items[0]
+              }) else {return false}
+              session.moveOrganizedPage(dragged.id,before:page.id)
+              session.organizeInsertion=nil
+              return true
+            } isTargeted: {inside in session.organizeInsertion=inside ? page.id : nil}
         }
       }
       .frame(maxWidth:.infinity,minHeight:338,alignment:.topLeading)
+      .contentShape(Rectangle())
+      .dropDestination(for:String.self) {items,_ in
+        guard items.count == 1, let dragged=session.options.modulePages.first(where:{
+          "clementine-organize:\(session.id):\($0.id)" == items[0]
+        }) else {return false}
+        session.moveOrganizedPage(dragged.id)
+        session.organizeInsertion=nil
+        return true
+      }
     }
   }
   var pdfPagesAreOriginal: Bool {
     session.options.modulePages.count == session.pageThumbnails.count &&
     session.options.modulePages.enumerated().allSatisfy { $0.element.index == $0.offset && $0.element.rotation == 0 }
   }
-  func resetPDFPages() { session.options.modulePages=session.pageThumbnails.keys.sorted().map {ModulePage(index:$0)} }
+  func resetPDFPages() {
+    withAnimation(.snappy(duration:0.24)) {
+      session.organizeInsertion=nil
+      session.options.modulePages=session.pageThumbnails.keys.sorted().map {ModulePage(index:$0)}
+    }
+  }
   func slider(_ title:String,binding:Binding<Double>,range:ClosedRange<Double>,suffix:String,multiplier:Double=1,render:Bool=false) -> some View {
     VStack(spacing:5) {HStack {Text(trString(title)).foregroundStyle(.secondary);Spacer();Text(trString(String(format:suffix == "dBTP" || suffix == "×" ? "%.1f %@" : "%.0f %@",binding.wrappedValue*multiplier,suffix))).monospacedDigit().foregroundStyle(.secondary)};Slider(value:binding,in:range).tint(citrus).onChange(of:binding.wrappedValue) { _, _ in if render {session.renderPreview()}} }
   }
@@ -530,74 +556,6 @@ struct ModuleContent: View {
   static func time(_ time:Double) -> String {let safe=time.isFinite ? max(0,time) : 0;return String(format:"%d:%05.2f",Int(safe)/60,safe.truncatingRemainder(dividingBy:60))}
 }
 
-private struct PDFPageCard: View {
-  @ObservedObject var session: ModuleSession
-  let page: ModulePage
-  let offset: Int
-  var hovered: Bool {session.hoveredPage == page.id}
-  var body: some View {
-    ZStack {
-      RoundedRectangle(cornerRadius:7,style:.continuous).fill(Color.clementineRaisedSurface)
-      if let image=session.pageThumbnails[page.index] {
-        GeometryReader { geometry in
-          let sideways = abs(page.rotation % 180) == 90
-          Image(nsImage:image)
-            .resizable()
-            .scaledToFit()
-            .frame(
-              width: sideways ? geometry.size.height : geometry.size.width,
-              height: sideways ? geometry.size.width : geometry.size.height)
-            .rotationEffect(.degrees(Double(page.rotation)))
-            .frame(width:geometry.size.width,height:geometry.size.height)
-        }
-        .padding(9)
-        .clipped()
-      }
-      VStack {
-        HStack(alignment:.top) {
-          Text(trString(String(offset+1))).font(.system(size:11,weight:.semibold)).foregroundStyle(.white)
-            .frame(width:23,height:23).background(citrus,in:Circle())
-          Spacer()
-          if hovered {
-            HStack(spacing:3) {
-              action("rotate.right") {session.options.modulePages[offset].rotation=(page.rotation+90)%360}
-              action("plus.square.on.square") {session.options.modulePages.insert(ModulePage(index:page.index,rotation:page.rotation),at:offset+1)}
-              action("trash") {session.options.modulePages.remove(at:offset)}
-            }.transition(.opacity.combined(with:.scale(scale:0.92,anchor:.topTrailing)))
-          } else {
-            Image(systemName:"ellipsis").font(.system(size:11,weight:.semibold)).foregroundStyle(.secondary)
-              .frame(width:23,height:23).background(.ultraThinMaterial,in:Circle())
-          }
-        }
-        Spacer()
-      }.padding(7)
-    }
-    .frame(height:164)
-    .overlay(RoundedRectangle(cornerRadius:7,style:.continuous).stroke(hovered ? citrus.opacity(0.8) : Color.clementineBorder,lineWidth:hovered ? 1.25 : 0.7))
-    .shadow(color:.black.opacity(hovered ? 0.14 : 0.08),radius:hovered ? 7 : 3,y:2)
-    .scaleEffect(hovered ? 1.015 : 1)
-    .animation(.easeOut(duration:0.14),value:hovered)
-    .onHover {inside in session.hoveredPage=inside ? page.id : (session.hoveredPage == page.id ? nil : session.hoveredPage)}
-  }
-  func action(_ icon:String,perform:@escaping ()->Void)->some View {
-    Button(action:perform) {Image(systemName:icon).font(.system(size:10,weight:.medium)).frame(width:23,height:23).background(.ultraThinMaterial,in:Circle())}.buttonStyle(.plain)
-  }
-}
-
-private struct PDFPageDropDelegate: DropDelegate {
-  let target: ModulePage
-  let session: ModuleSession
-  func dropEntered(info:DropInfo) {
-    guard let dragged=session.draggedPage,dragged.id != target.id,
-          let source=session.options.modulePages.firstIndex(where:{$0.id == dragged.id}),
-          let destination=session.options.modulePages.firstIndex(where:{$0.id == target.id}) else {return}
-    withAnimation(.easeInOut(duration:0.16)) {
-      session.options.modulePages.move(fromOffsets:IndexSet(integer:source),toOffset:destination > source ? destination+1 : destination)
-    }
-  }
-  func dropUpdated(info:DropInfo)->DropProposal? {DropProposal(operation:.move)}
-  func performDrop(info:DropInfo)->Bool {session.draggedPage=nil;return true}
-}
 extension NSColor {
   var hexString:String {let color=usingColorSpace(.deviceRGB) ?? .black;return String(format:"#%02X%02X%02X",Int(color.redComponent*255),Int(color.greenComponent*255),Int(color.blueComponent*255))}
 }

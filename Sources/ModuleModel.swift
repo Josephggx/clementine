@@ -97,8 +97,7 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
   var silenceGeneration = UUID()
   @Published var splitThumbnails: [URL: [Int:NSImage]] = [:]
   @Published var pageThumbnails: [Int:NSImage] = [:]
-  @Published var hoveredPage: UUID?
-  @Published var draggedPage: ModulePage?
+  @Published var organizeInsertion: UUID?
   @Published var undoStack: [[ModuleMark]] = []
   let player = AVPlayer()
   var close: (() -> Void)?

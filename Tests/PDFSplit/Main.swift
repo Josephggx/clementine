@@ -22,13 +22,14 @@ import CoreText
     _ = NSApplication.shared
     let root = FileManager.default.temporaryDirectory.appendingPathComponent("clementine-split-"+UUID().uuidString)
     try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
-    defer { if !CommandLine.arguments.contains("--ui") && Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String != "SplitRevisionPreview" { try? FileManager.default.removeItem(at:root) } }
+    defer { if !CommandLine.arguments.contains("--ui") && Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String != "SplitRevisionPreview" && Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String != "OrganizeRevisionPreview" { try? FileManager.default.removeItem(at:root) } }
     let source = root.appendingPathComponent("Document.pdf")
     let second = root.appendingPathComponent("Autre.pdf")
     try fixture(source,count:4); try fixture(second,count:2)
-    if CommandLine.arguments.contains("--ui") || Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String == "SplitRevisionPreview" {
+    if CommandLine.arguments.contains("--ui") || Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String == "SplitRevisionPreview" || Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String == "OrganizeRevisionPreview" {
       NSApp.setActivationPolicy(.regular)
-      let module = ModuleWindowController(tool:"split",files:[source,second],defaults:Options(),reveal:false)
+      let organize=Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String == "OrganizeRevisionPreview"
+      let module = ModuleWindowController(tool:organize ? "organize" : "split",files:organize ? [source] : [source,second],defaults:Options(),reveal:false)
       module.show(); NSApp.activate(ignoringOtherApps:true)
       module.window.makeKeyAndOrderFront(nil)
       module.onClose={NSApp.terminate(nil)}
@@ -127,6 +128,26 @@ import CoreText
       session.options.pdfSplitFormat = format
       precondition(session.canSave)
     }
-    print("PASS: editable PDF pages, custom groups/order, batch sources, PNG/JPEG pages, invalid groups, 500 page moves, wheel adjacency and defaults")
+    let organizer=ModuleSession(tool:"organize",files:[source],defaults:Options(),reveal:false,cataloguePreview:true)
+    let firstID=organizer.options.modulePages[0].id
+    let thirdID=organizer.options.modulePages[2].id
+    organizer.editOrganizedPage(firstID,action:"rotate")
+    organizer.editOrganizedPage(firstID,action:"duplicate")
+    let duplicateID=organizer.options.modulePages[1].id
+    precondition(duplicateID != firstID && organizer.options.modulePages[1].rotation == 90)
+    organizer.moveOrganizedPage(thirdID,before:firstID)
+    precondition(organizer.options.modulePages[0].id == thirdID)
+    organizer.editOrganizedPage(firstID,action:"remove")
+    precondition(!organizer.options.modulePages.contains(where:{$0.id == firstID}))
+    organizer.editOrganizedPage(firstID,action:"rotate") // A stale menu cannot mutate another page.
+    organizer.moveOrganizedPage(thirdID)
+    precondition(organizer.options.modulePages.map(\.index) == [0,1,2])
+    var organizedSettings=organizer.options
+    organizedSettings.outputFolder=root.appendingPathComponent("organized").path
+    let organized=try engine.run([source],action:"organize",options:organizedSettings)[0]
+    let organizedPDF=PDFDocument(url:organized)!
+    precondition(organizedPDF.pageCount == 3 && organizedPDF.page(at:0)!.rotation == 90)
+    precondition(contents(organized) == ["Source page 1","Source page 2","Source page 3"])
+    print("PASS: editable PDF pages, custom groups/order, batch sources, PNG/JPEG pages, invalid groups, 500 page moves, wheel adjacency, defaults and Organize commands/export")
   }
 }

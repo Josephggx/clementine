@@ -58,7 +58,7 @@ struct PDFSplitControls: View {
       } else {
         LazyVGrid(columns:[GridItem(.adaptive(minimum:90,maximum:130))],spacing:12) {
           ForEach(thumbnails.keys.sorted(),id:\.self) { page in
-            PDFSplitPageCard(image:thumbnails[page],rotation:0,
+            PDFPageThumbnailCard(image:thumbnails[page],rotation:0,
               title:session.options.pdfSplitFormat == "pdf" ? tr("PDF \(page+1)") : tr("Image \(page+1)"))
           }
         }
@@ -84,18 +84,13 @@ struct PDFSplitControls: View {
         LazyVGrid(columns:[GridItem(.adaptive(minimum:104,maximum:132))],spacing:10) {
           ForEach(groups[index],id:\.self) { page in
             let edit = edits[page] ?? ModulePage(index:page)
-            PDFSplitPageCard(image:thumbnails[edit.index],rotation:edit.rotation,
+            PDFPageThumbnailCard(image:thumbnails[edit.index],rotation:edit.rotation,
               title:tr("Page \(edit.index+1)"),editable:true,
               rotate:{ changePage(page,action:"rotate") },
               duplicate:{ changePage(page,action:"duplicate") },
               remove:{ changePage(page,action:"remove") })
               .draggable(payload(page))
-              .offset(x:hover.insertion == "\(index):\(page)" ? 7 : 0)
-              .animation(.easeOut(duration:0.16),value:hover.insertion)
-              .overlay(alignment:.leading) {
-                Capsule().fill(citrus).frame(width:3).padding(.vertical,4)
-                  .opacity(hover.insertion == "\(index):\(page)" ? 1 : 0).offset(x:-5)
-              }
+              .modifier(PDFPageInsertionHighlight(active:hover.insertion == "\(index):\(page)"))
               .dropDestination(for:String.self) { items,_ in
                 guard let dragged=decodedPage(items) else {return false}
                 move(dragged,to:index,before:page);return true
@@ -151,7 +146,6 @@ private final class PDFSplitInsertState: ObservableObject {
   @Published var hovered=false
   @Published var targeted=false
 }
-private final class PDFSplitCardState: ObservableObject {@Published var menu=false}
 
 private struct PDFSplitInsertZone: View {
   var create:()->Void
@@ -184,46 +178,3 @@ private struct PDFSplitInsertZone: View {
   }
 }
 
-private struct PDFSplitPageCard: View {
-  var image:NSImage?
-  var rotation:Int
-  var title:String
-  var editable=false
-  var rotate:()->Void = {}
-  var duplicate:()->Void = {}
-  var remove:()->Void = {}
-  @StateObject private var hover=PDFSplitCardState()
-  var body: some View {
-    VStack(spacing:6) {
-      ZStack(alignment:.topTrailing) {
-        if let image {
-          let turns=rotation%180 != 0
-          Image(nsImage:image).resizable().scaledToFit()
-            .frame(width:turns ? 116 : 82,height:turns ? 82 : 116)
-            .rotationEffect(.degrees(Double(rotation)))
-            .frame(maxWidth:.infinity).frame(height:116).clipped()
-            .shadow(color:.black.opacity(0.12),radius:3,y:1)
-        }
-        if editable {
-          HStack(spacing:2) {
-            if hover.menu {
-              control("arrow.clockwise",title:"Pivoter",action:rotate)
-              control("plus.square.on.square",title:"Dupliquer",action:duplicate)
-              control("trash",title:"Supprimer",action:remove)
-            } else {
-              Button {hover.menu=true} label:{Image(systemName:"ellipsis").frame(width:22,height:24)}
-                .buttonStyle(.plain).help(tr("Options de la page"))
-            }
-          }.padding(2).background(.regularMaterial,in:Capsule())
-            .onHover { hover.menu=$0 }.animation(.easeOut(duration:0.14),value:hover.menu)
-        }
-      }.frame(height:116)
-      Text(title).font(.system(size:10)).foregroundStyle(.secondary).lineLimit(1)
-    }.padding(8).frame(maxWidth:.infinity).frame(height:152)
-      .background(Color.clementineRaisedSurface,in:RoundedRectangle(cornerRadius:9))
-  }
-  private func control(_ icon:String,title:String,action:@escaping()->Void) -> some View {
-    Button(action:action) {Image(systemName:icon).font(.system(size:10)).frame(width:22,height:24)}
-      .buttonStyle(.borderless).help(trString(title)).accessibilityLabel(trString(title))
-  }
-}
