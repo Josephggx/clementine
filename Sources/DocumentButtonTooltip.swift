@@ -3,7 +3,7 @@ import SwiftUI
 
 extension View {
   func documentTooltip(_ text: String, hovered: Bool) -> some View {
-    background(DocumentTooltipAnchor(text: text, hovered: hovered).allowsHitTesting(false))
+    background(DocumentTooltipAnchor(text: trString(text), hovered: hovered).allowsHitTesting(false))
   }
 }
 

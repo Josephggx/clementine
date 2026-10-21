@@ -44,7 +44,7 @@ enum Documents {
       }
     }
     guard let binary = libreOffice else {
-      throw ClementineError("Le moteur bureautique est nécessaire pour exporter les feuilles en CSV.")
+      throw ClementineError(tr("Le moteur bureautique est nécessaire pour exporter les feuilles en CSV."))
     }
     let root = stage.appendingPathComponent("sheets-" + UUID().uuidString, isDirectory: true)
     let out = root.appendingPathComponent("output", isDirectory: true)
@@ -62,7 +62,7 @@ enum Documents {
     let workbookXML = try engine.process("/usr/bin/unzip", ["-p", workbook.path, "xl/workbook.xml"])
     let xml = try XMLDocument(xmlString: workbookXML, options: [])
     let sheetCount = try xml.nodes(forXPath: "//*[local-name()='sheets']/*[local-name()='sheet']").count
-    guard sheetCount > 0 else { throw ClementineError("Ce tableur ne contient aucune feuille.") }
+    guard sheetCount > 0 else { throw ClementineError(tr("Ce tableur ne contient aucune feuille.")) }
 
     // The twelfth Calc CSV filter option exports every sheet, including sheets after the first.
     let filter = "csv:Text - txt - csv (StarCalc):44,34,76,1,,0,false,true,true,false,false,-1"
@@ -75,7 +75,7 @@ enum Documents {
       .filter { $0.pathExtension.lowercased() == "csv" }
       .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
     guard produced.count == sheetCount else {
-      throw ClementineError("L’export CSV a produit \(produced.count) feuille(s) sur \(sheetCount). Aucun fichier incomplet n’a été enregistré.")
+      throw ClementineError(tr("L’export CSV a produit \(produced.count) feuille(s) sur \(sheetCount). Aucun fichier incomplet n’a été enregistré."))
     }
     let base = source.deletingPathExtension().lastPathComponent
     return try produced.map { file in
@@ -200,7 +200,7 @@ enum Documents {
       let generated = out.appendingPathComponent(name)
       guard engine.fm.fileExists(atPath: generated.path) else {
         throw ClementineError(
-          "Le moteur bureautique ne peut pas convertir ce document vers \(output.uppercased()). \(log.suffix(1000))"
+          tr("Le moteur bureautique ne peut pas convertir ce document vers \(output.uppercased()). \(log.suffix(1000))")
         )
       }
       if output == "html" {
@@ -242,12 +242,12 @@ enum Documents {
       guard
         let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .utf16)
           ?? String(data: data, encoding: .isoLatin1)
-      else { throw ClementineError("Encodage texte inconnu") }
+      else { throw ClementineError(tr("Encodage texte inconnu")) }
       return text
     }
     if ext == "pdf" {
       guard let pdf = PDFDocument(url: source), !pdf.isLocked else {
-        throw ClementineError("PDF verrouillé")
+        throw ClementineError(tr("PDF verrouillé"))
       }
       return try PDFText.text(pdf, engine: engine)
     }
@@ -263,10 +263,10 @@ enum Documents {
         let preview = extracted.appendingPathComponent("QuickLook/Preview.pdf")
         if let pdf = PDFDocument(url: preview), let text = pdf.string { return text }
         throw ClementineError(
-          "Ce fichier Pages ne contient pas d’aperçu PDF. Exportez-le en DOCX depuis Pages.")
+          tr("Ce fichier Pages ne contient pas d’aperçu PDF. Exportez-le en DOCX depuis Pages."))
       }
       guard let en = engine.fm.enumerator(at: extracted, includingPropertiesForKeys: nil) else {
-        throw ClementineError("Archive illisible")
+        throw ClementineError(tr("Archive illisible"))
       }
       let files = en.compactMap { $0 as? URL }.filter {
         ext == "pptx"
@@ -278,7 +278,7 @@ enum Documents {
       return try files.map { try xmlText($0) }.joined(separator: "\n\n")
     }
     throw ClementineError(
-      "L’import \(ext.uppercased()) nécessite un export intermédiaire DOCX, XLSX ou PDF.")
+      tr("L’import \(ext.uppercased()) nécessite un export intermédiaire DOCX, XLSX ou PDF."))
   }
   static func xmlText(_ u: URL) throws -> String {
     let data = try Data(contentsOf: u)
@@ -318,13 +318,13 @@ enum Documents {
     } else if ext == "epub" {
       try epub(text, to: dest, engine: engine)
     } else {
-      throw ClementineError("Export \(ext) non disponible")
+      throw ClementineError(tr("Export \(ext) non disponible"))
     }
   }
   static func pdf(_ text: String, to dest: URL) throws {
     var box = CGRect(x: 0, y: 0, width: 595, height: 842)
     guard let c = CGContext(dest as CFURL, mediaBox: &box, nil) else {
-      throw ClementineError("Création du PDF impossible")
+      throw ClementineError(tr("Création du PDF impossible"))
     }
     let paragraph = NSMutableParagraphStyle()
     paragraph.lineSpacing = 4
@@ -344,7 +344,7 @@ enum Documents {
       CTFrameDraw(frame, c)
       let range = CTFrameGetVisibleStringRange(frame)
       c.endPDFPage()
-      guard range.length > 0 else { throw ClementineError("La pagination du document a échoué") }
+      guard range.length > 0 else { throw ClementineError(tr("La pagination du document a échoué")) }
       offset += range.length
     }
     c.closePDF()
@@ -414,7 +414,7 @@ enum Documents {
       i += 1
     }
     guard !quoted else {
-      throw ClementineError("Le CSV contient un champ entre guillemets non fermé")
+      throw ClementineError(tr("Le CSV contient un champ entre guillemets non fermé"))
     }
     if !field.isEmpty || !row.isEmpty {
       row.append(field)
@@ -465,7 +465,7 @@ enum Documents {
             let ref = c.attribute(forName: "r")?.stringValue ?? "A1"
             let letters = ref.prefix { $0.isLetter }
             let index = letters.reduce(0) { $0 * 26 + Int($1.asciiValue ?? 65) - 64 } - 1
-            guard index >= 0, index < 16384 else { throw ClementineError("Colonne XLSX invalide") }
+            guard index >= 0, index < 16384 else { throw ClementineError(tr("Colonne XLSX invalide")) }
             while values.count <= index { values.append("") }
             let v =
               (try? c.nodes(forXPath: ".//*[local-name()='v' or local-name()='t']"))?.first?
@@ -491,7 +491,7 @@ enum Documents {
             let repeated =
               Int(c.attribute(forName: "table:number-columns-repeated")?.stringValue ?? "1") ?? 1
             guard repeated <= 16384, values.count + repeated <= 16384 else {
-              throw ClementineError("Trop de colonnes dans le fichier ODS")
+              throw ClementineError(tr("Trop de colonnes dans le fichier ODS"))
             }
             let v =
               (try? c.nodes(forXPath: ".//*[local-name()='p']"))?.compactMap(\.stringValue).joined(
@@ -503,10 +503,10 @@ enum Documents {
       }
     } else {
       throw ClementineError(
-        "Exportez ce tableur en XLSX ou CSV avant conversion. Les formats XLS et Numbers ne sont pas encore importés."
+        tr("Exportez ce tableur en XLSX ou CSV avant conversion. Les formats XLS et Numbers ne sont pas encore importés.")
       )
     }
-    guard rows.count <= 1_048_576 else { throw ClementineError("Trop de lignes") }
+    guard rows.count <= 1_048_576 else { throw ClementineError(tr("Trop de lignes")) }
     switch dest.pathExtension {
     case "csv", "tsv", "txt":
       try csvWrite(rows, delimiter: dest.pathExtension == "csv" ? "," : "\t").write(
@@ -547,7 +547,7 @@ enum Documents {
           "META-INF/manifest.xml":
             "<manifest:manifest xmlns:manifest=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\" manifest:version=\"1.2\"><manifest:file-entry manifest:full-path=\"/\" manifest:media-type=\"application/vnd.oasis.opendocument.spreadsheet\"/><manifest:file-entry manifest:full-path=\"content.xml\" manifest:media-type=\"text/xml\"/></manifest:manifest>",
         ], to: dest, engine: engine)
-    default: throw ClementineError("Format tableur inconnu")
+    default: throw ClementineError(tr("Format tableur inconnu"))
     }
     return dest
   }

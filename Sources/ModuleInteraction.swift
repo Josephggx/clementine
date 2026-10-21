@@ -254,7 +254,7 @@ struct ModuleRangeLane: View {
         RoundedRectangle(cornerRadius:4).fill(.gray.opacity(0.05)).allowsHitTesting(false)
         ZStack {
           RoundedRectangle(cornerRadius:4).fill(.orange.opacity(0.5))
-          Text(label).font(.caption2).lineLimit(1).foregroundStyle(.white)
+          Text(trString(label)).font(.caption2).lineLimit(1).foregroundStyle(.white)
           HStack {Capsule().fill(.white).frame(width:2,height:14);Spacer();Capsule().fill(.white).frame(width:2,height:14)}.padding(.horizontal,5)
         }.frame(width:width).offset(x:x)
         .gesture(DragGesture(minimumDistance:0).onChanged {value in
@@ -284,7 +284,7 @@ struct ModuleBleepLane:View {
           }.onEnded {_ in memory.start=nil;memory.active=nil})
         ForEach($session.options.marks) {$mark in
           ModuleRangeLane(start:$mark.start,end:$mark.end,duration:session.duration,label:"Bleep",onSeek:session.seek)
-            .contextMenu {Button("Delete") {session.options.marks.removeAll {$0.id==mark.id}}}
+            .contextMenu {Button(tr("Delete")) {session.options.marks.removeAll {$0.id==mark.id}}}
         }
       }
     }

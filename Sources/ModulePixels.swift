@@ -11,7 +11,7 @@ extension Engine {
       guard let context=CGContext(data:buffer.baseAddress,width:width,height:height,bitsPerComponent:8,bytesPerRow:width*4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue) else {return false}
       context.draw(image,in:CGRect(x:0,y:0,width:width,height:height));return true
     }
-    guard rendered else {throw ClementineError("Mémoire insuffisante pour le rendu")}
+    guard rendered else {throw ClementineError(tr("Mémoire insuffisante pour le rendu"))}
     func v(_ name:String)->Double {adjustments[name] ?? 0}
     let exposure=pow(2,v("Exposure")),contrast=1+v("Contrast")/100+v("Dehaze")/200-v("Fade")/250
     let brightness=v("Brightness")/100-v("Dehaze")/1000+v("Fade")/1000,gamma=pow(2,v("Gamma")/100)
@@ -59,7 +59,7 @@ extension Engine {
         bytes[i]=UInt8(min(255,max(0,original+(original-base)*detail+(base-original)*noise)))
       }
     }
-    guard let provider=CGDataProvider(data:Data(bytes) as CFData),let result=CGImage(width:width,height:height,bitsPerComponent:8,bitsPerPixel:32,bytesPerRow:width*4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGBitmapInfo(rawValue:CGImageAlphaInfo.premultipliedLast.rawValue),provider:provider,decode:nil,shouldInterpolate:true,intent:.defaultIntent) else {throw ClementineError("Rendu de l’image impossible")}
+    guard let provider=CGDataProvider(data:Data(bytes) as CFData),let result=CGImage(width:width,height:height,bitsPerComponent:8,bitsPerPixel:32,bytesPerRow:width*4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGBitmapInfo(rawValue:CGImageAlphaInfo.premultipliedLast.rawValue),provider:provider,decode:nil,shouldInterpolate:true,intent:.defaultIntent) else {throw ClementineError(tr("Rendu de l’image impossible"))}
     return result
   }
   static func moduleBoxBlur(_ pixels:[UInt8],width:Int,height:Int,radius:Int)->[UInt8] {

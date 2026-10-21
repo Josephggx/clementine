@@ -29,7 +29,7 @@ enum NativeOfficeScript {
       if code == -1743 || code == -1744 {
         report(bundleID, code!)
         let app = bundleID.split(separator: ".").last.map(String.init) ?? "l’application Apple"
-        throw ClementineError("L’accès à \(app) doit être autorisé. Accordez l’autorisation demandée ou activez-la dans Réglages Système → Confidentialité et sécurité → Automatisation, puis relancez l’opération.")
+        throw ClementineError(tr("L’accès à \(app) doit être autorisé. Accordez l’autorisation demandée ou activez-la dans Réglages Système → Confidentialité et sécurité → Automatisation, puis relancez l’opération."))
       }
       throw ClementineError(operation + " : " + String(describing: failure[NSAppleScript.errorMessage] ?? failure))
     }

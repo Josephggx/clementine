@@ -18,10 +18,10 @@ enum ClementinePermission: String, CaseIterable, Identifiable {
   }
   var title: String {
     switch self {
-    case .accessibility: return "Accessibilité"
-    case .pages: return "Pages"
-    case .numbers: return "Numbers"
-    case .keynote: return "Keynote"
+    case .accessibility: return tr("Accessibilité")
+    case .pages: return tr("Pages")
+    case .numbers: return tr("Numbers")
+    case .keynote: return tr("Keynote")
     }
   }
   var icon: String {
@@ -35,13 +35,13 @@ enum ClementinePermission: String, CaseIterable, Identifiable {
   var detail: String {
     switch self {
     case .accessibility:
-      return "Permet d’afficher les roues pendant un glisser-déposer et de piloter le bouton d’import de Chrome pour Finovox."
+      return tr("Permet d’afficher les roues pendant un glisser-déposer et de piloter le bouton d’import de Chrome pour Finovox.")
     case .pages:
-      return "Permet de créer et d’exporter des documents Pages lorsque vous choisissez un format Apple natif."
+      return tr("Permet de créer et d’exporter des documents Pages lorsque vous choisissez un format Apple natif.")
     case .numbers:
-      return "Permet de créer, lire et exporter des tableurs Numbers, notamment une feuille CSV par onglet."
+      return tr("Permet de créer, lire et exporter des tableurs Numbers, notamment une feuille CSV par onglet.")
     case .keynote:
-      return "Permet de créer et d’exporter des présentations Keynote lorsque vous choisissez un format Apple natif."
+      return tr("Permet de créer et d’exporter des présentations Keynote lorsque vous choisissez un format Apple natif.")
     }
   }
 }
@@ -51,10 +51,10 @@ enum ClementinePermissionStatus: Equatable {
 
   var label: String {
     switch self {
-    case .notRequested: return "À autoriser"
-    case .granted: return "Accordée"
-    case .denied: return "Non accordée"
-    case .unavailable: return "App non installée"
+    case .notRequested: return tr("À autoriser")
+    case .granted: return tr("Accordée")
+    case .denied: return tr("Non accordée")
+    case .unavailable: return tr("App non installée")
     }
   }
   var icon: String {
@@ -775,14 +775,14 @@ struct PermissionsView: View {
       HStack(spacing: 12) {
         ClementineMark(size: 38)
         VStack(alignment: .leading, spacing: 3) {
-          Text("Configurer Clémentine")
+          Text(tr("Configurer Clémentine"))
             .font(.system(size: 20, weight: .bold, design: .rounded))
-          Text("Pour activer la fonctionnalité Finovox et les formats Apple natifs.")
+          Text(tr("Pour activer la fonctionnalité Finovox et les formats Apple natifs."))
             .font(.system(size: 13))
             .foregroundStyle(.secondary)
         }
       }
-      Text("Activez d’abord Clémentine dans Accessibilité. macOS présentera ensuite les demandes pour Pages, Numbers et Keynote, l’une après l’autre. Les applications Apple absentes seront simplement ignorées.")
+      Text(tr("Activez d’abord Clémentine dans Accessibilité. macOS présentera ensuite les demandes pour Pages, Numbers et Keynote, l’une après l’autre. Les applications Apple absentes seront simplement ignorées."))
         .font(.system(size: 12))
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
@@ -792,7 +792,7 @@ struct PermissionsView: View {
         HStack(spacing: 8) {
           if center.isRequestingAll { ProgressView().controlSize(.small).tint(citrus) }
           else { Image(systemName: "checkmark.shield.fill") }
-          Text(center.isRequestingAll ? "Configuration en cours…" : "Configurer Clémentine")
+          Text(trString(center.isRequestingAll ? "Configuration en cours…" : "Configurer Clémentine"))
             .fontWeight(.semibold)
         }
         .frame(maxWidth: .infinity)
@@ -802,7 +802,7 @@ struct PermissionsView: View {
       .tint(citrus)
       .disabled(center.isRequestingAll)
       if center.isRequestingAll {
-        Button("Annuler") { center.cancelRequests() }
+        Button(tr("Annuler")) { center.cancelRequests() }
           .buttonStyle(.bordered)
       }
     }
@@ -821,8 +821,8 @@ struct PermissionsView: View {
         .frame(width: 42, height: 42)
         .background(citrus.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
       VStack(alignment: .leading, spacing: 4) {
-        Text(permission.title).font(.system(size: 15, weight: .semibold))
-        Text(status == .unavailable ? "Application non installée · aucune autorisation nécessaire." : permission.detail)
+        Text(trString(permission.title)).font(.system(size: 15, weight: .semibold))
+        Text(trString(status == .unavailable ? "Application non installée · aucune autorisation nécessaire." : permission.detail))
           .font(.system(size: 12))
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
@@ -842,8 +842,8 @@ struct PermissionsView: View {
       Image(systemName: "minus.circle.fill")
         .font(.system(size: 20, weight: .medium)).foregroundStyle(.secondary)
         .frame(width: 36, height: 36)
-        .accessibilityLabel("\(permission.title) : app non installée")
-        .help("Application non installée · aucune autorisation à demander")
+        .accessibilityLabel(tr("\(permission.title) : app non installée"))
+        .help(tr("Application non installée · aucune autorisation à demander"))
     } else {
     let granted = status == .granted
     let color = granted ? permissionGreen : Color.red
@@ -859,8 +859,8 @@ struct PermissionsView: View {
         .contentShape(Circle())
     }
     .buttonStyle(.plain)
-    .accessibilityLabel("\(permission.title) : \(status.label)")
-    .help(center.automationIssues[permission] ?? permissionHelp(permission, status: status))
+    .accessibilityLabel(tr("\(permission.title) : \(status.label)"))
+    .help(trString(center.automationIssues[permission] ?? permissionHelp(permission, status: status)))
     .onHover { hover.id = $0 ? "permission-\(permission.id)" : nil }
     .animation(.easeInOut(duration: 0.18), value: hovered)
     }

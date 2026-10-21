@@ -90,10 +90,10 @@ final class AppUpdates: NSObject, ObservableObject {
     guard !isBusy(), !isRestartingInstalledCopy else { return }
     if asking {
       let alert = NSAlert()
-      alert.messageText = "La nouvelle version est déjà installée"
-      alert.informativeText = "Relancez Clémentine pour l’utiliser. Aucun nouveau téléchargement n’est nécessaire."
-      alert.addButton(withTitle: "Relancer Clémentine")
-      alert.addButton(withTitle: "Plus tard")
+      alert.messageText = tr("La nouvelle version est déjà installée")
+      alert.informativeText = tr("Relancez Clémentine pour l’utiliser. Aucun nouveau téléchargement n’est nécessaire.")
+      alert.addButton(withTitle: tr("Relancer Clémentine"))
+      alert.addButton(withTitle: tr("Plus tard"))
       guard alert.runModal() == .alertFirstButtonReturn else { return }
     }
     isRestartingInstalledCopy = true
@@ -258,7 +258,7 @@ struct UpdateSidebarButton: View {
   var body: some View {
     if updates.availableVersion != nil || updates.needsRelaunch {
       Button { updates.checkForUpdates() } label: {
-        Label(updates.needsRelaunch ? "Relancer Clémentine" : "Mettre à jour",
+        Label(trString(updates.needsRelaunch ? "Relancer Clémentine" : "Mettre à jour"),
           systemImage: updates.needsRelaunch ? "arrow.clockwise" : "arrow.down.to.line")
           .font(.system(size: 13, weight: .semibold))
           .padding(11)
@@ -268,7 +268,7 @@ struct UpdateSidebarButton: View {
       }
       .buttonStyle(StableInteractionButtonStyle())
       .disabled(!updates.canCheckForUpdates && !updates.needsRelaunch)
-      .help(updates.needsRelaunch ? "Ouvrir la version déjà installée" : "Installer Clémentine \(updates.availableVersion ?? "")")
+      .help(trString(updates.needsRelaunch ? "Ouvrir la version déjà installée" : "Installer Clémentine \(updates.availableVersion ?? "")"))
       .onHover { hover.active = $0 }
       .animation(.easeInOut(duration: 0.18), value: hover.active)
     }
@@ -282,11 +282,11 @@ struct AppVersionLabel: View {
     VStack(alignment: .leading, spacing: 5) {
     HStack(spacing: 6) {
       ClementineMark(size: 13).saturation(0).opacity(0.6)
-      Text("Clémentine version \(AppUpdates.installedVersion)")
+      Text(tr("Clémentine version \(AppUpdates.installedVersion)"))
         .font(.system(size: 11))
         .foregroundStyle(.secondary)
       Button { updates.checkForUpdates() } label: {
-        Text("Chercher une mise à jour")
+        Text(tr("Chercher une mise à jour"))
           .font(.system(size: 11))
           .foregroundStyle(.secondary)
           .padding(.horizontal, 6).padding(.vertical, 4)
@@ -299,7 +299,7 @@ struct AppVersionLabel: View {
       .animation(.easeInOut(duration: 0.18), value: hover.active)
     }
     if let warning = updates.installationWarning {
-      Text(warning).font(.system(size: 11)).foregroundStyle(.secondary)
+      Text(trString(warning)).font(.system(size: 11)).foregroundStyle(.secondary)
     }
     }
     .padding(.top, 8)

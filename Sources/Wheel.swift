@@ -236,7 +236,7 @@ final class WheelController {
   func showProgress(_ job: Job) {
     let progress = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 330, height: 150),
       styleMask: [.titled, .closable, .utilityWindow, .nonactivatingPanel], backing: .buffered, defer: false)
-    progress.title = job.title
+    progress.title = trString(job.title)
     progress.level = .floating
     progress.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
     progress.hidesOnDeactivate = false
@@ -419,7 +419,7 @@ final class WheelView: NSView {
     selected=nil;visualState.selected=nil
     visualState.count=items.count;visualState.hoverLevels=Array(repeating:0,count:items.count)
     visualState.hasIcons = items.contains { !$0.icon.isEmpty };pressed=nil
-    setAccessibilityLabel("Roue Clémentine : " + items.map(\.title).joined(separator: ", "))
+    setAccessibilityLabel(trString("Roue Clémentine : ") + items.map { trString($0.title) }.joined(separator: ", "))
     needsDisplay = true
   }
   override func updateTrackingAreas() {
@@ -535,7 +535,7 @@ final class WheelView: NSView {
       NSColor.windowBackgroundColor.withAlphaComponent(0.96).setFill()
       NSBezierPath(roundedRect: message, xRadius: 18, yRadius: 18).fill()
       let paragraph = NSMutableParagraphStyle(); paragraph.alignment = .center
-      (emptyText as NSString).draw(in: message.insetBy(dx: 8, dy: 16), withAttributes: [
+      (trString(emptyText) as NSString).draw(in: message.insetBy(dx: 8, dy: 16), withAttributes: [
         .font: NSFont.systemFont(ofSize: 12, weight: .medium), .foregroundColor: NSColor.labelColor, .paragraphStyle: paragraph])
       return
     }
@@ -595,7 +595,7 @@ final class WheelView: NSView {
       width: hubRadius*2, height: hubRadius*2))
     context.restoreGState()
     guard selected != nil || showsIdleCenter else { return }
-    let label=selected.map { items[$0].title } ?? previewLabel ?? fileSizeText
+    let label=trString(selected.map { items[$0].title } ?? previewLabel ?? fileSizeText)
     let toolLabel=visualState.hasIcons && selected != nil
     let height=visualState.centerHeight
     let pill=CGRect(x:center.x-35,y:center.y-height/2,width:70,height:height)
@@ -638,10 +638,10 @@ struct WheelProgress: View {
       VStack(alignment: .leading, spacing: 12) {
         Text(job.files.count == 1 ? job.files[0].lastPathComponent : "\(job.files.count) fichiers").font(.headline).lineLimit(1)
         if !job.done { ProgressView(value: job.progress).tint(citrus) }
-        Text(job.state).font(.caption).foregroundStyle(job.failed ? .red : .secondary).lineLimit(3)
+        Text(trString(job.state)).font(.caption).foregroundStyle(job.failed ? .red : .secondary).lineLimit(3)
         HStack {
           Spacer()
-          if !job.done { Button("Annuler") { state.cancel(id) } }
+          if !job.done { Button(tr("Annuler")) { state.cancel(id) } }
         }
       }.padding(18).frame(width: 330, height: 150)
         .onAppear { if job.done { onDismiss() } }

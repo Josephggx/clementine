@@ -343,13 +343,13 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
           var groups: [String: [[Int]]] = [:]
           for file in self.files {
             guard let doc = PDFDocument(url:file), !doc.isLocked, doc.pageCount > 0 else {
-              throw ClementineError("PDF illisible, vide ou verrouillé : \(file.lastPathComponent)")
+              throw ClementineError(tr("PDF illisible, vide ou verrouillé : \(file.lastPathComponent)"))
             }
             var pages: [Int:NSImage] = [:]
             for i in 0..<doc.pageCount {
               pages[i] = doc.page(at:i)?.thumbnail(of:CGSize(width:150,height:180),for:.mediaBox)
             }
-            guard pages.count == doc.pageCount else { throw ClementineError("Aperçu des pages impossible") }
+            guard pages.count == doc.pageCount else { throw ClementineError(tr("Aperçu des pages impossible")) }
             thumbnails[file] = pages
             groups[file.path] = PDFSplitLayout.individual(count:doc.pageCount)
           }
@@ -392,7 +392,7 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
     return (zip(left,right).map {max($0,$1)},left,right)
   }
   func loadMetadata() throws {
-    guard let exif = Engine.exiftool else { throw ClementineError("ExifTool est absent") }
+    guard let exif = Engine.exiftool else { throw ClementineError(tr("ExifTool est absent")) }
     let json = try Engine().process("/usr/bin/perl",[exif,"-j","-G1","-s",files[0].path])
     let dict = (try JSONSerialization.jsonObject(with:Data(json.utf8)) as? [[String:Any]])?.first ?? [:]
     let writableOutput = try Engine().process("/usr/bin/perl",[exif,"-listw","-s"])

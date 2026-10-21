@@ -15,6 +15,8 @@ subprocess.run(cmd,check=True)
 resources=app/'Contents/Resources';resources.mkdir(exist_ok=True)
 link=resources/'Demo'
 if not link.exists():link.symlink_to(root/'Resources/Demo')
+localization=resources/'Localization'
+if not localization.exists():localization.symlink_to(root/'Resources/Localization')
 identity=os.environ.get('CLEMENTINE_TEST_BUNDLE_ID','io.joseph.clementine.onboardingcheck')
 (app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleExecutable':executable,'CFBundleIdentifier':identity,'CFBundleName':executable,'CFBundlePackageType':'APPL','NSAppleEventsUsageDescription':'Essais isolés des autorisations pour les conversions natives Clémentine.','TestMode':os.environ.get('CLEMENTINE_TEST_MODE',''),'TestRoot':str(root/'.build/onboarding-results')}))
 subprocess.run(['codesign','--force','--sign','-','--identifier',identity,'--requirements','=designated => identifier "'+identity+'"',str(app)],check=True)

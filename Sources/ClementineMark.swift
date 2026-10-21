@@ -50,7 +50,7 @@ struct ClementineMark: View {
     }
     .frame(width: size, height: size)
     .shadow(color: citrus.opacity(0.20), radius: size * 0.08, y: size * 0.03)
-    .accessibilityLabel("Clémentine")
+    .accessibilityLabel(tr("Clémentine"))
   }
 }
 

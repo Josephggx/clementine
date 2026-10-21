@@ -8,6 +8,7 @@ private final class OnboardingState: ObservableObject {
 }
 
 struct OnboardingView: View {
+  @ObservedObject private var language = AppLanguage.shared
   @ObservedObject var state: AppState
   @StateObject private var flow = OnboardingState()
   @StateObject private var permissions = PermissionCenter.shared
@@ -34,6 +35,7 @@ struct OnboardingView: View {
       .padding(.horizontal, 38)
       .padding(.vertical, 24)
     }
+    .id(language.code).environment(\.locale,language.locale)
     .frame(minWidth: 1076, minHeight: 720)
     .onAppear { if state.onboardingPage == 4 { permissions.startMonitoring(owner: flow.permissionOwner) } }
     .onChange(of: state.onboardingPage) { _, page in
@@ -63,7 +65,7 @@ struct OnboardingView: View {
     HStack {
       HStack(spacing: 11) {
         ClementineMark(size: 34)
-        Text("Clémentine")
+        Text(tr("Clémentine"))
           .font(.system(size: 22, weight: .bold, design: .rounded))
       }
       Spacer()
@@ -72,7 +74,7 @@ struct OnboardingView: View {
         permissions.refresh()
         state.completeProductOnboarding()
       } label: {
-        Text("Passer")
+        Text(tr("Passer"))
           .font(.system(size: 12, weight: .medium))
           .foregroundStyle(.secondary)
           .padding(.horizontal, 12).padding(.vertical, 8)
@@ -102,6 +104,18 @@ struct OnboardingView: View {
         move(to: state.onboardingPage - 1)
       }
       Spacer()
+      navButton(id: "next", icon: nextIcon, title: nextTitle, trailingIcon: true) {
+        if state.onboardingPage == pageCount - 1 {
+          if permissions.allRequiredGranted { state.completeProductOnboarding() }
+          else { permissions.requestAll { state.completeProductOnboarding() } }
+        } else { move(to: state.onboardingPage + 1) }
+      }
+      .disabled(permissions.isRequestingAll)
+      LanguagePicker(compact:true).controlSize(.small)
+        .disabled(permissions.isRequestingAll)
+
+    }
+    .overlay {
       HStack(spacing: 8) {
         ForEach(0..<pageCount, id: \.self) { index in
           Button { move(to: index) } label: {
@@ -111,18 +125,9 @@ struct OnboardingView: View {
               .animation(.easeInOut(duration: 0.24), value: state.onboardingPage)
           }
           .buttonStyle(StableInteractionButtonStyle())
-          .accessibilityLabel("Étape \(index + 1)")
+          .accessibilityLabel(tr("Étape \(index + 1)"))
         }
       }
-      Spacer()
-      navButton(id: "next", icon: nextIcon, title: nextTitle, trailingIcon: true) {
-        if state.onboardingPage == pageCount - 1 {
-          if permissions.allRequiredGranted { state.completeProductOnboarding() }
-          else { permissions.requestAll { state.completeProductOnboarding() } }
-        } else { move(to: state.onboardingPage + 1) }
-      }
-      .disabled(permissions.isRequestingAll)
-
     }
     .frame(maxWidth: 1040)
     .padding(.top, 18)
@@ -145,7 +150,7 @@ struct OnboardingView: View {
     return Button(action: action) {
       HStack(spacing: 8) {
         if !trailingIcon { Image(systemName: icon) }
-        Text(title)
+        Text(trString(title))
         if trailingIcon { Image(systemName: icon) }
       }
       .font(.system(size: 13, weight: .semibold))
@@ -178,12 +183,12 @@ private struct OnboardingSlideShell<Content: View>: View {
   var body: some View {
     HStack(spacing: 34) {
       VStack(alignment: .leading, spacing: 18) {
-        Text(eyebrow.uppercased())
+        Text(trString(eyebrow.uppercased()))
           .font(.system(size: 11, weight: .bold)).tracking(1.6).foregroundStyle(citrus)
-        Text(title)
+        Text(trString(title))
           .font(.system(size: 35, weight: .bold, design: .rounded))
           .fixedSize(horizontal: false, vertical: true)
-        Text(detail)
+        Text(trString(detail))
           .font(.system(size: 16)).foregroundStyle(.secondary)
           .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
         Spacer(minLength: 0)
@@ -204,8 +209,8 @@ private struct ShortcutBadge: View {
   let title: String
   var body: some View {
     HStack(spacing: 9) {
-      Text(symbol).font(.system(size: 16, weight: .semibold))
-      Text(title).font(.system(size: 12, weight: .semibold))
+      Text(trString(symbol)).font(.system(size: 16, weight: .semibold))
+      Text(trString(title)).font(.system(size: 12, weight: .semibold))
     }
     .foregroundStyle(citrus)
     .padding(.horizontal, 13).frame(height: 38)
@@ -296,8 +301,8 @@ private struct OnboardingDragDemo: View {
           Color.black.opacity(0.17)
           HStack(spacing: 7) {
             Image(systemName: "apple.logo")
-            Text("Finder").fontWeight(.semibold)
-            Text("Fichier   Édition   Présentation")
+            Text(tr("Finder")).fontWeight(.semibold)
+            Text(tr("Fichier   Édition   Présentation"))
           }.font(.system(size: 9)).foregroundStyle(.white.opacity(0.95))
             .padding(.horizontal, 12).frame(width: geometry.size.width, height: 24, alignment: .leading)
             .background(.black.opacity(0.22))
@@ -326,9 +331,9 @@ private struct OnboardingDragDemo: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 11))
             .overlay(RoundedRectangle(cornerRadius: 11).stroke(citrus.opacity(visible ? 1 : 0), lineWidth: 2))
             .padding(.leading, 16).padding(.top, 40)
-          Text(time < 0.6 ? "Cliquez et maintenez" : time < 1.9 ? "Glissez le fichier" :
+          Text(trString(time < 0.6 ? "Cliquez et maintenez" : time < 1.9 ? "Glissez le fichier" :
             time < 2.5 ? (actions ? "Appuyez sur Option" : "Appuyez sur Maj") :
-            time < 4.65 ? "Choisissez puis relâchez" : actions ? "Action lancée !" : "C’est fait !")
+            time < 4.65 ? "Choisissez puis relâchez" : actions ? "Action lancée !" : "C’est fait !"))
             .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
             .padding(.horizontal, 14).padding(.vertical, 9)
             .background(.black.opacity(0.38), in: Capsule())
@@ -348,7 +353,7 @@ private struct OnboardingDragDemo: View {
       Image(systemName: icon).font(.system(size: 28, weight: .regular))
         .foregroundStyle(citrus).frame(width: 48, height: 55)
         .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 7))
-      Text(name).font(.system(size: 10, weight: .medium)).foregroundStyle(.white)
+      Text(trString(name)).font(.system(size: 10, weight: .medium)).foregroundStyle(.white)
         .padding(.horizontal, 5).padding(.vertical, 2).background(.black.opacity(0.3), in: Capsule())
     }.frame(width: 112)
   }
@@ -409,10 +414,10 @@ private struct OnboardingToolCard: View {
     VStack(alignment: .leading, spacing: 8) {
       HStack(spacing: 9) {
         WheelGlyphView(key: example.icon).frame(width: 22, height: 22)
-        Text(example.tool.wheelTitle).font(.system(size: 11, weight: .bold))
+        Text(trString(example.tool.wheelTitle)).font(.system(size: 11, weight: .bold))
         Spacer(minLength: 0)
       }
-      Text(FeatureToolCopy.forTool(example.tool).summary)
+      Text(trString(FeatureToolCopy.forTool(example.tool).summary))
         .font(.system(size: 10)).foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
       illustration.frame(height: 58).clipped().clipShape(RoundedRectangle(cornerRadius: 6))
@@ -444,9 +449,9 @@ private struct OnboardingWorkspaceSlide: View {
       detail: "Ajoutez vos fichiers, contrôlez leur aperçu, puis lancez une conversion, un outil ou une action depuis la même fenêtre.") {
       VStack(spacing: 13) {
         HStack {
-          Text("Atelier").font(.system(size:16,weight:.bold,design:.rounded))
+          Text(tr("Atelier")).font(.system(size:16,weight:.bold,design:.rounded))
           Spacer()
-          Label("Ajouter des fichiers",systemImage:"plus")
+          Label(tr("Ajouter des fichiers"),systemImage:"plus")
             .font(.system(size:10,weight:.semibold)).foregroundStyle(.white)
             .padding(.horizontal,11).frame(height:28).background(citrus,in:Capsule())
         }
@@ -476,15 +481,15 @@ private struct OnboardingWorkspaceSlide: View {
     HStack(spacing:9) {
       Image(systemName:name.hasSuffix("pdf") ? "doc.richtext" : "photo")
         .foregroundStyle(citrus).frame(width:27,height:27).background(citrus.opacity(0.11),in:RoundedRectangle(cornerRadius:7))
-      VStack(alignment:.leading,spacing:2) {Text(name).font(.system(size:10,weight:.semibold));Text(detail).font(.system(size:8)).foregroundStyle(.secondary)}
+      VStack(alignment:.leading,spacing:2) {Text(trString(name)).font(.system(size:10,weight:.semibold));Text(trString(detail)).font(.system(size:8)).foregroundStyle(.secondary)}
       Spacer();Image(systemName:"eye.fill").font(.system(size:9)).foregroundStyle(citrus)
     }.padding(9).background(Color.clementineSurface,in:RoundedRectangle(cornerRadius:10))
   }
   private func mockColumn(_ title:String,_ values:[(String, String)])->some View {
     VStack(alignment:.leading,spacing:7) {
-      Text(title).font(.system(size:10,weight:.semibold))
+      Text(trString(title)).font(.system(size:10,weight:.semibold))
       ForEach(values,id:\.0) { value in
-        HStack {WheelGlyphView(key:value.1).frame(width:12,height:12);Text(value.0);Spacer();Image(systemName:"chevron.right").foregroundStyle(.secondary)}
+        HStack {WheelGlyphView(key:value.1).frame(width:12,height:12);Text(trString(value.0));Spacer();Image(systemName:"chevron.right").foregroundStyle(.secondary)}
           .font(.system(size:9,weight:.medium)).padding(.horizontal,9).frame(height:29)
           .background(Color.clementineSurface,in:RoundedRectangle(cornerRadius:8))
       }
@@ -505,8 +510,8 @@ private struct OnboardingPermissionsSlide: View {
               .foregroundStyle(status == .unavailable ? Color.secondary : citrus)
               .frame(width:34,height:34).background(citrus.opacity(0.10),in:RoundedRectangle(cornerRadius:9))
             VStack(alignment:.leading,spacing:2) {
-              Text(permission.title).font(.system(size:13,weight:.semibold))
-              Text(status == .unavailable ? "Application non installée · aucune autorisation nécessaire." : permission.detail)
+              Text(trString(permission.title)).font(.system(size:13,weight:.semibold))
+              Text(trString(status == .unavailable ? "Application non installée · aucune autorisation nécessaire." : permission.detail))
                 .font(.system(size:10)).foregroundStyle(.secondary).lineLimit(2)
             }
             Spacer()

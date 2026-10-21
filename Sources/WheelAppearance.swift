@@ -99,7 +99,8 @@ enum WheelGlyph {
       }
     }
   }
-  static func text(_ text: String, centeredAt point: CGPoint, font: NSFont, color: NSColor, tracking: CGFloat) {
+  static func text(_ source: String, centeredAt point: CGPoint, font: NSFont, color: NSColor, tracking: CGFloat) {
+    let text = trString(source)
     let line=CTLineCreateWithAttributedString(NSAttributedString(string:text,attributes:[.font:font,.foregroundColor:color,.kern:tracking]))
     guard let c=NSGraphicsContext.current?.cgContext else{return}
     c.saveGState();c.textMatrix = .identity

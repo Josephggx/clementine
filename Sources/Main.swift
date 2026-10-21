@@ -8,7 +8,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   var wheel: WheelController!
   var modules: [UUID: ModuleWindowController] = [:]
   var floats: [FloatController] = []
+  var languageObserver: NSObjectProtocol?
+  var menuSourceTitles: [ObjectIdentifier:String] = [:]
   var appearanceObserver: NSObjectProtocol?
+  private func localizeMenus() {
+    func update(_ menu:NSMenu?) {
+      guard let menu else { return }
+      for item in menu.items {
+        let key = ObjectIdentifier(item)
+        if menuSourceTitles[key] == nil { menuSourceTitles[key] = item.title }
+        item.title = trString(menuSourceTitles[key]!)
+        update(item.submenu)
+      }
+    }
+    update(status?.menu); update(NSApp.mainMenu)
+  }
   func applicationDidFinishLaunching(_ notification: Notification) {
     // Clémentine behaves as a menu-bar utility while its main window is
     // closed. `show()` restores the regular Dock presence when needed.
@@ -103,6 +117,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     editItem.submenu = edit
     mainMenu.addItem(editItem)
     NSApp.mainMenu = mainMenu
+    localizeMenus()
+    languageObserver = NotificationCenter.default.addObserver(forName:AppLanguage.changed,object:nil,queue:.main) { [weak self] _ in self?.localizeMenus() }
     wheel = WheelController(state: state)
     wheel.start()
     AppUpdates.shared.start(isBusy: { [weak self] in
@@ -163,10 +179,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   @objc func quit() {
     if state.running {
       let alert = NSAlert()
-      alert.messageText = "Des traitements sont en cours"
-      alert.informativeText = "Quitter interrompra les opérations. Les originaux sont conservés."
-      alert.addButton(withTitle: "Continuer les traitements")
-      alert.addButton(withTitle: "Quitter")
+      alert.messageText = tr("Des traitements sont en cours")
+      alert.informativeText = tr("Quitter interrompra les opérations. Les originaux sont conservés.")
+      alert.addButton(withTitle: tr("Continuer les traitements"))
+      alert.addButton(withTitle: tr("Quitter"))
       if alert.runModal() == .alertFirstButtonReturn { return }
     }
     NSApp.terminate(nil)

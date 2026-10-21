@@ -173,14 +173,14 @@ final class AppState: ObservableObject {
     let p = NSOpenPanel()
     p.allowsMultipleSelection = true
     p.canChooseDirectories = true
-    p.message = "Choisissez les fichiers à traiter localement"
+    p.message = tr("Choisissez les fichiers à traiter localement")
     if p.runModal() == .OK { add(p.urls) }
   }
   func folder() {
     let p = NSOpenPanel()
     p.canChooseDirectories = true
     p.canChooseFiles = false
-    p.prompt = "Choisir"
+    p.prompt = tr("Choisir")
     if p.runModal() == .OK { options.outputFolder = p.url!.path }
   }
   var showModule: ((String,[URL]) -> Void)?

@@ -15,11 +15,11 @@ enum RichDocuments {
     if input == "epub" {document=try epub(source,root:root,engine:engine)}
     else if input == "md" {
       let resources=ProcessInfo.processInfo.environment["CLEMENTINE_RESOURCES"].map{URL(fileURLWithPath:$0)} ?? Bundle.main.resourceURL!
-      guard let context=JSContext(),let js=try? String(contentsOf:resources.appendingPathComponent("marked.umd.js"),encoding:.utf8) else {throw ClementineError("Le moteur Markdown local est absent")}
+      guard let context=JSContext(),let js=try? String(contentsOf:resources.appendingPathComponent("marked.umd.js"),encoding:.utf8) else {throw ClementineError(tr("Le moteur Markdown local est absent"))}
       context.evaluateScript(js)
       let text=try Documents.read(source,engine:engine)
       let rendered=context.objectForKeyedSubscript("marked")?.objectForKeyedSubscript("parse")?.call(withArguments:[text])
-      guard context.exception == nil,let html=rendered?.toString() else {throw ClementineError("Markdown illisible")}
+      guard context.exception == nil,let html=rendered?.toString() else {throw ClementineError(tr("Markdown illisible"))}
       document=try parse(DocumentFidelity.html(html));try localize(document,base:source.deletingLastPathComponent(),root:root)
     } else if input == "rtfd" {
       let file=root.appendingPathComponent("Imported.html")
@@ -30,7 +30,7 @@ enum RichDocuments {
       // A clipping can contain rich RTFD, RTF or plain text. Prefer the richest representation.
       let attr: NSAttributedString
       if let rich=try clipping(source) {attr=rich}
-      else {throw ClementineError("Ce texte extrait n’a pas de contenu riche lisible. Enregistrez-le en RTFD depuis son application.")}
+      else {throw ClementineError(tr("Ce texte extrait n’a pas de contenu riche lisible. Enregistrez-le en RTFD depuis son application."))}
       let data=try attr.data(from:NSRange(location:0,length:attr.length),documentAttributes:[.documentType:NSAttributedString.DocumentType.html])
       document=try parse(String(data:data,encoding:.utf8) ?? "")
       try localize(document,base:source.deletingLastPathComponent(),root:root)
@@ -86,7 +86,7 @@ enum RichDocuments {
           data.count <= 128*1024*1024,
           let source=CGImageSourceCreateWithData(data as CFData,nil),
           let pixels=CGImageSourceCreateImageAtIndex(source,0,nil) else {
-          throw ClementineError("Une illustration du document ne peut pas être exportée en Markdown.")
+          throw ClementineError(tr("Une illustration du document ne peut pas être exportée en Markdown."))
         }
         let filename:String
         if let previous=exported[data] {filename=previous}
@@ -126,7 +126,7 @@ enum RichDocuments {
     return nil
   }
   static func parse(_ html:String) throws -> XMLDocument {
-    guard html.utf8.count<=128*1024*1024,!html.localizedCaseInsensitiveContains("<!ENTITY") else {throw ClementineError("Document HTML trop volumineux ou illisible")}
+    guard html.utf8.count<=128*1024*1024,!html.localizedCaseInsensitiveContains("<!ENTITY") else {throw ClementineError(tr("Document HTML trop volumineux ou illisible"))}
     return try XMLDocument(xmlString:html,options:[.documentTidyHTML,.nodeLoadExternalEntitiesNever])
   }
   static func localize(_ doc:XMLDocument,base:URL,root:URL) throws {
@@ -146,15 +146,15 @@ enum RichDocuments {
       guard let e=node as? XMLElement,let src=e.attribute(forName:"src")?.stringValue else{continue}
       if src.hasPrefix("data:image/") {continue}
       let u=URL(string:src,relativeTo:URL(fileURLWithPath:base.path,isDirectory:true)).map{$0.absoluteURL}
-      guard let u,u.isFileURL else {throw ClementineError("Une illustration distante ne peut pas être intégrée hors ligne. Enregistrez-la à côté du document.")}
+      guard let u,u.isFileURL else {throw ClementineError(tr("Une illustration distante ne peut pas être intégrée hors ligne. Enregistrez-la à côté du document."))}
       var resolved=u
       if !FileManager.default.fileExists(atPath:resolved.path) {
         let attachment=base.appendingPathComponent(u.lastPathComponent)
         if FileManager.default.fileExists(atPath:attachment.path) {resolved=attachment}
       }
       let data:Data
-      do {data=try Data(contentsOf:resolved)} catch {throw ClementineError("Illustration locale introuvable : \(resolved.path)")}
-      guard data.count <= 128*1024*1024, let image=NSImage(data:data),let cg=image.cgImage(forProposedRect:nil,context:nil,hints:nil) else {throw ClementineError("Illustration locale illisible : \(u.lastPathComponent)")}
+      do {data=try Data(contentsOf:resolved)} catch {throw ClementineError(tr("Illustration locale introuvable : \(resolved.path)"))}
+      guard data.count <= 128*1024*1024, let image=NSImage(data:data),let cg=image.cgImage(forProposedRect:nil,context:nil,hints:nil) else {throw ClementineError(tr("Illustration locale illisible : \(u.lastPathComponent)"))}
       let png=NSBitmapImageRep(cgImage:cg).representation(using:.png,properties:[:])!
       e.removeAttribute(forName:"src");e.addAttribute(XMLNode.attribute(withName:"src",stringValue:"data:image/png;base64,"+png.base64EncodedString()) as! XMLNode)
     }
@@ -162,11 +162,11 @@ enum RichDocuments {
   static func epub(_ source:URL,root:URL,engine:Engine) throws -> XMLDocument {
     let expanded=try engine.extract(source,stage:root)
     let container=try XMLDocument(contentsOf:expanded.appendingPathComponent("META-INF/container.xml"),options:.nodeLoadExternalEntitiesNever)
-    guard let opf=(try container.nodes(forXPath:"//*[local-name()='rootfile']/@full-path").first)?.stringValue else{throw ClementineError("EPUB sans manifeste")}
+    guard let opf=(try container.nodes(forXPath:"//*[local-name()='rootfile']/@full-path").first)?.stringValue else{throw ClementineError(tr("EPUB sans manifeste"))}
     func safe(_ path:String,base:URL) throws -> URL {
-      guard let u=URL(string:path,relativeTo:URL(fileURLWithPath:base.path,isDirectory:true))?.absoluteURL,u.isFileURL else {throw ClementineError("Référence EPUB invalide")}
+      guard let u=URL(string:path,relativeTo:URL(fileURLWithPath:base.path,isDirectory:true))?.absoluteURL,u.isFileURL else {throw ClementineError(tr("Référence EPUB invalide"))}
       let result=u.standardizedFileURL.resolvingSymlinksInPath(),prefix=expanded.standardizedFileURL.resolvingSymlinksInPath().path+"/"
-      guard result.path.hasPrefix(prefix) else{throw ClementineError("Une ressource EPUB sort du livre")};return result
+      guard result.path.hasPrefix(prefix) else{throw ClementineError(tr("Une ressource EPUB sort du livre"))};return result
     }
     let package=try safe(opf,base:expanded),manifest=try XMLDocument(contentsOf:package,options:.nodeLoadExternalEntitiesNever)
     var items:[String:String]=[:]
@@ -174,13 +174,13 @@ enum RichDocuments {
     var content=""
     for node in try manifest.nodes(forXPath:"//*[local-name()='spine']/*[local-name()='itemref']") {
       try engine.token.check()
-      guard let e=node as? XMLElement,let id=e.attribute(forName:"idref")?.stringValue,let href=items[id] else{throw ClementineError("Chapitre EPUB manquant")}
+      guard let e=node as? XMLElement,let id=e.attribute(forName:"idref")?.stringValue,let href=items[id] else{throw ClementineError(tr("Chapitre EPUB manquant"))}
       let u=try safe(href,base:package.deletingLastPathComponent()),chapter=try parse(String(contentsOf:u,encoding:.utf8))
       try localize(chapter,base:u.deletingLastPathComponent(),root:root)
-      guard let body=(try chapter.nodes(forXPath:"//*[local-name()='body']").first) else{throw ClementineError("Chapitre EPUB sans contenu")}
+      guard let body=(try chapter.nodes(forXPath:"//*[local-name()='body']").first) else{throw ClementineError(tr("Chapitre EPUB sans contenu"))}
       content += "<section>"+(body.children ?? []).map{$0.xmlString}.joined()+"</section>"
     }
-    guard !content.isEmpty else{throw ClementineError("EPUB vide")};return try parse(DocumentFidelity.html(content))
+    guard !content.isEmpty else{throw ClementineError(tr("EPUB vide"))};return try parse(DocumentFidelity.html(content))
   }
   static func plainText(_ node:XMLNode)->String {
     if node.kind == .text {return node.stringValue ?? ""}

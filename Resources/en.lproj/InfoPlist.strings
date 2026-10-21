@@ -1,0 +1,6 @@
+"NSAppleEventsUsageDescription" = "Clémentine uses Pages, Numbers or Keynote to create the native Apple files you request. Your original files are kept.";
+"NSDesktopFolderUsageDescription" = "Clémentine accesses only the Desktop files you choose, to convert them or save results next to the originals.";
+"NSDocumentsFolderUsageDescription" = "Clémentine accesses only the documents you choose, to convert them or save results next to the originals.";
+"NSDownloadsFolderUsageDescription" = "Clémentine accesses only the downloaded files you choose, to convert them or save results next to the originals.";
+"NSRemovableVolumesUsageDescription" = "Clémentine accesses only the files you choose on an external drive.";
+"NSNetworkVolumesUsageDescription" = "Clémentine accesses only the files you choose on a network volume.";

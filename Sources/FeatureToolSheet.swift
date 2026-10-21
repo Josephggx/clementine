@@ -80,24 +80,24 @@ struct FeatureToolSheet: View {
       if hasNativeModule { scaledModule }
       else { directActionIllustration.frame(width: 430, height: 500) }
       VStack(alignment: .leading, spacing: 18) {
-        Text(family.rawValue.uppercased())
+        Text(trString(family.rawValue.uppercased()))
           .font(.system(size: 10, weight: .semibold)).tracking(1.5).foregroundStyle(citrus)
-        Text(tool.name).font(.system(size: 31, weight: .semibold, design: .rounded))
-        Text(copy.summary).font(.system(size: 15)).foregroundStyle(.secondary)
+        Text(trString(tool.name)).font(.system(size: 31, weight: .semibold, design: .rounded))
+        Text(trString(copy.summary)).font(.system(size: 15)).foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
         Divider()
         ForEach(copy.benefits, id: \.self) { benefit in
-          Label(benefit, systemImage: "checkmark")
+          Label(trString(benefit), systemImage: "checkmark")
             .font(.system(size: 13)).labelStyle(.titleAndIcon)
         }
         if viewState.invalidSelection {
-          Text(tool.id == "archive"
+          Text(trString(tool.id == "archive"
             ? "Choisissez au moins un fichier à compresser."
-            : "Choisissez \(tool.group ? "au moins deux fichiers" : "un fichier") compatible\(tool.group ? "s" : "") avec cet outil.")
+            : "Choisissez \(tool.group ? "au moins deux fichiers" : "un fichier") compatible\(tool.group ? "s" : "") avec cet outil."))
             .font(.caption).foregroundStyle(.red)
         }
         Button(action: chooseFiles) {
-          Label("Essayer", systemImage: "arrow.up.doc")
+          Label(tr("Essayer"), systemImage: "arrow.up.doc")
         }
         .buttonStyle(.borderedProminent).tint(citrus).controlSize(.large)
       }
@@ -125,7 +125,7 @@ struct FeatureToolSheet: View {
     .buttonStyle(.plain)
     .onHover { viewState.closeHovered = $0 }
     .animation(.easeOut(duration: 0.16), value: viewState.closeHovered)
-    .help("Fermer")
+    .help(tr("Fermer"))
   }
 
   private var scaledModule: some View {
@@ -146,7 +146,7 @@ struct FeatureToolSheet: View {
   private var directActionIllustration: some View {
     VStack(spacing: 18) {
       Image(systemName: tool.icon).font(.system(size: 65, weight: .ultraLight))
-      Text(tool.name).font(.system(size: 19, weight: .semibold, design: .rounded))
+      Text(trString(tool.name)).font(.system(size: 19, weight: .semibold, design: .rounded))
     }
     .foregroundStyle(citrus)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -158,7 +158,7 @@ struct FeatureToolSheet: View {
     let panel = NSOpenPanel()
     panel.allowsMultipleSelection = tool.group
     panel.canChooseDirectories = false
-    panel.message = "Choisissez \(tool.group ? "les fichiers" : "le fichier") à tester"
+    panel.message = tool.group ? tr("Choisissez les fichiers à tester") : tr("Choisissez le fichier à tester")
     guard panel.runModal() == .OK else { return }
     viewState.invalidSelection = !onTry(panel.urls)
   }

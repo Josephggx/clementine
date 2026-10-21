@@ -95,12 +95,14 @@ enum Family: String, CaseIterable {
   }
 }
 struct Tool: Identifiable, Hashable {
-  let id: String, name: String, icon: String
+  let id: String, icon: String
+  private let sourceName: String
+  var name: String { trString(sourceName) }
   let families: [Family]
   let group: Bool
   init(_ id: String, _ name: String, _ icon: String, _ families: [Family], group: Bool = false) {
     self.id = id
-    self.name = name
+    self.sourceName = name
     self.icon = icon
     self.families = families
     self.group = group
@@ -282,7 +284,7 @@ struct Job: Identifiable {
 struct ClementineError: LocalizedError {
   let message: String
   init(_ message: String) { self.message = message }
-  var errorDescription: String? { message }
+  var errorDescription: String? { trString(message) }
 }
 final class CancellationToken: @unchecked Sendable {
   private let lock = NSLock()
@@ -292,12 +294,12 @@ final class CancellationToken: @unchecked Sendable {
     lock.lock()
     let c = cancelled
     lock.unlock()
-    if c { throw ClementineError("Opération annulée") }
+    if c { throw ClementineError(tr("Opération annulée")) }
   }
   func attach(_ p: Process) throws {
     lock.lock()
     defer { lock.unlock() }
-    if cancelled { throw ClementineError("Opération annulée") }
+    if cancelled { throw ClementineError(tr("Opération annulée")) }
     process = p
   }
   func cancel() {

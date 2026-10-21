@@ -47,12 +47,12 @@ final class FinovoxUploader {
     guard !busy else { panel?.orderFront(nil); return }
     guard pendingAccessibilityURLs.isEmpty else { return }
     guard Self.accepts(urls) else {
-      alert("Format non pris en charge", "Finovox accepte PDF, PNG, JPG, TIFF et ZIP. Sélectionnez uniquement des fichiers dans ces formats.")
+      alert(tr("Format non pris en charge"), "Finovox accepte PDF, PNG, JPG, TIFF et ZIP. Sélectionnez uniquement des fichiers dans ces formats.")
       return
     }
     guard AXIsProcessTrusted() else {pendingAccessibilityURLs=urls;showAccessibilityRepair();return}
     guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.google.Chrome") else {
-      alert("Chrome requis", "L’import utilise votre session Finovox connectée dans Google Chrome.")
+      alert(tr("Chrome requis"), "L’import utilise votre session Finovox connectée dans Google Chrome.")
       return
     }
     queue = urls
@@ -102,14 +102,14 @@ final class FinovoxUploader {
     p.title = "Finovox"; p.isReleasedWhenClosed = false; p.level = .floating
     let effect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 420, height: 145))
     effect.material = .hudWindow; effect.blendingMode = .behindWindow; effect.state = .active
-    let text = NSTextField(wrappingLabelWithString: "Ouverture de Finovox…")
+    let text = NSTextField(wrappingLabelWithString: tr("Ouverture de Finovox…"))
     text.frame = NSRect(x: 20, y: 60, width: 380, height: 65); effect.addSubview(text); label = text
     let indicator = NSHostingView(rootView:
       ProgressView().progressViewStyle(.linear).tint(citrus).frame(width: 380))
     indicator.frame = NSRect(x: 20, y: 43, width: 380, height: 8)
     effect.addSubview(indicator)
     progressIndicator = indicator
-    let cancel = NSButton(title: "Arrêter", target: self, action: #selector(cancelUpload))
+    let cancel = NSButton(title: tr("Arrêter"), target: self, action: #selector(cancelUpload))
     cancel.frame = NSRect(x: 300, y: 12, width: 100, height: 30); effect.addSubview(cancel)
     p.contentView = effect; p.center(); p.orderFrontRegardless(); panel = p
   }
@@ -183,7 +183,7 @@ final class FinovoxUploader {
       preferredChromeWindow = context.window
       begin("ready", seconds: 15)
     } else if stage == "ready" {
-      label?.stringValue = "Recherche du bouton d’import…\n\(completed + 1) / \(completed + queue.count) · \(file.lastPathComponent)"
+      label?.stringValue = tr("Recherche du bouton d’import…\n\(completed + 1) / \(completed + queue.count) · \(file.lastPathComponent)")
       guard let context = authenticatedFinovoxContext(chrome) else {
         if let existing = finovoxContext(chrome) {
           switch FinovoxImportPage.route(for: webURL(existing.web)) {
@@ -229,7 +229,7 @@ final class FinovoxUploader {
       // its accessibility tree. Reassert activation because a nonactivating
       // wheel panel can otherwise leave Finder in front after the drop.
       guard NSWorkspace.shared.frontmostApplication?.processIdentifier == chrome.processIdentifier else {
-        label?.stringValue = "Activation de Chrome…\n\(file.lastPathComponent)"
+        label?.stringValue = tr("Activation de Chrome…\n\(file.lastPathComponent)")
         focus(chrome, window: context.window)
         return
       }
@@ -273,7 +273,7 @@ final class FinovoxUploader {
         (attr(open, kAXEnabledAttribute) as? Bool) == true else { return }
       guard press(open) else { fail("Le sélecteur n’a pas accepté le fichier."); return }
       handedOff = true
-      label?.stringValue = "Envoi dans \(organization ?? "Finovox")…\n\(file.lastPathComponent)"
+      label?.stringValue = tr("Envoi dans \(organization ?? "Finovox")…\n\(file.lastPathComponent)")
       begin("verify", seconds: 12)
     } else if stage == "verify" {
       // Confirm delivery to the SaaS, not its analysis or table rendering.
@@ -312,9 +312,9 @@ final class FinovoxUploader {
     onCompletion?(success, message)
     progressIndicator?.removeFromSuperview(); progressIndicator = nil
     if success { closePanel(); return }
-    label?.stringValue = message
+    label?.stringValue = trString(message)
     if let button = panel?.contentView?.subviews.compactMap({ $0 as? NSButton }).first {
-      button.title = "Fermer"; button.action = #selector(closePanel)
+      button.title = tr("Fermer"); button.action = #selector(closePanel)
     }
   }
   @objc private func closePanel() {
@@ -325,14 +325,14 @@ final class FinovoxUploader {
     let remaining=message.replacingOccurrences(of:"Aucun fichier n’a été envoyé.",with:"Aucun fichier restant n’a été envoyé.")
     finish("\(completed) fichier\(completed>1 ? "s" : "") déjà remis à Finovox. \(remaining)")
   }
-  private func alert(_ title: String, _ message: String) { let a = NSAlert(); a.messageText = title; a.informativeText = message; NSApp.activate(ignoringOtherApps: true); a.runModal() }
+  private func alert(_ title: String, _ message: String) { let a = NSAlert(); a.messageText = trString(title); a.informativeText = trString(message); NSApp.activate(ignoringOtherApps: true); a.runModal() }
   private func showAccessibilityRepair() {
     let a = NSAlert()
-    a.messageText = "Clémentine n’a pas accès à Chrome"
-    a.informativeText = "macOS conserve parfois l’autorisation de l’ancienne version après une mise à jour, même si l’interrupteur Clémentine reste bleu. Réparer retire uniquement cette autorisation obsolète, puis affiche la demande correcte. L’import reprendra automatiquement dès que l’accès sera activé. Aucun mot de passe ni contenu de navigation n’est lu."
-    a.addButton(withTitle:"Réparer l’autorisation")
-    a.addButton(withTitle:"Ouvrir les réglages")
-    a.addButton(withTitle:"Annuler")
+    a.messageText = tr("Clémentine n’a pas accès à Chrome")
+    a.informativeText = tr("macOS conserve parfois l’autorisation de l’ancienne version après une mise à jour, même si l’interrupteur Clémentine reste bleu. Réparer retire uniquement cette autorisation obsolète, puis affiche la demande correcte. L’import reprendra automatiquement dès que l’accès sera activé. Aucun mot de passe ni contenu de navigation n’est lu.")
+    a.addButton(withTitle:tr("Réparer l’autorisation"))
+    a.addButton(withTitle:tr("Ouvrir les réglages"))
+    a.addButton(withTitle:tr("Annuler"))
     NSApp.activate(ignoringOtherApps:true)
     switch a.runModal() {
     case .alertFirstButtonReturn: repairAccessibilityPermission()

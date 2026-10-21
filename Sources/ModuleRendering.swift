@@ -6,9 +6,9 @@ import AVFoundation
 extension Engine {
   func validateModuleOptions(_ o:Options) throws {
     let values = [o.loudnessRange,o.truePeak,o.corners,o.shadow,o.backgroundBlur,o.silenceThreshold] + Array(o.photoAdjustments.values)
-    guard values.allSatisfy({$0.isFinite}),o.loudnessRange>=1,o.loudnessRange<=50,o.truePeak<=0,o.truePeak>=(-20),o.corners>=0,o.corners<=2000,o.shadow>=0,o.shadow<=1000,o.backgroundBlur>=0,o.backgroundBlur<=200,o.columns>=1,o.columns<=100 else {throw ClementineError("Paramètres du module invalides")}
+    guard values.allSatisfy({$0.isFinite}),o.loudnessRange>=1,o.loudnessRange<=50,o.truePeak<=0,o.truePeak>=(-20),o.corners>=0,o.corners<=2000,o.shadow>=0,o.shadow<=1000,o.backgroundBlur>=0,o.backgroundBlur<=200,o.columns>=1,o.columns<=100 else {throw ClementineError(tr("Paramètres du module invalides"))}
     for mark in o.marks {
-      guard [mark.x,mark.y,mark.width,mark.height,mark.size,mark.start,mark.end].allSatisfy({$0.isFinite}),mark.x>=0,mark.y>=0,mark.width>=0,mark.height>=0,mark.x+mark.width<=1.0001,mark.y+mark.height<=1.0001,mark.size>0,mark.size<=1000,mark.start>=0,mark.end>mark.start,mark.points.allSatisfy({$0.x.isFinite && $0.y.isFinite && $0.x>=0 && $0.y>=0 && $0.x<=1 && $0.y<=1}) else {throw ClementineError("Zone ou annotation invalide")}
+      guard [mark.x,mark.y,mark.width,mark.height,mark.size,mark.start,mark.end].allSatisfy({$0.isFinite}),mark.x>=0,mark.y>=0,mark.width>=0,mark.height>=0,mark.x+mark.width<=1.0001,mark.y+mark.height<=1.0001,mark.size>0,mark.size<=1000,mark.start>=0,mark.end>mark.start,mark.points.allSatisfy({$0.x.isFinite && $0.y.isFinite && $0.x>=0 && $0.y>=0 && $0.x<=1 && $0.y<=1}) else {throw ClementineError(tr("Zone ou annotation invalide"))}
       if mark.kind == "image" {_=try loadImage(URL(fileURLWithPath:mark.text))}
     }
     if !o.backgroundImage.isEmpty {_=try loadImage(URL(fileURLWithPath:o.backgroundImage))}
@@ -179,7 +179,7 @@ extension Engine {
     let w = Int(Double(width)*factor), h = Int(Double(height)*factor)
     let columns = o.collageStyle == "Row" ? urls.count : o.collageStyle == "Column" ? 1 : max(1,o.columns)
     let rows = Int(ceil(Double(urls.count)/Double(columns)))
-    guard Double(w)>2*o.collagePadding*factor+o.collageSpacing*factor*Double(columns-1),Double(h)>2*o.collagePadding*factor+o.collageSpacing*factor*Double(rows-1) else {throw ClementineError("L’espacement dépasse la taille du collage")}
+    guard Double(w)>2*o.collagePadding*factor+o.collageSpacing*factor*Double(columns-1),Double(h)>2*o.collagePadding*factor+o.collageSpacing*factor*Double(rows-1) else {throw ClementineError(tr("L’espacement dépasse la taille du collage"))}
     let images = try urls.map {try loadImage($0)}
     let spacing = o.collageSpacing*factor, padding = o.collagePadding*factor
     return try canvas(width:w,height:h) { c in
@@ -200,19 +200,19 @@ extension Engine {
     }
   }
   func moduleMetadata(_ source: URL, stage: URL, options o: Options) throws -> URL {
-    guard let exif = Self.exiftool else { throw ClementineError("ExifTool est absent") }
+    guard let exif = Self.exiftool else { throw ClementineError(tr("ExifTool est absent")) }
     let destination = output(source,source.pathExtension,stage,suffix:"-metadata")
     if Family.of(source) == .pdf,o.metadataRemoveAll {
-      guard let original=PDFDocument(url:source),!original.isLocked else {throw ClementineError("PDF illisible ou verrouillé")}
+      guard let original=PDFDocument(url:source),!original.isLocked else {throw ClementineError(tr("PDF illisible ou verrouillé"))}
       let clean=PDFDocument()
       for index in 0..<original.pageCount {if let page=original.page(at:index)?.copy() as? PDFPage {clean.insert(page,at:clean.pageCount)}}
       clean.documentAttributes=[:]
-      guard clean.write(to:destination) else {throw ClementineError("Écriture du PDF impossible")}
+      guard clean.write(to:destination) else {throw ClementineError(tr("Écriture du PDF impossible"))}
     } else {try fm.copyItem(at:source,to:destination)}
     var args = [exif,"-overwrite_original"]
     if o.metadataRemoveAll { args.append("-all=") }
     for key in o.metadataChanges.keys.sorted() {
-      guard key.range(of:"^[A-Za-z0-9_:.-]+$",options:.regularExpression) != nil else { throw ClementineError("Champ de métadonnées invalide") }
+      guard key.range(of:"^[A-Za-z0-9_:.-]+$",options:.regularExpression) != nil else { throw ClementineError(tr("Champ de métadonnées invalide")) }
       args.append("-\(key)=\(o.metadataChanges[key]!)")
     }
     if args.count>2 {
@@ -222,15 +222,15 @@ extension Engine {
     return destination
   }
   func moduleOrganize(_ url: URL, stage: URL, options o: Options) throws -> URL {
-    guard let doc = PDFDocument(url:url),!doc.isLocked,!o.modulePages.isEmpty else { throw ClementineError("Aucune page à enregistrer") }
+    guard let doc = PDFDocument(url:url),!doc.isLocked,!o.modulePages.isEmpty else { throw ClementineError(tr("Aucune page à enregistrer")) }
     let arranged = PDFDocument()
     for entry in o.modulePages {
-      guard let page = doc.page(at:entry.index)?.copy() as? PDFPage else { throw ClementineError("Page introuvable") }
+      guard let page = doc.page(at:entry.index)?.copy() as? PDFPage else { throw ClementineError(tr("Page introuvable")) }
       page.rotation = (page.rotation+entry.rotation)%360
       arranged.insert(page,at:arranged.pageCount)
     }
     let destination = output(url,"pdf",stage,suffix:"-organized")
-    if !arranged.write(to:destination) { throw ClementineError("Écriture du PDF impossible") }
+    if !arranged.write(to:destination) { throw ClementineError(tr("Écriture du PDF impossible")) }
     return destination
   }
 }

@@ -144,7 +144,7 @@ struct FeaturesView: View {
               let isSelected = selection.selectedID == item.id
               let isHovered = selection.hoveredTabID == item.id && !isSelected
               Button { selection.selectedID = item.id; selection.selectedFormat = "" } label: {
-                Label(item.title, systemImage: item.icon)
+                Label(trString(item.title), systemImage: item.icon)
                   .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
                   .foregroundStyle(isSelected ? citrus : Color.secondary)
                   .padding(.horizontal, 15).padding(.vertical, 11)
@@ -164,11 +164,11 @@ struct FeaturesView: View {
         if category.formats.count > 1 {
           HStack {
             Picker("", selection: $selection.selectedFormat) {
-              Text("Choisir un format").tag("")
+              Text(tr("Choisir un format")).tag("")
               ForEach(category.formats.sorted {
                 Compatibility.label($0).localizedStandardCompare(Compatibility.label($1)) == .orderedAscending
               }, id: \.self) { format in
-                Text(Compatibility.label(format)).tag(format)
+                Text(trString(Compatibility.label(format))).tag(format)
               }
             }
             .labelsHidden()
@@ -258,7 +258,7 @@ struct FeaturesView: View {
   private func cornerBadge(icon: String, text: String, accent: Bool) -> some View {
     HStack(spacing: 6) {
       Image(systemName: icon).font(.system(size: 10, weight: .semibold))
-      Text(text).font(.system(size: 10.5, weight: .semibold))
+      Text(trString(text)).font(.system(size: 10.5, weight: .semibold))
     }
     .foregroundStyle(accent ? citrus : Color.secondary)
     .padding(.horizontal, 10).frame(height: 28)
@@ -280,9 +280,9 @@ struct FeaturesView: View {
       }
       .overlay(alignment: .topTrailing) {
         HStack(spacing: 6) {
-          Text(WheelShortcutAssignments.symbol(symbol))
+          Text(trString(WheelShortcutAssignments.symbol(symbol)))
             .font(.system(size: 12, weight: .semibold))
-          Text(shortcutName(symbol)).font(.system(size: 10.5, weight: .semibold))
+          Text(trString(shortcutName(symbol))).font(.system(size: 10.5, weight: .semibold))
         }
         .foregroundStyle(citrus)
         .padding(.horizontal, 10).frame(height: 28)

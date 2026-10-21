@@ -120,12 +120,15 @@ struct FloatGlass:View {
   }
 }
 struct FloatView:View {
+  @ObservedObject private var language = AppLanguage.shared
   @ObservedObject var state:AppState
   @ObservedObject var model:FloatModel
   let onResize:()->Void
   let onClose:()->Void
   private var size:CGSize {FloatLayout.size(count:model.files.count,expanded:model.expanded)}
   var body:some View {
+    let _ = language.code
+
     ZStack(alignment:.topLeading) {
       if model.expanded {FloatGlass()}
       VStack(spacing:0) {
@@ -133,10 +136,10 @@ struct FloatView:View {
         if model.expanded {
           HStack(spacing:5) {
             Button {model.expanded=false} label:{Image(systemName:"chevron.up").font(.system(size:8,weight:.semibold))}
-              .buttonStyle(.plain).help("Replier le Float").accessibilityLabel("Replier le Float")
-            Text(model.dropping ? "Drop to add" : "\(model.files.count) \(model.files.count == 1 ? "Item" : "Items")")
+              .buttonStyle(.plain).help(tr("Replier le Float")).accessibilityLabel(tr("Replier le Float"))
+            Text(trString(model.dropping ? "Drop to add" : "\(model.files.count) \(model.files.count == 1 ? "Item" : "Items")"))
               .font(.system(size:11,weight:.medium))
-              .overlay(FloatMoveRegion().accessibilityLabel("Déplacer le Float"))
+              .overlay(FloatMoveRegion().accessibilityLabel(tr("Déplacer le Float")))
           }.frame(maxWidth:.infinity).frame(height:35)
           Divider().padding(.horizontal,12)
           ScrollView {
@@ -148,8 +151,8 @@ struct FloatView:View {
       }
       if model.hovering {
         Button(action:onClose) {Image(systemName:"xmark.circle.fill").symbolRenderingMode(.palette).foregroundStyle(.white,Color(white:0.16)).font(.system(size:16))}
-          .buttonStyle(.plain).help("Fermer le Float sans supprimer les fichiers")
-          .accessibilityLabel("Fermer le Float sans supprimer les fichiers")
+          .buttonStyle(.plain).help(tr("Fermer le Float sans supprimer les fichiers"))
+          .accessibilityLabel(tr("Fermer le Float sans supprimer les fichiers"))
           .padding(.leading,model.expanded ? 18 : 8).padding(.top,13)
       }
     }.frame(width:size.width,height:size.height)
@@ -180,7 +183,7 @@ struct FloatView:View {
       }.offset(y:model.expanded ? 10.5 : -1)
       FloatPaperclip(expanded:model.expanded)
       FloatDragRegion(model:model,file:nil,onClick:{if !model.expanded {model.expanded=true}},context:{menuActions(model.files)})
-        .accessibilityLabel(model.expanded ? "Float — glisser pour déplacer l’îlot, Option-glisser pour emporter les fichiers." : "Float — cliquer pour déployer, glisser pour déplacer l’îlot.")
+        .accessibilityLabel(trString(model.expanded ? "Float — glisser pour déplacer l’îlot, Option-glisser pour emporter les fichiers." : "Float — cliquer pour déployer, glisser pour déplacer l’îlot."))
     }.frame(maxWidth:.infinity).contentShape(Rectangle())
   }
   private func cell(_ file:URL)->some View {
@@ -281,7 +284,7 @@ final class FloatDragSource:NSView,NSDraggingSource {
   func draggingSession(_ session:NSDraggingSession,sourceOperationMaskFor context:NSDraggingContext)->NSDragOperation {[.copy,.generic]}
   override func menu(for event:NSEvent)->NSMenu? {
     let menu=NSMenu();let choices=actions?() ?? [];menuCallbacks=choices.map{$0.1}
-    for (index,choice) in choices.enumerated() {let item=NSMenuItem(title:choice.0,action:#selector(menuAction(_:)),keyEquivalent:"");item.tag=index;item.target=self;menu.addItem(item)}
+    for (index,choice) in choices.enumerated() {let item=NSMenuItem(title:trString(choice.0),action:#selector(menuAction(_:)),keyEquivalent:"");item.tag=index;item.target=self;menu.addItem(item)}
     return menu
   }
   @objc private func menuAction(_ sender:NSMenuItem) {if menuCallbacks.indices.contains(sender.tag){menuCallbacks[sender.tag]()}}

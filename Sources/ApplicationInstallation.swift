@@ -41,18 +41,18 @@ enum ApplicationInstallation {
     } else {
       let alert = NSAlert()
       alert.icon = NSImage(named: NSImage.applicationIconName)
-      alert.messageText = "Installer Clémentine"
-      alert.informativeText = "Clémentine doit être placée dans Applications pour conserver vos autorisations et recevoir ses mises à jour."
-      alert.addButton(withTitle: "Installer et ouvrir")
-      alert.addButton(withTitle: "Annuler")
+      alert.messageText = tr("Installer Clémentine")
+      alert.informativeText = tr("Clémentine doit être placée dans Applications pour conserver vos autorisations et recevoir ses mises à jour.")
+      alert.addButton(withTitle: tr("Installer et ouvrir"))
+      alert.addButton(withTitle: tr("Annuler"))
       NSApp.activate(ignoringOtherApps: true)
       guard alert.runModal() == .alertFirstButtonReturn else { return true }
 
       let progress = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 390, height: 132),
         styleMask: [.titled], backing: .buffered, defer: false)
-      progress.title = "Installation de Clémentine"
+      progress.title = tr("Installation de Clémentine")
       progress.isReleasedWhenClosed = false
-      let label = NSTextField(labelWithString: "Copie dans Applications…")
+      let label = NSTextField(labelWithString: tr("Copie dans Applications…"))
       label.font = .systemFont(ofSize: 15, weight: .medium)
       label.frame = NSRect(x: 28, y: 76, width: 334, height: 22)
       let spinner = NSProgressIndicator(frame: NSRect(x: 28, y: 38, width: 334, height: 10))
@@ -112,10 +112,10 @@ enum ApplicationInstallation {
 
   private static func showInstallationError(_ error: Error, destination: URL) {
     let alert = NSAlert()
-    alert.messageText = "Clémentine n’a pas pu être ouverte depuis Applications"
-    alert.informativeText = "Glissez Clémentine dans Applications, attendez la fin de la copie, puis ouvrez-la depuis ce dossier.\n\n" + error.localizedDescription
-    alert.addButton(withTitle: "Afficher Applications")
-    alert.addButton(withTitle: "Fermer")
+    alert.messageText = tr("Clémentine n’a pas pu être ouverte depuis Applications")
+    alert.informativeText = tr("Glissez Clémentine dans Applications, attendez la fin de la copie, puis ouvrez-la depuis ce dossier.\n\n") + error.localizedDescription
+    alert.addButton(withTitle: tr("Afficher Applications"))
+    alert.addButton(withTitle: tr("Fermer"))
     if alert.runModal() == .alertFirstButtonReturn {
       NSWorkspace.shared.open(destination.deletingLastPathComponent())
     }

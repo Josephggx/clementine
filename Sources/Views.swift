@@ -15,15 +15,15 @@ private final class WorkspaceFileSelection: ObservableObject {
   @Published var hoveredControlID: String?
 }
 struct MainView: View {
+  @ObservedObject private var language = AppLanguage.shared
   @ObservedObject var state: AppState
   @StateObject private var hover = MainHover()
   @StateObject private var permissionCenter = PermissionCenter.shared
   var body: some View {
-    if state.showingOnboarding {
-      OnboardingView(state: state)
-    } else {
-      mainContent
-    }
+    Group {
+      if state.showingOnboarding { OnboardingView(state: state) }
+      else { mainContent }
+    }.id(language.code).environment(\.locale,language.locale)
   }
 
   private var mainContent: some View {
@@ -31,7 +31,7 @@ struct MainView: View {
       VStack(alignment: .leading, spacing: 26) {
         HStack(spacing: 10) {
           ClementineMark(size: 31)
-          Text("Clémentine").font(.system(size: 21, weight: .bold, design: .rounded))
+          Text(tr("Clémentine")).font(.system(size: 21, weight: .bold, design: .rounded))
         }.padding(.top, 18)
         VStack(spacing: 7) {
           nav("workspace", "Atelier", "square.stack.3d.up")
@@ -52,14 +52,14 @@ struct MainView: View {
         .ignoresSafeArea(edges:.top)
       VStack(spacing: 0) {
         HStack {
-          Text(title).font(.system(size: 27, weight: .semibold, design: .rounded))
+          Text(trString(title)).font(.system(size: 27, weight: .semibold, design: .rounded))
           Spacer()
           if state.page == "workspace" {
             let isHovered = hover.actionID == "add-files"
             Button {
               state.browse()
             } label: {
-              Label("Ajouter des fichiers", systemImage: "plus")
+              Label(tr("Ajouter des fichiers"), systemImage: "plus")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 15).frame(height: 34)
@@ -87,12 +87,12 @@ struct MainView: View {
     }.frame(minWidth: 1076, minHeight: 720)
       .background(Color.clementineCanvas)
       .alert(
-        "Impossible de terminer",
+        tr("Impossible de terminer"),
         isPresented: Binding(get: { state.error != nil }, set: { if !$0 { state.error = nil } })
       ) {
-        Button("Fermer", role: .cancel) {}
+        Button(tr("Fermer"), role: .cancel) {}
       } message: {
-        Text(state.error ?? "")
+        Text(trString(state.error ?? ""))
       }
   }
   var title: String {
@@ -110,7 +110,7 @@ struct MainView: View {
     } label: {
       HStack(spacing: 11) {
         Image(systemName: icon).frame(width: 20)
-        Text(label).lineLimit(1).fixedSize(horizontal: true, vertical: false)
+        Text(trString(label)).lineLimit(1).fixedSize(horizontal: true, vertical: false)
         Spacer()
         if id == "permissions" {
           let hasMissingPermission = ClementinePermission.allCases.contains {
@@ -123,7 +123,7 @@ struct MainView: View {
               .foregroundStyle(.white)
               .frame(width: 16, height: 16)
               .background(.red, in: Circle())
-              .accessibilityLabel("Autorisations à vérifier")
+              .accessibilityLabel(tr("Autorisations à vérifier"))
           }
         }
       }.padding(11).contentShape(Rectangle()).foregroundStyle(
@@ -158,7 +158,7 @@ struct WorkspaceView: View {
       } else {
         VStack(alignment: .leading, spacing: 10) {
           HStack {
-            Text("\(state.files.count) fichier\(state.files.count>1 ? "s" : "")").font(
+            Text(tr("\(state.files.count) fichier\(state.files.count>1 ? "s" : "")")).font(
               .headline).fixedSize(horizontal: true, vertical: false)
             Spacer(minLength: 12)
             if state.files.count > 1 {
@@ -167,7 +167,7 @@ struct WorkspaceView: View {
                 state.files = []
                 state.selectedTool = nil
               } label: {
-                Text("Vider").foregroundStyle(.secondary)
+                Text(tr("Vider")).foregroundStyle(.secondary)
                   .padding(.horizontal,9).padding(.vertical,5)
                   .background(clearHovered ? citrus.opacity(0.14) : .clear,
                     in:RoundedRectangle(cornerRadius:7,style:.continuous))
@@ -274,7 +274,7 @@ struct WorkspaceView: View {
           ForEach(0..<8) { i in
             let angle = Double(i) * Double.pi / 4 - Double.pi / 2
             RoundedRectangle(cornerRadius: 18).fill(citrus.opacity(0.08)).overlay {
-              Text(["JPG", "PNG", "WEBP", "HEIC", "PDF", "MP4", "MP3", "ZIP"][i]).font(
+              Text(trString(["JPG", "PNG", "WEBP", "HEIC", "PDF", "MP4", "MP3", "ZIP"][i])).font(
                 .system(size: 11, weight: .bold, design: .rounded)
               ).foregroundStyle(citrus.opacity(0.8))
             }.frame(width: 69, height: 62).rotationEffect(.degrees(Double(i) * 45)).overlay {
@@ -284,8 +284,8 @@ struct WorkspaceView: View {
           Image(systemName: "doc.badge.arrow.up").font(.system(size: 52, weight: .ultraLight))
             .foregroundStyle(citrus)
         }.frame(height: 320)
-        Text("Déposez vos fichiers ici").font(.system(size: 25, weight: .semibold, design: .rounded))
-        Text("Choisir des fichiers")
+        Text(tr("Déposez vos fichiers ici")).font(.system(size: 25, weight: .semibold, design: .rounded))
+        Text(tr("Choisir des fichiers"))
           .font(.system(size: 13, weight: .semibold))
           .foregroundStyle(.white)
           .padding(.horizontal, 17)
@@ -304,7 +304,7 @@ struct WorkspaceView: View {
     .buttonStyle(.plain)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .contentShape(Rectangle())
-    .accessibilityLabel("Choisir des fichiers")
+    .accessibilityLabel(tr("Choisir des fichiers"))
   }
   func size(_ u: URL) -> String {
     let n = (try? u.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
@@ -327,7 +327,7 @@ struct WorkspaceView: View {
       Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 30, height: 30)
       VStack(alignment: .leading) {
         Text(url.lastPathComponent).lineLimit(1)
-        Text(size(url)).font(.caption).foregroundStyle(.secondary)
+        Text(trString(size(url))).font(.caption).foregroundStyle(.secondary)
       }
       Spacer()
       if selectable {
@@ -341,7 +341,7 @@ struct WorkspaceView: View {
         }
         .buttonStyle(.plain)
         .documentTooltip("Preview", hovered: previewHovered)
-        .accessibilityLabel(selected ? "Document prévisualisé : \(url.lastPathComponent)" : "Afficher l’aperçu de \(url.lastPathComponent)")
+        .accessibilityLabel(trString(selected ? "Document prévisualisé : \(url.lastPathComponent)" : "Afficher l’aperçu de \(url.lastPathComponent)"))
         .onHover { fileSelection.hoveredControlID = $0 ? previewHoverID : nil }
         .animation(.easeInOut(duration: 0.18), value: previewHovered)
         .animation(.easeInOut(duration: 0.18), value: selected)
@@ -356,7 +356,7 @@ struct WorkspaceView: View {
       }
       .buttonStyle(.plain)
       .documentTooltip(url.path, hovered: finderHovered)
-      .accessibilityLabel("Afficher dans le Finder : \(url.lastPathComponent)")
+      .accessibilityLabel(tr("Afficher dans le Finder : \(url.lastPathComponent)"))
       .onHover { fileSelection.hoveredControlID = $0 ? finderHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: finderHovered)
       Button {
@@ -369,7 +369,7 @@ struct WorkspaceView: View {
       }
       .buttonStyle(.plain)
       .documentTooltip("Ouvrir", hovered: openHovered)
-      .accessibilityLabel("Ouvrir \(url.lastPathComponent)")
+      .accessibilityLabel(tr("Ouvrir \(url.lastPathComponent)"))
       .onHover { fileSelection.hoveredControlID = $0 ? openHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: openHovered)
       Button {
@@ -383,7 +383,7 @@ struct WorkspaceView: View {
       }
       .buttonStyle(.plain)
       .documentTooltip("Retirer", hovered: removeHovered)
-      .accessibilityLabel("Retirer \(url.lastPathComponent)")
+      .accessibilityLabel(tr("Retirer \(url.lastPathComponent)"))
       .onHover { fileSelection.hoveredControlID = $0 ? removeHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: removeHovered)
     }
@@ -395,7 +395,7 @@ struct WorkspaceView: View {
 
   private func actionColumn<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
     VStack(alignment: .leading, spacing: 9) {
-      Text(title).font(.system(size: 13, weight: .semibold))
+      Text(trString(title)).font(.system(size: 13, weight: .semibold))
       ViewThatFits(in: .vertical) {
         VStack(alignment: .leading, spacing: 9) {
           content()
@@ -417,7 +417,7 @@ struct WorkspaceView: View {
   }
 
   private func columnEmpty(_ message:String)->some View {
-    Text(message).font(.system(size:11,weight:.light)).foregroundStyle(.tertiary)
+    Text(trString(message)).font(.system(size:11,weight:.light)).foregroundStyle(.tertiary)
       .padding(.horizontal,3).padding(.top,8)
       .frame(maxWidth:.infinity,alignment:.leading)
   }
@@ -433,7 +433,7 @@ struct WorkspaceView: View {
         } else if let icon {
           Image(systemName: icon).font(.system(size: 14)).foregroundStyle(citrus).frame(width: 19)
         }
-        Text(title).font(.system(size: 11, weight: .semibold, design: .rounded)).lineLimit(1)
+        Text(trString(title)).font(.system(size: 11, weight: .semibold, design: .rounded)).lineLimit(1)
         Spacer(minLength: 2)
         Image(systemName: "chevron.right").font(.system(size: 8)).foregroundStyle(.tertiary)
       }
@@ -548,7 +548,7 @@ struct PreviewPane: View {
     VStack(spacing: 8) {
       Image(systemName: Family.icon(for: url)).font(.system(size: 45, weight: .ultraLight))
         .foregroundStyle(citrus)
-      Text(previewFormatLabel).font(.system(size: 11, weight: .semibold))
+      Text(trString(previewFormatLabel)).font(.system(size: 11, weight: .semibold))
         .foregroundStyle(.secondary)
         .padding(.horizontal, 10).padding(.vertical, 5)
         .background(Color.primary.opacity(0.065), in: Capsule())
@@ -600,57 +600,58 @@ struct SettingsView: View {
 
   var body: some View {
     Form {
-      Section("Clémentine") {
-        Toggle("Lancer au démarrage", isOn: Binding(
+      Section(tr("Clémentine")) {
+        LanguagePicker()
+        Toggle(tr("Lancer au démarrage"), isOn: Binding(
           get: { state.login }, set: { state.setLaunchAtLogin($0) }))
-        Picker("Apparence", selection: $state.appearance) {
-          Text("Selon le système").tag("system")
-          Text("Clair").tag("light")
-          Text("Sombre").tag("dark")
+        Picker(tr("Apparence"), selection: $state.appearance) {
+          Text(tr("Selon le système")).tag("system")
+          Text(tr("Clair")).tag("light")
+          Text(tr("Sombre")).tag("dark")
         }
         modifier("Roue des formats", state.wheelModifierBinding("formats"))
         modifier("Roue des outils", state.wheelModifierBinding("tools"))
         modifier("Roue des actions", state.wheelModifierBinding("actions"))
-        Picker("Survol de la Clémentine", selection: hoverFeedback) {
-          Text("Son + retour haptique").tag("both")
-          Text("Son").tag("sound")
-          Text("Retour haptique").tag("haptic")
+        Picker(tr("Survol de la Clémentine"), selection: hoverFeedback) {
+          Text(tr("Son + retour haptique")).tag("both")
+          Text(tr("Son")).tag("sound")
+          Text(tr("Retour haptique")).tag("haptic")
         }
         Button {
           state.onboardingPage = 0
           withAnimation(.easeInOut(duration: 0.24)) { state.showingOnboarding = true }
         } label: {
-          Label("Voir l’onboarding", systemImage: "play.rectangle")
+          Label(tr("Voir l’onboarding"), systemImage: "play.rectangle")
         }
       }
       Section {
-        Picker("Nouveau float", selection: $state.floatBehavior) {
-          Text("Créer une fenêtre").tag("new")
-          Text("Ajouter à la dernière fenêtre").tag("append")
+        Picker(tr("Nouveau float"), selection: $state.floatBehavior) {
+          Text(tr("Créer une fenêtre")).tag("new")
+          Text(tr("Ajouter à la dernière fenêtre")).tag("append")
         }
-        LabeledContent("Qualité des conversions") {
+        LabeledContent(tr("Qualité des conversions")) {
           Slider(value: $state.options.quality, in: 0.3...1)
             .frame(width: 240)
-          Text("\(Int(state.options.quality*100)) %")
+          Text(tr("\(Int(state.options.quality*100)) %"))
         }
-        Toggle("Retirer les métadonnées lors des conversions", isOn: $state.options.strip)
-        Picker("Format d’archivage par défaut", selection: $state.options.archiveFormat) {
-          Text("ZIP").tag("zip")
-          Text("TAR").tag("tar")
-          Text("TAR + GZIP").tag("gz")
-          Text("RAR").tag("rar")
+        Toggle(tr("Retirer les métadonnées lors des conversions"), isOn: $state.options.strip)
+        Picker(tr("Format d’archivage par défaut"), selection: $state.options.archiveFormat) {
+          Text(tr("ZIP")).tag("zip")
+          Text(tr("TAR")).tag("tar")
+          Text(tr("TAR + GZIP")).tag("gz")
+          Text(tr("RAR")).tag("rar")
         }
-        Picker("PDF → DOCX / Pages", selection: $state.options.pdfOfficeLayout) {
-          Text("Automatique · texte éditable, scans en images").tag("automatic")
-          Text("Fidélité visuelle · pages en images").tag("preservePages")
-          Text("Texte éditable · OCR des scans").tag("editable")
+        Picker(tr("PDF → DOCX / Pages"), selection: $state.options.pdfOfficeLayout) {
+          Text(tr("Automatique · texte éditable, scans en images")).tag("automatic")
+          Text(tr("Fidélité visuelle · pages en images")).tag("preservePages")
+          Text(tr("Texte éditable · OCR des scans")).tag("editable")
         }
-        Picker("PDF → EPUB", selection: $state.options.epubLayout) {
-          Text("Texte adaptable à l’écran").tag("adjustableText")
-          Text("Fidélité visuelle · pages en images").tag("preservePages")
+        Picker(tr("PDF → EPUB"), selection: $state.options.epubLayout) {
+          Text(tr("Texte adaptable à l’écran")).tag("adjustableText")
+          Text(tr("Fidélité visuelle · pages en images")).tag("preservePages")
         }
       } header: {
-        Text("Préférences")
+        Text(tr("Préférences"))
       } footer: {
         AppVersionLabel()
       }
@@ -675,14 +676,14 @@ struct SettingsView: View {
     })
   }
   func modifier(_ title: String, _ value: Binding<String>) -> some View {
-    Picker(title, selection: value) {
-      Text("⌥ Option").tag("option")
-      Text("⇧ Maj").tag("shift")
-      Text("⌘ Commande").tag("command")
-      Text("⌃ Contrôle").tag("control")
-      Text("fn / 🌐").tag("fn")
-      Text("fn + ⇧ Maj").tag("fnShift")
-      Text("Désactivée").tag("none")
+    Picker(trString(title), selection: value) {
+      Text(tr("⌥ Option")).tag("option")
+      Text(tr("⇧ Maj")).tag("shift")
+      Text(tr("⌘ Commande")).tag("command")
+      Text(tr("⌃ Contrôle")).tag("control")
+      Text(tr("fn / 🌐")).tag("fn")
+      Text(tr("fn + ⇧ Maj")).tag("fnShift")
+      Text(tr("Désactivée")).tag("none")
     }
   }
 }

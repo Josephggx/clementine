@@ -29,7 +29,7 @@ final class Engine {
     }) {
       return p
     }
-    throw ClementineError("Le moteur \(name) est absent. Consultez le guide d’installation.")
+    throw ClementineError(tr("Le moteur \(name) est absent. Consultez le guide d’installation."))
   }
   @discardableResult func process(_ path: String, _ args: [String], at directory: URL? = nil, environment: [String: String]? = nil, timeoutSeconds: TimeInterval = 900) throws
     -> String
@@ -64,7 +64,7 @@ final class Engine {
         try? output.write(to: URL(fileURLWithPath:folder).appendingPathComponent("process-"+UUID().uuidString+".log"), atomically:true, encoding:.utf8)
       }
       throw ClementineError(
-        "\(URL(fileURLWithPath:path).lastPathComponent) (\(p.terminationStatus)) : \(output.suffix(3000))")
+        tr("\(URL(fileURLWithPath:path).lastPathComponent) (\(p.terminationStatus)) : \(output.suffix(3000))"))
     }
     return output
   }
@@ -78,14 +78,14 @@ final class Engine {
       ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", url.path])
     guard let d = json.data(using: .utf8),
       let result = try JSONSerialization.jsonObject(with: d) as? [String: Any]
-    else { throw ClementineError("Impossible de lire le média") }
+    else { throw ClementineError(tr("Impossible de lire le média")) }
     return result
   }
   func mediaDuration(_ url: URL) throws -> Double {
     let info = try probe(url)
     guard let format = info["format"] as? [String: Any], let s = format["duration"] as? String,
       let value = Double(s), value > 0
-    else { throw ClementineError("Durée du média inconnue") }
+    else { throw ClementineError(tr("Durée du média inconnue")) }
     return value
   }
   func bytes(_ u: URL) -> Int64 {
@@ -96,7 +96,7 @@ final class Engine {
       .appendingPathExtension(ext)
   }
   func run(_ urls: [URL], action: String, options o: Options) throws -> [URL] {
-    guard !urls.isEmpty else { throw ClementineError("Ajoutez au moins un fichier") }
+    guard !urls.isEmpty else { throw ClementineError(tr("Ajoutez au moins un fichier")) }
     if o.moduleEditor { try validateModuleOptions(o) }
     guard
       [
@@ -109,7 +109,7 @@ final class Engine {
       o.duration > 0, o.speed >= 0.25, o.speed <= 4, o.width >= 0, o.height >= 0, o.x >= 0, o.y >= 0
     else {
       throw ClementineError(
-        "Vérifiez les paramètres : taille, durée et vitesse doivent être positives.")
+        tr("Vérifiez les paramètres : taille, durée et vitesse doivent être positives."))
     }
     let destination =
       o.outputFolder.isEmpty
@@ -148,7 +148,7 @@ final class Engine {
     do {
       for file in generated {
         guard fm.fileExists(atPath: file.path) else {
-          throw ClementineError("Aucun fichier généré")
+          throw ClementineError(tr("Aucun fichier généré"))
         }
         let base = destination.appendingPathComponent(file.lastPathComponent)
         let imageFolder=RichDocuments.markdownAssets(for:file)
@@ -191,7 +191,7 @@ final class Engine {
   func convert(_ url: URL, to ext: String, stage: URL, o: Options) throws -> [URL] {
     let family = Family.of(url)
     if ext == url.pathExtension.lowercased() {
-      throw ClementineError("Le fichier est déjà au format \(ext.uppercased()).")
+      throw ClementineError(tr("Le fichier est déjà au format \(ext.uppercased())."))
     }
     if ["zip", "tar", "gz", "rar"].contains(ext) {
       if family == .archive {
@@ -229,10 +229,10 @@ final class Engine {
       }
     case .pdf:
       guard let pdf = PDFDocument(url: url), pdf.pageCount > 0 else {
-        throw ClementineError("PDF illisible ou protégé")
+        throw ClementineError(tr("PDF illisible ou protégé"))
       }
       guard !pdf.isLocked else {
-        throw ClementineError("Déverrouillez le PDF avant de le convertir")
+        throw ClementineError(tr("Déverrouillez le PDF avant de le convertir"))
       }
       if ["png", "jpg", "tiff"].contains(ext) {
         var files: [URL] = []
@@ -261,7 +261,7 @@ final class Engine {
         return try convert(intermediate, to: ext, stage: stage, o: o)
       }
       return [try Documents.office(url, to: dest, engine: self, options: o)]
-    default: throw ClementineError("Ce type de fichier ne peut pas être converti en \(ext).")
+    default: throw ClementineError(tr("Ce type de fichier ne peut pas être converti en \(ext)."))
     }
     return [dest]
   }
@@ -288,7 +288,7 @@ final class Engine {
   func tool(_ u: URL, action: String, stage: URL, o: Options) throws -> [URL] {
     var o = o
     if let reduction = o.compressionReduction {
-      guard reduction.isFinite,reduction>0,reduction<100 else {throw ClementineError("Réduction invalide")}
+      guard reduction.isFinite,reduction>0,reduction<100 else {throw ClementineError(tr("Réduction invalide"))}
       o.targetMB = Double(bytes(u))*(1-reduction/100)/1_000_000
     }
     if o.moduleEditor,action == "crop",let crop=o.moduleCrops[u.path] {o.x=crop.x;o.y=crop.y;o.width=crop.width;o.height=crop.height}
@@ -337,7 +337,7 @@ final class Engine {
             try saveImage(image, to: d, o: settings)
             if bytes(d) <= limit { return [d] }
           }
-          throw ClementineError("La taille cible est trop faible pour cette image.")
+          throw ClementineError(tr("La taille cible est trop faible pour cette image."))
         }
         if o.width > 0 || o.height > 0 {
           image = try resize(image, width: o.width, height: o.height)
@@ -345,11 +345,11 @@ final class Engine {
         try saveImage(image, to: d, o: settings, source: o.strip ? nil : u)
         if bytes(d) >= bytes(u) {
           throw ClementineError(
-            "Cette image est déjà optimisée. Essayez Taille cible ou une qualité inférieure.")
+            tr("Cette image est déjà optimisée. Essayez Taille cible ou une qualité inférieure."))
         }
       case "resize":
         guard o.width > 0 || o.height > 0 else {
-          throw ClementineError("Indiquez une largeur ou une hauteur.")
+          throw ClementineError(tr("Indiquez une largeur ou une hauteur."))
         }
         image = try resize(image, width: o.width, height: o.height)
         try saveImage(image, to: d, o: o, source: o.strip ? nil : u)
@@ -373,10 +373,10 @@ final class Engine {
           let r = CGRect(x: o.x, y: o.y, width: o.width, height: o.height)
           guard CGRect(x: 0, y: 0, width: image.width, height: image.height).contains(r),
             let crop = image.cropping(to: r)
-          else { throw ClementineError("Le rectangle dépasse les dimensions de l’image.") }
+          else { throw ClementineError(tr("Le rectangle dépasse les dimensions de l’image.")) }
           image = crop
         } else {
-          throw ClementineError("Indiquez la largeur et la hauteur du recadrage.")
+          throw ClementineError(tr("Indiquez la largeur et la hauteur du recadrage."))
         }
         try saveImage(image, to: d, o: o, source: o.strip ? nil : u)
       case "adjust":
@@ -393,7 +393,7 @@ final class Engine {
         } else {
           guard o.width > 0, o.height > 0, o.x + o.width <= image.width,
             o.y + o.height <= image.height
-          else { throw ClementineError("Sélectionnez une zone dans l’aperçu.") }
+          else { throw ClementineError(tr("Sélectionnez une zone dans l’aperçu.")) }
           image = try draw(image) { context in
             let r = CGRect(
               x: o.x, y: image.height - o.y - o.height, width: o.width, height: o.height)
@@ -404,7 +404,7 @@ final class Engine {
         // Flattened pixels: concealed content is not kept in the output.
         try saveImage(image, to: d, o: o)
       case "annotate":
-        guard !o.text.isEmpty else { throw ClementineError("Saisissez le texte de l’annotation.") }
+        guard !o.text.isEmpty else { throw ClementineError(tr("Saisissez le texte de l’annotation.")) }
         image = try draw(image) { context in
           NSGraphicsContext.saveGraphicsState()
           NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
@@ -427,7 +427,7 @@ final class Engine {
         }
         try saveImage(image, to: d, o: o, source: o.strip ? nil : u)
       case "strip": try saveImage(image, to: d, o: o)
-      default: throw ClementineError("Outil non applicable à cette image")
+      default: throw ClementineError(tr("Outil non applicable à cette image"))
       }
       return [d]
     }
@@ -440,7 +440,7 @@ final class Engine {
           let file = output(u, "png", stage, suffix: "-image-\(i+1)")
           try ff(["-ss", String(t), "-i", u.path, "-frames:v", "1", file.path])
           guard bytes(file) > 0 else {
-            throw ClementineError("L’instant \(t) s dépasse la durée de la vidéo.")
+            throw ClementineError(tr("L’instant \(t) s dépasse la durée de la vidéo."))
           }
           results.append(file)
         }
@@ -453,7 +453,7 @@ final class Engine {
           boundaries.allSatisfy({ $0 >= 0 && $0 <= duration })
         else {
           throw ClementineError(
-            "Indiquez des points de coupe croissants, compris dans la durée du média.")
+            tr("Indiquez des points de coupe croissants, compris dans la durée du média."))
         }
         var result: [URL] = []
         for i in 0..<boundaries.count - 1 {
@@ -476,12 +476,12 @@ final class Engine {
       case "trim":
         let total = try mediaDuration(u)
         guard o.start < total, o.start + o.duration <= total + 0.1 else {
-          throw ClementineError("L’intervalle dépasse la durée du média.")
+          throw ClementineError(tr("L’intervalle dépasse la durée du média."))
         }
         args = ["-ss", String(o.start), "-i", u.path, "-t", String(o.duration)]
       case "resize":
         guard o.width > 0 || o.height > 0 else {
-          throw ClementineError("Indiquez une largeur ou une hauteur.")
+          throw ClementineError(tr("Indiquez une largeur ou une hauteur."))
         }
         vf = ["scale=\(o.width>0 ? o.width : -2):\(o.height>0 ? o.height : -2)"]
       case "rotate":
@@ -495,7 +495,7 @@ final class Engine {
         if o.blur { vf.append("hflip") }
       case "crop":
         guard o.width > 0, o.height > 0 else {
-          throw ClementineError("Définissez une zone de recadrage.")
+          throw ClementineError(tr("Définissez une zone de recadrage."))
         }
         vf = ["crop=\(o.width):\(o.height):\(o.x):\(o.y)"]
       case "speed":
@@ -531,23 +531,23 @@ final class Engine {
         ]
       case "redact":
         guard o.width > 0, o.height > 0 else {
-          throw ClementineError("Définissez une zone de caviardage.")
+          throw ClementineError(tr("Définissez une zone de caviardage."))
         }
         vf = [
           "drawbox=x=\(o.x):y=\(o.y):w=\(o.width):h=\(o.height):color=black:t=fill:enable='between(t,\(o.start),\(o.start+o.duration))'"
         ]
       case "strip": args += ["-map_metadata", "-1", "-map_chapters", "-1"]
-      default: throw ClementineError("Outil non applicable à ce média")
+      default: throw ClementineError(tr("Outil non applicable à ce média"))
       }
       if !vf.isEmpty { args += ["-vf", vf.joined(separator: ",")] }
       if !af.isEmpty { args += ["-af", af.joined(separator: ",")] }
       try ff(args + mediaEncoding(ext, o: o) + [d.path])
       if action == "compress" && bytes(d) >= bytes(u) {
-        throw ClementineError("Le média est déjà optimisé. Utilisez Taille cible.")
+        throw ClementineError(tr("Le média est déjà optimisé. Utilisez Taille cible."))
       }
       return [d]
     }
-    throw ClementineError("Outil non applicable à ce fichier")
+    throw ClementineError(tr("Outil non applicable à ce fichier"))
   }
   func targetMedia(_ u: URL, stage: URL, o: Options) throws -> URL {
     let duration = try mediaDuration(u)
@@ -556,7 +556,7 @@ final class Engine {
     let budget = Int64(o.targetMB * 1_000_000)
     var bits = Double(budget) * 8 / duration * 0.90
     guard bits > (isVideo ? 40_000 : 8_000) else {
-      throw ClementineError("Cette cible est trop faible pour la durée du média.")
+      throw ClementineError(tr("Cette cible est trop faible pour la durée du média."))
     }
     for _ in 0..<4 {
       try token.check()
@@ -575,7 +575,7 @@ final class Engine {
       if bytes(d) <= budget { return d }
       bits *= Double(budget) / Double(bytes(d)) * 0.90
     }
-    throw ClementineError("La taille cible n’a pas pu être atteinte. Augmentez la limite.")
+    throw ClementineError(tr("La taille cible n’a pas pu être atteinte. Augmentez la limite."))
   }
   func numbers(_ s: String) throws -> [Double] {
     let values = s.split(separator: ",").compactMap {
@@ -584,7 +584,7 @@ final class Engine {
     guard !values.isEmpty, values.count == s.split(separator: ",").count,
       values.allSatisfy({ $0.isFinite && $0 >= 0 })
     else {
-      throw ClementineError("Indiquez des secondes séparées par des virgules, par exemple 5,10,15.")
+      throw ClementineError(tr("Indiquez des secondes séparées par des virgules, par exemple 5,10,15."))
     }
     return values
   }
@@ -609,7 +609,7 @@ final class Engine {
     {
       return i
     }
-    throw ClementineError("Image illisible ou format non reconnu")
+    throw ClementineError(tr("Image illisible ou format non reconnu"))
   }
   func saveImage(_ image: CGImage, to u: URL, o: Options, source: URL? = nil, dpi: Double? = nil) throws {
     let e = u.pathExtension.lowercased()
@@ -617,9 +617,9 @@ final class Engine {
       let data = NSMutableData()
       guard
         let dst = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil)
-      else { throw ClementineError("Encodage PNG indisponible") }
+      else { throw ClementineError(tr("Encodage PNG indisponible")) }
       CGImageDestinationAddImage(dst, image, nil)
-      guard CGImageDestinationFinalize(dst) else { throw ClementineError("Encodage impossible") }
+      guard CGImageDestinationFinalize(dst) else { throw ClementineError(tr("Encodage impossible")) }
       let xml =
         "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"\(image.width)\" height=\"\(image.height)\" viewBox=\"0 0 \(image.width) \(image.height)\"><image width=\"100%\" height=\"100%\" xlink:href=\"data:image/png;base64,\((data as Data).base64EncodedString())\"/></svg>"
       try xml.write(to: u, atomically: true, encoding: .utf8)
@@ -643,7 +643,7 @@ final class Engine {
       }
       CGImageDestinationAddImage(dest, image, props as CFDictionary)
       guard CGImageDestinationFinalize(dest) else {
-        throw ClementineError("L’encodage \(e) a échoué.")
+        throw ClementineError(tr("L’encodage \(e) a échoué."))
       }
       return
     }
@@ -658,7 +658,7 @@ final class Engine {
         String(Int(15 + (1 - o.quality) * 45)), "-cpu-used", "6", u.path,
       ])
     } else {
-      throw ClementineError("Format image non disponible : \(e)")
+      throw ClementineError(tr("Format image non disponible : \(e)"))
     }
   }
   func canvas(width: Int, height: Int, draw: (CGContext) -> Void) throws -> CGImage {
@@ -668,17 +668,17 @@ final class Engine {
         data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
         space: CGColorSpaceCreateDeviceRGB(),
         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
-    else { throw ClementineError("Dimensions de l’image trop grandes") }
+    else { throw ClementineError(tr("Dimensions de l’image trop grandes")) }
     c.interpolationQuality = .high
     draw(c)
-    guard let i = c.makeImage() else { throw ClementineError("Rendu impossible") }
+    guard let i = c.makeImage() else { throw ClementineError(tr("Rendu impossible")) }
     return i
   }
   func adjustedImage(_ filter: CIFilter, width: Int, height: Int) throws -> CGImage {
     guard let ci = filter.outputImage,
       let image = CIContext(options: [.useSoftwareRenderer: true]).createCGImage(
         ci, from: CGRect(x: 0, y: 0, width: width, height: height))
-    else { throw ClementineError("Le rendu des couleurs est indisponible dans cette session.") }
+    else { throw ClementineError(tr("Le rendu des couleurs est indisponible dans cette session.")) }
     return image
   }
   func draw(_ image: CGImage, body: (CGContext) -> Void) throws -> CGImage {
@@ -697,7 +697,7 @@ final class Engine {
     }
   }
   func collage(_ urls: [URL], stage: URL, o: Options) throws -> URL {
-    guard urls.count <= 100 else { throw ClementineError("Maximum : 100 images par collage") }
+    guard urls.count <= 100 else { throw ClementineError(tr("Maximum : 100 images par collage")) }
     if o.moduleEditor {
       let image = try moduleCollage(urls,options:o)
       let destination = stage.appendingPathComponent("Collage.png")
@@ -738,7 +738,7 @@ final class Engine {
     rects += (face.results ?? []).map(\.boundingBox)
     rects += (text.results ?? []).map(\.boundingBox)
     guard !rects.isEmpty else {
-      throw ClementineError("Aucun visage ni texte détecté. Sélectionnez une zone manuellement.")
+      throw ClementineError(tr("Aucun visage ni texte détecté. Sélectionnez une zone manuellement."))
     }
     return try draw(image) { c in
       c.setFillColor(CGColor(gray: 0, alpha: 1))
@@ -755,7 +755,7 @@ final class Engine {
     var images: [CGImage] = []
     if Family.of(u) == .pdf {
       guard let doc = PDFDocument(url: u), !doc.isLocked else {
-        throw ClementineError("PDF illisible")
+        throw ClementineError(tr("PDF illisible"))
       }
       for i in 0..<doc.pageCount {
         if let p = doc.page(at: i) { images.append(try renderPage(p, scale: 2)) }
@@ -773,14 +773,14 @@ final class Engine {
         $0.payloadStringValue.map { "Page \(i+1) : \($0)" }
       }
     }
-    guard !result.isEmpty else { throw ClementineError("Aucun QR code détecté") }
+    guard !result.isEmpty else { throw ClementineError(tr("Aucun QR code détecté")) }
     let d = output(u, "txt", stage, suffix: "-QR")
     try result.joined(separator: "\n").write(to: d, atomically: true, encoding: .utf8)
     return d
   }
   func renderPage(_ page: PDFPage, scale: Double) throws -> CGImage {
     let size = try DocumentFidelity.pageSize(page)
-    guard let reference = page.pageRef else { throw ClementineError("Page PDF illisible") }
+    guard let reference = page.pageRef else { throw ClementineError(tr("Page PDF illisible")) }
     let width=max(1,Int((size.width*scale).rounded())), height=max(1,Int((size.height*scale).rounded()))
     let transform=try DocumentFidelity.drawingTransform(page,canvas:CGSize(width:width,height:height))
     return try canvas(width:width,height:height) { c in
@@ -796,7 +796,7 @@ final class Engine {
       try token.check()
       if Family.of(u) == .pdf {
         guard let pdf = PDFDocument(url: u), !pdf.isLocked else {
-          throw ClementineError("PDF illisible ou verrouillé : \(u.lastPathComponent)")
+          throw ClementineError(tr("PDF illisible ou verrouillé : \(u.lastPathComponent)"))
         }
         for i in 0..<pdf.pageCount {
           if let p = pdf.page(at: i)?.copy() as? PDFPage { doc.insert(p, at: doc.pageCount) }
@@ -804,18 +804,18 @@ final class Engine {
       } else {
         let img = try loadImage(u)
         guard let p = PDFPage(image: NSImage(cgImage: img, size: .zero)) else {
-          throw ClementineError("Création de page impossible")
+          throw ClementineError(tr("Création de page impossible"))
         }
         doc.insert(p, at: doc.pageCount)
       }
     }
     let d = output(urls[0], "pdf", stage, suffix: "-assemblé")
-    guard doc.write(to: d) else { throw ClementineError("Écriture du PDF impossible") }
+    guard doc.write(to: d) else { throw ClementineError(tr("Écriture du PDF impossible")) }
     return d
   }
   func pdfTool(_ u: URL, action: String, stage: URL, o: Options) throws -> [URL] {
     guard let doc = PDFDocument(url: u), !doc.isLocked else {
-      throw ClementineError("PDF illisible ou verrouillé")
+      throw ClementineError(tr("PDF illisible ou verrouillé"))
     }
     if action == "split" {
       return try splitPDF(doc, source:u, stage:stage, options:o)
@@ -829,12 +829,12 @@ final class Engine {
         p.rotation = (p.rotation + o.rotation) % 360
         arranged.insert(p, at: arranged.pageCount)
       }
-      guard arranged.write(to: d) else { throw ClementineError("Écriture impossible") }
+      guard arranged.write(to: d) else { throw ClementineError(tr("Écriture impossible")) }
       return [d]
     }
     if action == "strip" {
       doc.documentAttributes = [:]
-      guard doc.write(to: d) else { throw ClementineError("Écriture impossible") }
+      guard doc.write(to: d) else { throw ClementineError(tr("Écriture impossible")) }
       return [d]
     }
     if action == "compress" || action == "target" {
@@ -851,24 +851,24 @@ final class Engine {
           settings.quality = o.strong ? 0.45 : max(0.25, o.quality - Double(iteration) * 0.08)
           try saveImage(image, to: jpeg, o: settings)
           guard let n = NSImage(contentsOf: jpeg), let newPage = PDFPage(image: n) else {
-            throw ClementineError("Rendu impossible")
+            throw ClementineError(tr("Rendu impossible"))
           }
           newPage.setBounds(p.bounds(for: .mediaBox), for: .mediaBox)
           compressed.insert(newPage, at: compressed.pageCount)
         }
-        guard compressed.write(to: d) else { throw ClementineError("Écriture impossible") }
+        guard compressed.write(to: d) else { throw ClementineError(tr("Écriture impossible")) }
         if action == "target" && bytes(d) <= Int64(o.targetMB * 1_000_000) { return [d] }
         scale *= 0.75
       }
       if action == "target" {
-        throw ClementineError("La taille cible du PDF n’a pas pu être atteinte.")
+        throw ClementineError(tr("La taille cible du PDF n’a pas pu être atteinte."))
       }
       guard bytes(d) < bytes(u) else {
-        throw ClementineError("Le PDF est déjà optimisé. Essayez Taille cible.")
+        throw ClementineError(tr("Le PDF est déjà optimisé. Essayez Taille cible."))
       }
       return [d]
     }
-    throw ClementineError("Outil PDF non applicable")
+    throw ClementineError(tr("Outil PDF non applicable"))
   }
   func pageOrder(_ value: String, count: Int) throws -> [Int] {
     if value.trimmingCharacters(in: .whitespaces).isEmpty { return Array(0..<count) }
@@ -882,11 +882,11 @@ final class Engine {
       } else if bounds.count == 2, bounds[0] <= bounds[1], bounds[1] - bounds[0] < 10000 {
         result += (bounds[0]...bounds[1]).map { $0 - 1 }
       } else {
-        throw ClementineError("Ordre des pages invalide")
+        throw ClementineError(tr("Ordre des pages invalide"))
       }
     }
     guard !result.isEmpty, result.allSatisfy({ $0 >= 0 && $0 < count }) else {
-      throw ClementineError("Une page demandée n’existe pas")
+      throw ClementineError(tr("Une page demandée n’existe pas"))
     }
     return result
   }
@@ -940,20 +940,20 @@ final class Engine {
     let d = output(u, u.pathExtension, stage, suffix: "-métadonnées")
     if family == .pdf {
       guard let doc = PDFDocument(url: u), !doc.isLocked else {
-        throw ClementineError("PDF illisible")
+        throw ClementineError(tr("PDF illisible"))
       }
       var a = doc.documentAttributes ?? [:]
       a[PDFDocumentAttribute.titleAttribute] = o.title
       a[PDFDocumentAttribute.authorAttribute] = o.author
       a[PDFDocumentAttribute.subjectAttribute] = o.subject
       doc.documentAttributes = a
-      guard doc.write(to: d) else { throw ClementineError("Écriture impossible") }
+      guard doc.write(to: d) else { throw ClementineError(tr("Écriture impossible")) }
     } else if family == .image {
       guard let source = CGImageSourceCreateWithURL(u as CFURL, nil),
         let type = CGImageSourceGetType(source),
         let dest = CGImageDestinationCreateWithURL(
           d as CFURL, type, CGImageSourceGetCount(source), nil)
-      else { throw ClementineError("Métadonnées non modifiables pour ce format") }
+      else { throw ClementineError(tr("Métadonnées non modifiables pour ce format")) }
       for i in 0..<CGImageSourceGetCount(source) {
         var props = CGImageSourceCopyPropertiesAtIndex(source, i, nil) as? [CFString: Any] ?? [:]
         props[kCGImagePropertyTIFFDictionary] = [
@@ -963,7 +963,7 @@ final class Engine {
         CGImageDestinationAddImageFromSource(dest, source, i, props as CFDictionary)
       }
       guard CGImageDestinationFinalize(dest) else {
-        throw ClementineError("Écriture des métadonnées impossible")
+        throw ClementineError(tr("Écriture des métadonnées impossible"))
       }
     } else {
       try ff([
@@ -974,7 +974,7 @@ final class Engine {
     return d
   }
   func join(_ urls: [URL], stage: URL, o: Options) throws -> URL {
-    guard urls.count > 1 else { throw ClementineError("Ajoutez au moins deux médias") }
+    guard urls.count > 1 else { throw ClementineError(tr("Ajoutez au moins deux médias")) }
     let video = Family.of(urls[0]) == .video
     var canvasWidth = 1280, canvasHeight = 720
     if o.moduleEditor, video {
@@ -1022,7 +1022,7 @@ final class Engine {
     return d
   }
   func archive(_ urls: [URL], stage: URL, format: String) throws -> URL {
-    guard !urls.isEmpty else { throw ClementineError("L’archive est vide") }
+    guard !urls.isEmpty else { throw ClementineError(tr("L’archive est vide")) }
     if format == "rar" {
       let dest = output(urls[0], "rar", stage, suffix: "-archive")
       try RARStore.write(urls, to: dest, engine: self)
@@ -1050,12 +1050,12 @@ final class Engine {
   }
   func extract(_ u: URL, stage: URL) throws -> URL {
     let names = try process("/usr/bin/tar", ["-tf", u.path]).split(separator: "\n").map(String.init)
-    guard names.count <= 100000 else { throw ClementineError("Archive trop volumineuse") }
+    guard names.count <= 100000 else { throw ClementineError(tr("Archive trop volumineuse")) }
     guard
       names.allSatisfy({
         !$0.hasPrefix("/") && !$0.split(separator: "/").contains("..") && !$0.contains("\\")
       })
-    else { throw ClementineError("L’archive contient des chemins dangereux.") }
+    else { throw ClementineError(tr("L’archive contient des chemins dangereux.")) }
     let listing = try process("/usr/bin/tar", ["-tvf", u.path])
     guard
       !listing.split(separator: "\n").contains(where: {
@@ -1063,7 +1063,7 @@ final class Engine {
       })
     else {
       throw ClementineError(
-        "Les archives contenant des liens ou fichiers spéciaux ne sont pas extraites.")
+        tr("Les archives contenant des liens ou fichiers spéciaux ne sont pas extraites."))
     }
     let dest = stage.appendingPathComponent(
       u.deletingPathExtension().lastPathComponent + "-extrait", isDirectory: true)

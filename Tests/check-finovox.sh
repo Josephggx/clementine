@@ -21,7 +21,7 @@ test_root.mkdir(parents=True, exist_ok=True)
 }))
 subprocess.run(['xcrun', 'swiftc', '-swift-version', '5',
     '-module-cache-path', str(root / '.build/cache'),
-    'Sources/Finovox.swift', 'Sources/FinovoxImportPage.swift',
+    'Sources/Localization.swift', 'Sources/Finovox.swift', 'Sources/FinovoxImportPage.swift',
     'Tests/Finovox/main.swift', '-o', str(binary),
     '-framework', 'AppKit', '-framework', 'SwiftUI',
     '-framework', 'ApplicationServices'], check=True)

@@ -12,9 +12,9 @@ enum DocumentFidelity {
   static let officeNS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
   static func pdf(_ source: URL, to dest: URL, options: Options, engine: Engine) throws -> URL {
     guard let document = PDFDocument(url: source), !document.isLocked, document.pageCount > 0 else {
-      throw ClementineError("PDF vide, illisible ou verrouillé")
+      throw ClementineError(tr("PDF vide, illisible ou verrouillé"))
     }
-    guard document.allowsCopying else { throw ClementineError("Ce PDF n’autorise pas la copie de son contenu.") }
+    guard document.allowsCopying else { throw ClementineError(tr("Ce PDF n’autorise pas la copie de son contenu.")) }
     let ext = dest.pathExtension.lowercased()
     if ext == "pages" { try NativeOffice.convert(source, to: dest, engine: engine, options: options); return dest }
     if ext == "xlsx" { try PDFText.spreadsheet(document, destination: dest, engine: engine); return dest }
@@ -22,7 +22,7 @@ enum DocumentFidelity {
       // Plain-text exports in Tangerine do not run OCR on a scan.
       let text = (0..<document.pageCount).compactMap { document.page(at: $0)?.string }.joined(separator: "\n\n")
       guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-        throw ClementineError("Ce PDF ne contient pas de texte sélectionnable. Choisissez DOCX/Pages avec paragraphes modifiables pour utiliser l’OCR.")
+        throw ClementineError(tr("Ce PDF ne contient pas de texte sélectionnable. Choisissez DOCX/Pages avec paragraphes modifiables pour utiliser l’OCR."))
       }
       try text.write(to: dest, atomically: true, encoding: .utf8); return dest
     }
@@ -50,14 +50,14 @@ enum DocumentFidelity {
       let html = root.appendingPathComponent("Editable.html")
       try reflow(document, root: root, engine: engine, allowOCR: ext != "docx" || options.pdfOfficeLayout == "editable").write(to: html, atomically: true, encoding: .utf8)
       return try Documents.office(html, to: dest, engine: engine, options: options)
-    } else { throw ClementineError("Export PDF non disponible") }
+    } else { throw ClementineError(tr("Export PDF non disponible")) }
     return dest
   }
   static func png(_ image: CGImage, to url: URL, dpi: Double? = nil) throws {
-    guard let writer = CGImageDestinationCreateWithURL(url as CFURL, "public.png" as CFString, 1, nil) else { throw ClementineError("Création de l’illustration impossible") }
+    guard let writer = CGImageDestinationCreateWithURL(url as CFURL, "public.png" as CFString, 1, nil) else { throw ClementineError(tr("Création de l’illustration impossible")) }
     let properties: [CFString: Any]? = dpi.map { [kCGImagePropertyDPIWidth: $0, kCGImagePropertyDPIHeight: $0] }
     CGImageDestinationAddImage(writer, image, properties as CFDictionary?)
-    guard CGImageDestinationFinalize(writer) else { throw ClementineError("Enregistrement de l’illustration impossible") }
+    guard CGImageDestinationFinalize(writer) else { throw ClementineError(tr("Enregistrement de l’illustration impossible")) }
   }
   static func write(_ text: String, _ path: String, root: URL) throws {
     let u = root.appendingPathComponent(path)
@@ -72,12 +72,12 @@ enum DocumentFidelity {
     let b = page.bounds(for: .mediaBox)
     let rotated = abs(page.rotation % 180) == 90
     let size = CGSize(width: rotated ? b.height : b.width, height: rotated ? b.width : b.height)
-    guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0, max(size.width,size.height) <= 14400 else { throw ClementineError("Dimensions de page PDF invalides") }
+    guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0, max(size.width,size.height) <= 14400 else { throw ClementineError(tr("Dimensions de page PDF invalides")) }
     return size
   }
   static func drawingTransform(_ page: PDFPage, canvas: CGSize) throws -> CGAffineTransform {
     let size = try pageSize(page)
-    guard let ref = page.pageRef else { throw ClementineError("Page PDF illisible") }
+    guard let ref = page.pageRef else { throw ClementineError(tr("Page PDF illisible")) }
     // CGPDFPageGetDrawingTransform only shrinks pages; upscale explicitly for 300 DPI.
     let points = CGRect(origin: .zero, size: size)
     return ref.getDrawingTransform(.mediaBox, rect: points, rotate: 0, preserveAspectRatio: true)
@@ -88,7 +88,7 @@ enum DocumentFidelity {
     var body = "", relations = ""
     for index in 0..<pdf.pageCount {
       try engine.token.check(); let page = pdf.page(at: index)!, size = try pageSize(page)
-      guard max(size.width,size.height) <= 1584 else { throw ClementineError("Une page dépasse la limite de 22 pouces du format Word.") }
+      guard max(size.width,size.height) <= 1584 else { throw ClementineError(tr("Une page dépasse la limite de 22 pouces du format Word.")) }
       try png(engine.renderPage(page, scale: 300/72), to: media.appendingPathComponent("page-\(index+1).png"), dpi:300)
       let id = index+1, cx = Int((size.width*12700).rounded()), cy = Int((size.height*12700).rounded())
       relations += "<Relationship Id=\"p\(id)\" Type=\"\(officeNS)/image\" Target=\"media/page-\(id).png\"/>"

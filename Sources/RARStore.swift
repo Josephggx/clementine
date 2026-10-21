@@ -46,7 +46,7 @@ enum RARStore {
         .isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey,
       ])
       guard values.isSymbolicLink != true else {
-        throw ClementineError("L’archivage RAR ne prend pas en charge les liens symboliques.")
+        throw ClementineError(tr("L’archivage RAR ne prend pas en charge les liens symboliques."))
       }
       let directory = values.isDirectory == true
       let size = directory ? 0 : (values.fileSize ?? 0)
@@ -82,7 +82,7 @@ enum RARStore {
           copied += chunk.count
         }
         guard copied == size else {
-          throw ClementineError("Un fichier a changé pendant l’archivage")
+          throw ClementineError(tr("Un fichier a changé pendant l’archivage"))
         }
       }
     }

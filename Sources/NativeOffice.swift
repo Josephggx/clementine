@@ -17,7 +17,7 @@ enum NativeOffice {
     case "key":
       bundleID = "com.apple.Keynote"
       intermediate = "pptx"
-    default: throw ClementineError("Format Apple inconnu")
+    default: throw ClementineError(tr("Format Apple inconnu"))
     }
     let app =
       NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
@@ -26,7 +26,7 @@ enum NativeOffice {
           of: "com.apple.", with: "com.apple.iWork."))
     guard let app else {
       throw ClementineError(
-        "Installez l’application Apple correspondante (Pages, Numbers ou Keynote) pour exporter ce format."
+        tr("Installez l’application Apple correspondante (Pages, Numbers ou Keynote) pour exporter ce format.")
       )
     }
     let id = Bundle(url: app)?.bundleIdentifier ?? bundleID
@@ -63,7 +63,7 @@ enum NativeOffice {
       """
     _ = try NativeOfficeScript.run(script, bundleID: id, operation: "Export Apple")
     guard engine.fm.fileExists(atPath: destination.path) else {
-      throw ClementineError("L’application Apple n’a pas créé le fichier attendu.")
+      throw ClementineError(tr("L’application Apple n’a pas créé le fichier attendu."))
     }
   }
 }
@@ -74,7 +74,7 @@ extension NativeOffice {
     let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Numbers")
       ?? NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iWork.Numbers")
     guard let app, let bundleID = Bundle(url: app)?.bundleIdentifier else {
-      throw ClementineError("Numbers doit être installé pour exporter ce tableur.")
+      throw ClementineError(tr("Numbers doit être installé pour exporter ce tableur."))
     }
     let root = engine.fm.temporaryDirectory.appendingPathComponent("clementine-numbers-" + UUID().uuidString)
     try engine.fm.createDirectory(at: root, withIntermediateDirectories: true)
@@ -130,7 +130,7 @@ extension NativeOffice {
       return (name, tables)
     }
     guard sheets.count == result.numberOfItems, !sheets.isEmpty else {
-      throw ClementineError("La lecture des feuilles Numbers est incomplète.")
+      throw ClementineError(tr("La lecture des feuilles Numbers est incomplète."))
     }
     return sheets
   }
@@ -147,7 +147,7 @@ extension NativeOffice {
     case ("numbers", "xlsx"): appName = "Numbers"; exportFormat = "Microsoft Excel"
     case ("key", "pdf"): appName = "Keynote"; exportFormat = "PDF"
     case ("key", "pptx"): appName = "Keynote"; exportFormat = "Microsoft PowerPoint"
-    default: throw ClementineError("Export Apple non pris en charge : \(sourceFormat) → \(output)")
+    default: throw ClementineError(tr("Export Apple non pris en charge : \(sourceFormat) → \(output)"))
     }
     let root=destination.deletingLastPathComponent().appendingPathComponent("apple-export-"+UUID().uuidString)
     try engine.fm.createDirectory(at:root,withIntermediateDirectories:true)
@@ -155,7 +155,7 @@ extension NativeOffice {
     let copy=root.appendingPathComponent(source.lastPathComponent);try engine.fm.copyItem(at:source,to:copy)
     func quote(_ s:String)->String {"\""+s.replacingOccurrences(of:"\\",with:"\\\\").replacingOccurrences(of:"\"",with:"\\\"")+"\""}
     let app=NSWorkspace.shared.urlForApplication(withBundleIdentifier:"com.apple."+appName) ?? NSWorkspace.shared.urlForApplication(withBundleIdentifier:"com.apple.iWork."+appName)
-    guard let app,let bundleID=Bundle(url:app)?.bundleIdentifier else {throw ClementineError("\(appName) doit être installé pour cet export.")}
+    guard let app,let bundleID=Bundle(url:app)?.bundleIdentifier else {throw ClementineError(tr("\(appName) doit être installé pour cet export."))}
     let script="""
     with timeout of 600 seconds
       tell application id \(quote(bundleID))
@@ -176,6 +176,6 @@ extension NativeOffice {
     end timeout
     """
     _ = try NativeOfficeScript.run(script, bundleID: bundleID, operation: "Export " + appName)
-    guard engine.fm.fileExists(atPath:destination.path) else {throw ClementineError("\(appName) n’a pas créé le document attendu")}
+    guard engine.fm.fileExists(atPath:destination.path) else {throw ClementineError(tr("\(appName) n’a pas créé le document attendu"))}
   }
 }
