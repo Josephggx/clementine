@@ -286,7 +286,7 @@ struct AppVersionLabel: View {
         .font(.system(size: 11))
         .foregroundStyle(.secondary)
       Button { updates.checkForUpdates() } label: {
-        Text(tr("Chercher une mise à jour"))
+        Text(tr("Rechercher une mise à jour"))
           .font(.system(size: 11))
           .foregroundStyle(.secondary)
           .padding(.horizontal, 6).padding(.vertical, 4)

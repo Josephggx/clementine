@@ -121,7 +121,6 @@
   "Désactivée": "Disabled",
   "Désactivé": "Disabled",
   "Clémentine version {0}": "Clémentine version {0}",
-  "Chercher une mise à jour": "Check for updates",
   "Rechercher des mises à jour…": "Check for updates…",
   "Mettre à jour": "Update",
   "Plus tard": "Later",
@@ -514,5 +513,6 @@
   "« {0} » sera déplacé dans la Corbeille. Vous pourrez le restaurer depuis le Finder.": "“{0}” will be moved to the Trash. You can restore it from Finder.",
   "Choisissez un nom valide, sans / ni :.": "Choose a valid name without / or :.",
   "Un élément porte déjà ce nom. Choisissez un autre nom.": "An item already has this name. Choose another name.",
-  "Ce document est en cours d’utilisation. Réessayez après l’opération.": "This document is in use. Try again when the operation has finished."
+  "Ce document est en cours d’utilisation. Réessayez après l’opération.": "This document is in use. Try again when the operation has finished.",
+  "Rechercher une mise à jour": "Check for updates"
 }

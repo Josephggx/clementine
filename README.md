@@ -4,6 +4,18 @@ Application macOS de conversion et de traitement de fichiers. Apple Silicon, mac
 
 L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
 
+## En préparation — 1.0.8
+
+Sources synchronisées le 21 octobre 2026. Cette version n’est pas encore publiée en téléchargement : l’installateur et le flux de mise à jour restent sur la version 1.0.7.
+
+- Interface disponible en français et en anglais, avec choix de langue dans Réglages et en bas à droite de l’onboarding. Le français reste la langue par défaut.
+- Onboarding : roue des outils animée sans interaction ; demandes d’autorisation fiabilisées, apps Apple absentes ignorées et boutons débloqués après refus ou expiration.
+- PDF : « Merge PDF » devient « Merge ». Split propose un dropdown PDF/JPEG/PNG ; pour PDF, choix « 1 par 1 » ou regroupement personnalisé des pages par glisser-déposer.
+- Archives : action Dézip. Le bouton Dézip d’un ZIP épinglé le remplace dans l’Atelier par ses fichiers et dossiers après extraction réussie, en conservant le ZIP original sur le disque.
+- Atelier : boutons Renommer et Supprimer sur les éléments épinglés ; confirmation avant déplacement dans la Corbeille. Retirer continue de désépingler uniquement.
+- Réglages : le bouton de vérification devient « Rechercher une mise à jour ».
+
+
 ## Construire et mettre à jour
 
 Lancer `./build.sh`. La compilation produit `.build/Clémentine.app` et ne remplace pas l’application installée. Les mises à jour sont publiées sur GitHub ; Joseph les installe depuis l’app pour vérifier les changements.
