@@ -7,6 +7,7 @@ export CLEMENTINE_OFFICE="${CLEMENTINE_OFFICE:-$PWD/.build/Clémentine.app/Conte
 checks=(
   check-compatibility.sh
   check-drag.sh
+  check-update-feed.sh
   check-workspace-files.sh
   check-modules.sh
   check-documents.sh

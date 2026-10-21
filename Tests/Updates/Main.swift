@@ -98,7 +98,7 @@ final class UpdateCheckApp: NSObject, NSApplicationDelegate {
     } else {
       AppUpdates.shared.start(isBusy: { false }, isOnboarding: { false })
     }
-    if AppUpdates.installedVersion == "1.0.1" {
+    if AppUpdates.installedVersion == (Bundle.main.object(forInfoDictionaryKey:"TestExpectedVersion") as? String ?? "1.0.1") {
       DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [self] in
         precondition(AppUpdates.shared.availableVersion == nil)
         precondition(AppUpdates.shared.installationWarning == nil)

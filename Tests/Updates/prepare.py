@@ -23,7 +23,12 @@ if "--reuse-binary" not in sys.argv:
     subprocess.run(cmd, check=True)
 base = plistlib.loads((root / "Info.plist").read_bytes())
 bundle_id = "io.joseph.clementine.updatetest"
-for folder, version, build in [("installed", "1.0.0", "10"), ("release", "1.0.1", "11")]:
+skipping = "--skip-versions" in sys.argv
+latest_version, latest_build = ("1.0.9", "19") if skipping else ("1.0.1", "11")
+versions = [("installed", "1.0.0", "10"), ("release", latest_version, latest_build)]
+if skipping:
+    versions.append(("intermediate", "1.0.8", "18"))
+for folder, version, build in versions:
     app = out / folder / "Clémentine.app"
     macos = app / "Contents/MacOS"
     resources = app / "Contents/Resources"
@@ -37,7 +42,7 @@ for folder, version, build in [("installed", "1.0.0", "10"), ("release", "1.0.1"
     info.update(CFBundleIdentifier=bundle_id, CFBundleName="Clémentine Update Test",
                 CFBundleDisplayName="Clémentine Update Test", CFBundleShortVersionString=version,
                 CFBundleVersion=build, SUFeedURL="http://localhost:8765/appcast.xml", TestRoot=str(out),
-                TestAutomaticUpdate=(folder == "installed"),
+                TestAutomaticUpdate=(folder == "installed"), TestExpectedVersion=latest_version,
                 NSAppTransportSecurity={"NSAllowsLocalNetworking": True})
     (app / "Contents/Info.plist").write_bytes(plistlib.dumps(info))
     subprocess.run(["codesign", "--force", "--sign", "-", "--identifier", bundle_id,
@@ -47,6 +52,11 @@ archive = out / "update.zip"
 old_archive = out / "previous.zip"
 subprocess.run(["ditto", "-c", "-k", "--keepParent", str(out / "installed/Clémentine.app"), str(old_archive)], check=True)
 subprocess.run(["ditto", "-c", "-k", "--keepParent", str(out / "release/Clémentine.app"), str(archive)], check=True)
+if skipping:
+    # Advertise only the 1.0.8 -> 1.0.9 delta: a 1.0.0 client must still choose
+    # 1.0.9 directly, using the full archive, without installing 1.0.8 first.
+    old_archive = out / "intermediate.zip"
+    subprocess.run(["ditto", "-c", "-k", "--keepParent", str(out / "intermediate/Clémentine.app"), str(old_archive)], check=True)
 subprocess.run([sys.executable, str(root / "Scripts/prepare-update.py"), str(archive),
                 "--plist", str(out / "release/Clémentine.app/Contents/Info.plist"),
                 "--previous-archive", str(old_archive),

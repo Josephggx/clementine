@@ -147,7 +147,9 @@ def prepare(archive, plist, feed, download_url, notes, account, previous_archive
         candidates.append((int(old_build), old_app, old_info))
     deltas = None
     seen = set()
-    for old_build, old_app, old_info in sorted(candidates, key=lambda candidate: candidate[0], reverse=True)[:3]:
+    # Each patch goes straight from its installed base to this release. Do not
+    # force lagging users through an intermediate build to get a small update.
+    for old_build, old_app, old_info in sorted(candidates, key=lambda candidate: candidate[0], reverse=True):
         if old_build in seen:
             continue
         seen.add(old_build)

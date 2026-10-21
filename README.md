@@ -4,9 +4,11 @@ Application macOS de conversion et de traitement de fichiers. Apple Silicon, mac
 
 L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
 
-## Version 1.0.10
+## Version 1.0.11
 
-Version 1.0.10 du 21 octobre 2026 : Maj ouvre les conversions, Option les outils, Commande les actions. Les préférences existantes sont migrées une seule fois.
+Version 1.0.11 du 21 octobre 2026 : mise à jour directe vers la dernière version, résolution fraîche du catalogue GitHub et correctifs directs depuis toutes les archives locales conservées.
+
+Raccourcis : Maj ouvre les conversions, Option les outils, Commande les actions. Les préférences existantes sont migrées une seule fois.
 
 - Float : fond glass compact, animation d’ouverture/repli, clic et déplacement sur tout le fond, document et trombone ; les fichiers restent sélectionnables séparément.
 - Aperçu Atelier : grande fenêtre native, défilement, déplacement, redimensionnement et vrai plein écran via le bouton vert.
@@ -60,7 +62,7 @@ L’installateur DMG présente deux vraies icônes Finder sur un fond Retina gé
 
 Les écritures et publications GitHub doivent passer exclusivement par le connecteur GitHub, sur le compte personnel Josephggx. Ne pas contourner une absence de droits avec le navigateur ou GitHub Desktop. Si la connexion fournie n’a pas les droits nécessaires, conserver les changements et les artefacts localement et signaler précisément la publication en attente.
 
-`Scripts/prepare-update.py` génère désormais le flux signé et les correctifs différentiels depuis les trois dernières archives locales plus anciennes. Les archives déjà diffusées sont immuables et conservées pour servir de bases. Il est possible de limiter explicitement les bases avec `--previous-archive`. Chaque correctif est appliqué sur une copie de la base ; signature, contenu, liens symboliques et permissions du résultat doivent correspondre à la nouvelle version avant publication. Le rapport `.build/release-assets.json` liste tous les fichiers à joindre à la même release : DMG complet, correctifs `.delta` et flux signé. Toujours joindre également le SHA-256 du DMG. Si une base est absente ou qu’un correctif ne s’applique pas, Sparkle utilise automatiquement l’archive complète signée. Ne pas publier uniquement le flux sans ses correctifs.
+`Scripts/prepare-update.py` génère désormais le flux signé et les correctifs différentiels depuis toutes les archives locales plus anciennes disponibles. Les archives déjà diffusées sont immuables et conservées pour servir de bases. Il est possible de limiter explicitement les bases avec `--previous-archive`. Chaque correctif est appliqué sur une copie de la base ; signature, contenu, liens symboliques et permissions du résultat doivent correspondre à la nouvelle version avant publication. Le rapport `.build/release-assets.json` liste tous les fichiers à joindre à la même release : DMG complet, correctifs `.delta` et flux signé. Toujours joindre également le SHA-256 du DMG. Si une base est absente ou qu’un correctif ne s’applique pas, Sparkle utilise automatiquement l’archive complète signée. Ne pas publier uniquement le flux sans ses correctifs.
 
 Le moteur bureautique est normalisé une fois par `Scripts/normalize-runtime-signatures.py` : seuls quatre anciens fichiers vides sont retirés, puis la signature de son bundle est refaite. Ceci supprime des signatures détachées en attributs étendus, incompatibles avec une reconstruction différentielle. Les exécutables et bibliothèques du moteur restent identiques.
 

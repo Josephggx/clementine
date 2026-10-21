@@ -58,6 +58,13 @@ final class AppUpdates: NSObject, ObservableObject {
       let enabled = updater.canCheckForUpdates
       DispatchQueue.main.async { self?.canCheckForUpdates = enabled }
     }
+    // Always resolve the moving "latest" feed again rather than accepting an
+    // old redirected appcast from a cache or a legacy per-user feed override.
+    if let configured=Bundle.main.object(forInfoDictionaryKey:"SUFeedURL") as? String,
+      let url=URL(string:configured),UpdateFeed.isLatestRelease(url) {
+      controller.updater.clearFeedURLFromUserDefaults()
+      controller.updater.httpHeaders=["Cache-Control":"no-cache","Pragma":"no-cache"]
+    }
     controller.startUpdater()
     if controller.updater.automaticallyChecksForUpdates {
       controller.updater.checkForUpdatesInBackground()
@@ -141,6 +148,10 @@ final class AppUpdates: NSObject, ObservableObject {
 
 #if canImport(Sparkle)
 extension AppUpdates: SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
+  func feedURLString(for updater:SPUUpdater)->String? {
+    guard let configured=updater.hostBundle.object(forInfoDictionaryKey:"SUFeedURL") as? String else {return nil}
+    return UpdateFeed.freshURL(configured)
+  }
   var supportsGentleScheduledUpdateReminders: Bool { true }
 
   func standardUserDriverShouldHandleShowingScheduledUpdate(
