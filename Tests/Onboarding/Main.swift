@@ -58,6 +58,13 @@ final class OnboardingCheck: NSObject, NSApplicationDelegate {
   var module: ModuleWindowController?
   let root = URL(fileURLWithPath: Bundle.main.object(forInfoDictionaryKey: "TestRoot") as! String)
   func applicationDidFinishLaunching(_ notification: Notification) {
+    if CommandLine.arguments.contains("--permission-matrix") {
+      Task { @MainActor in
+        await PermissionMatrix.run()
+        NSApp.terminate(nil)
+      }
+      return
+    }
     if CommandLine.arguments.contains("--preview-pointer") {
       checkPreviewPointerIsolation()
       NSApp.terminate(nil)
@@ -72,6 +79,16 @@ final class OnboardingCheck: NSObject, NSApplicationDelegate {
     window.center()
     if !CommandLine.arguments.contains("--panels") {
       window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps:true)
+    }
+    if CommandLine.arguments.contains("--first-run") || Bundle.main.object(forInfoDictionaryKey: "TestMode") as? String == "first-run" {
+      state.showingOnboarding = true
+      state.onboardingPage = 0
+      window.contentView = NSHostingView(rootView: FirstRunTestRoot(state: state))
+      return
+    }
+    if CommandLine.arguments.contains("--tools-live") {
+      state.onboardingPage = 1
+      return
     }
     if CommandLine.arguments.contains("--panels") {
       checkPanelActivation()
@@ -306,6 +323,16 @@ final class OnboardingCheck: NSObject, NSApplicationDelegate {
     precondition(color.alphaComponent < 0.1, "Finovox fold must stay hollow")
     try! rep.representation(using:.png,properties:[:])!.write(to:root.appendingPathComponent("finovox.png"))
     print("Finovox: intérieur transparent OK")
+  }
+}
+
+private struct FirstRunTestRoot: View {
+  @ObservedObject var state: AppState
+  var body: some View {
+    Group {
+      if state.showingOnboarding { OnboardingView(state: state) }
+      else { PermissionsView() }
+    }
   }
 }
 @main struct Main {

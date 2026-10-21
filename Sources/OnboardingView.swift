@@ -253,7 +253,6 @@ private struct OnboardingConversionSlide: View {
 private final class OnboardingDemoState: ObservableObject {
   @Published var start = Date()
   @Published var selected = 0
-  @Published var paused = false
 }
 
 private struct OnboardingDragDemo: View {
@@ -370,10 +369,8 @@ private struct OnboardingToolsSlide: View {
           RoundedRectangle(cornerRadius: 21).fill(Color.clementineRaisedSurface.opacity(0.72))
           FeatureWheelPreview(items: items, appearance: state.appearance,
             soundFeedback: false, hapticFeedback: false,
-            previewSelection: animation.selected - first, drivesSelection: true, animateOpening: true,
-            onChoose: { item in
-              if let index = examples.firstIndex(where: { $0.id == item.action }) { animation.selected = index }
-            })
+            previewSelection: animation.selected - first, drivesSelection: true,
+            allowsPointerInteraction: false, animateOpening: true)
             .frame(width: WheelGeometry.side, height: WheelGeometry.side)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
           ShortcutBadge(symbol: "⌘", title: "Commande").padding(14)
@@ -394,11 +391,10 @@ private struct OnboardingToolsSlide: View {
           }
         }
       }
-      .onHover { animation.paused = $0 }
       .task {
         while !Task.isCancelled {
           do { try await Task.sleep(for: .seconds(2.3)) } catch { break }
-          guard !animation.paused, !reduceMotion else { continue }
+          guard !reduceMotion, !examples.isEmpty else { continue }
           withAnimation(.easeInOut(duration: 0.28)) { animation.selected = (animation.selected + 1) % examples.count }
         }
       }
@@ -505,11 +501,13 @@ private struct OnboardingPermissionsSlide: View {
         ForEach(ClementinePermission.allCases) { permission in
           let status = center.status(permission)
           HStack(spacing:12) {
-            Image(systemName:permission.icon).font(.system(size:15,weight:.medium)).foregroundStyle(citrus)
+            Image(systemName:permission.icon).font(.system(size:15,weight:.medium))
+              .foregroundStyle(status == .unavailable ? Color.secondary : citrus)
               .frame(width:34,height:34).background(citrus.opacity(0.10),in:RoundedRectangle(cornerRadius:9))
             VStack(alignment:.leading,spacing:2) {
               Text(permission.title).font(.system(size:13,weight:.semibold))
-              Text(permission.detail).font(.system(size:10)).foregroundStyle(.secondary).lineLimit(2)
+              Text(status == .unavailable ? "Application non installée · aucune autorisation nécessaire." : permission.detail)
+                .font(.system(size:10)).foregroundStyle(.secondary).lineLimit(2)
             }
             Spacer()
             Image(systemName: status == .granted ? "checkmark.shield.fill" :

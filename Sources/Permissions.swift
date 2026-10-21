@@ -1,6 +1,7 @@
 import AppKit
 import ApplicationServices
 import CoreServices
+import OSLog
 import SwiftUI
 
 enum ClementinePermission: String, CaseIterable, Identifiable {
@@ -74,6 +75,14 @@ enum ClementinePermissionStatus: Equatable {
   }
 }
 
+/// Injectable system boundary for first-run tests; production uses macOS below.
+struct PermissionEnvironment {
+  var accessibilityGranted: () -> Bool
+  var requestAccessibility: () -> Void
+  var installedApplication: (ClementinePermission) -> (url: URL, bundleID: String)?
+  var requestAutomation: (ClementinePermission, @escaping (OSStatus) -> Void) -> Void
+}
+
 final class PermissionCenter: ObservableObject {
   static let shared = PermissionCenter()
   static let onboardingKey = "didRequestSystemPermissions20261019v3"
@@ -85,14 +94,20 @@ final class PermissionCenter: ObservableObject {
   @Published private var automationStatuses: [ClementinePermission: ClementinePermissionStatus] = [:]
   private var monitor: Timer?
   private var activationObserver: NSObjectProtocol?
+  private var windowActivationObserver: NSObjectProtocol?
   private var targetActivationObserver: NSObjectProtocol?
   private var probesInFlight = Set<ClementinePermission>()
   private(set) var monitoring = false
   private var monitoringOwners = Set<UUID>()
   private var lastAutomationProbe = Date.distantPast
   private var requestGeneration = UUID()
-  private var waitingForAccessibility = false
   private var requestCompletion: (() -> Void)?
+  @Published private(set) var automationIssues: [ClementinePermission: String] = [:]
+  private var timedOutRequests: [ClementinePermission: Int] = [:]
+  private var requestDeadlines: [ClementinePermission: DispatchWorkItem] = [:]
+  private var requestLeases: [ClementinePermission: PermissionApplicationLeases] = [:]
+  private let environment: PermissionEnvironment?
+  private let requestTimeout: TimeInterval
   private var monitorLaunches = Set<ClementinePermission>()
   private var monitorPreexistingApps = Set<ClementinePermission>()
   private var applicationLeases = PermissionApplicationLeases()
@@ -109,10 +124,16 @@ final class PermissionCenter: ObservableObject {
   private let wouldRequireConsent: OSStatus = -1744
   private let eventNotPermitted: OSStatus = -1743
   private let processNotFound: OSStatus = -600
+  private let logger = Logger(subsystem: "io.joseph.clementine.permissions", category: "automation")
+  private var lastPassiveResults: [ClementinePermission: OSStatus] = [:]
 
   init(defaults: UserDefaults = .standard,
-    recovery: ((ClementinePermission) -> Void)? = nil) {
+    recovery: ((ClementinePermission) -> Void)? = nil,
+    environment: PermissionEnvironment? = nil, requestTimeout: TimeInterval = 45) {
     self.defaults = defaults
+    self.environment = environment
+    self.requestTimeout = requestTimeout
+    self.accessibilityGranted = environment?.accessibilityGranted() ?? AXIsProcessTrusted()
     recoveryOverride = recovery
     for permission in [ClementinePermission.pages, .numbers, .keynote] {
       switch defaults.string(forKey: "permissionStatus.\(permission.id)") {
@@ -140,6 +161,7 @@ final class PermissionCenter: ObservableObject {
         let id = app.bundleIdentifier else { return }
       self?.activatedProcessIdentifiers.insert(app.processIdentifier)
       self?.applicationLeases.protect(bundleID: id)
+      if id == Bundle.main.bundleIdentifier { self?.recheckAfterActivation() }
     }
   }
 
@@ -147,6 +169,7 @@ final class PermissionCenter: ObservableObject {
     if let workflowObserver { NotificationCenter.default.removeObserver(workflowObserver) }
     if let workflowUseObserver { NotificationCenter.default.removeObserver(workflowUseObserver) }
     if let targetActivationObserver { NSWorkspace.shared.notificationCenter.removeObserver(targetActivationObserver) }
+    if let windowActivationObserver { NotificationCenter.default.removeObserver(windowActivationObserver) }
   }
 
   var allRequiredGranted: Bool {
@@ -173,12 +196,8 @@ final class PermissionCenter: ObservableObject {
   }
 
   private func refreshAccessibility() {
-    let granted = AXIsProcessTrusted()
+    let granted = environment?.accessibilityGranted() ?? AXIsProcessTrusted()
     if accessibilityGranted != granted { accessibilityGranted = granted }
-    if granted && waitingForAccessibility {
-      waitingForAccessibility = false
-      continueConfiguration(generation: requestGeneration)
-    }
   }
 
   func startMonitoring(owner: UUID) {
@@ -191,6 +210,7 @@ final class PermissionCenter: ObservableObject {
     refreshAccessibility()
     guard !monitoring else { return }
     monitoring = true
+    logger.notice("Permission monitoring started")
     applicationLeases = PermissionApplicationLeases()
     monitorProbeAttempts.removeAll()
     // A pre-existing app that the user closes must not be reopened by polling.
@@ -218,22 +238,30 @@ final class PermissionCenter: ObservableObject {
         forName: NSApplication.didBecomeActiveNotification, object: NSApp, queue: .main
       ) { [weak self] _ in
         guard let self, self.monitoring else { return }
-        self.refreshAccessibility()
-        // Recheck after a visit to System Settings, even if the apps we briefly
-        // started on entry have already been closed. Do not relaunch user apps.
-        for permission in [ClementinePermission.pages, .numbers, .keynote]
-          where !self.monitorPreexistingApps.contains(permission) {
-          guard let installed = self.installedApplication(for: permission),
-            !self.applicationLeases.isProtected(bundleID: installed.bundleID),
-            !self.probesInFlight.contains(permission),
-            NSRunningApplication.runningApplications(withBundleIdentifier: installed.bundleID).isEmpty
-          else { continue }
-          self.monitorLaunches.remove(permission)
-          self.monitorProbeAttempts[permission] = 0
-        }
-        self.probeAutomationPermissions()
+        self.recheckAfterActivation()
       }
     }
+    if windowActivationObserver == nil {
+      windowActivationObserver = NotificationCenter.default.addObserver(
+        forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main
+      ) { [weak self] _ in self?.recheckAfterActivation() }
+    }
+  }
+
+  private func recheckAfterActivation() {
+    guard monitoring else { return }
+    refreshAccessibility()
+    for permission in [ClementinePermission.pages, .numbers, .keynote]
+      where !monitorPreexistingApps.contains(permission) {
+      guard let installed = installedApplication(for: permission),
+        !applicationLeases.isProtected(bundleID: installed.bundleID),
+        !probesInFlight.contains(permission), automationRequests[permission] == nil,
+        NSRunningApplication.runningApplications(withBundleIdentifier: installed.bundleID).isEmpty
+      else { continue }
+      monitorLaunches.remove(permission)
+      monitorProbeAttempts[permission] = 0
+    }
+    probeAutomationPermissions()
   }
 
   func stopMonitoring(owner: UUID) {
@@ -243,6 +271,7 @@ final class PermissionCenter: ObservableObject {
 
   func suspendMonitoring() {
     monitoring = false
+    logger.notice("Permission monitoring stopped")
     cancelRequests()
     monitorLaunches.removeAll()
     applicationLeases.finishAll()
@@ -250,14 +279,19 @@ final class PermissionCenter: ObservableObject {
     monitor = nil
     if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
     activationObserver = nil
+    if let windowActivationObserver { NotificationCenter.default.removeObserver(windowActivationObserver) }
+    windowActivationObserver = nil
   }
 
   func request(_ permission: ClementinePermission) {
     switch permission {
     case .accessibility:
       defaults.set(true, forKey: accessibilityRequestKey)
-      let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-      _ = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
+      if let environment { environment.requestAccessibility() }
+      else {
+        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        _ = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
+      }
     case .pages, .numbers, .keynote:
       requestAutomation(permission)
     }
@@ -299,10 +333,12 @@ final class PermissionCenter: ObservableObject {
     requestGeneration = UUID()
     requestCompletion = completion
     if status(.accessibility) != .granted {
-      waitingForAccessibility = true
       let denied = status(.accessibility) == .denied
       request(.accessibility)
-      if denied { openSettings(for: .accessibility) }
+      if denied && environment == nil { openSettings(for: .accessibility) }
+      // Accessibility has no completion callback. A refusal, closed prompt or
+      // trip to Settings must never leave the onboarding CTA spinning forever.
+      finishConfiguration(generation: requestGeneration)
       return
     }
     continueConfiguration(generation: requestGeneration)
@@ -310,8 +346,15 @@ final class PermissionCenter: ObservableObject {
 
   func cancelRequests() {
     requestGeneration = UUID()
-    waitingForAccessibility = false
     requestCompletion = nil
+    timedOutRequests.removeAll()
+    for permission in Array(automationRequests.keys) {
+      automationEpochs[permission, default: 0] += 1
+      requestDeadlines.removeValue(forKey: permission)?.cancel()
+      releaseRequestLease(permission)
+    }
+    automationRequests.removeAll()
+    workflowRecoveries.removeAll()
     if isRequestingAll { isRequestingAll = false }
   }
 
@@ -324,17 +367,18 @@ final class PermissionCenter: ObservableObject {
       status($0) != .granted && status($0) != .unavailable
     }
     requestAutomationSequence(automation, generation: generation) { [weak self] in
-      guard let self, generation == self.requestGeneration else { return }
-      self.defaults.set(self.allRequiredGranted, forKey: Self.onboardingKey)
-      self.isRequestingAll = false
-      self.refresh()
-      if let denied = [ClementinePermission.pages, .numbers, .keynote].first(where: {
-        self.status($0) == .denied
-      }) { self.openSettings(for: denied) }
-      let completion = self.requestCompletion
-      self.requestCompletion = nil
-      completion?()
+      self?.finishConfiguration(generation: generation)
     }
+  }
+
+  private func finishConfiguration(generation: UUID) {
+    guard generation == requestGeneration, isRequestingAll else { return }
+    defaults.set(allRequiredGranted, forKey: Self.onboardingKey)
+    isRequestingAll = false
+    let completion = requestCompletion
+    requestCompletion = nil
+    refresh()
+    completion?()
   }
 
   func openSettings(for permission: ClementinePermission) {
@@ -345,6 +389,7 @@ final class PermissionCenter: ObservableObject {
   }
 
   private func installedApplication(for permission: ClementinePermission) -> (url: URL, bundleID: String)? {
+    if let environment { return environment.installedApplication(permission) }
     let names: [String]
     switch permission {
     case .accessibility: return nil
@@ -353,7 +398,9 @@ final class PermissionCenter: ObservableObject {
     case .keynote: names = ["com.apple.Keynote", "com.apple.iWork.Keynote"]
     }
     for id in names {
-      if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) {
+      if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id),
+        let bundle = Bundle(url: url), let executable = bundle.executableURL,
+        FileManager.default.isExecutableFile(atPath: executable.path) {
         return (url, Bundle(url: url)?.bundleIdentifier ?? id)
       }
     }
@@ -367,10 +414,31 @@ final class PermissionCenter: ObservableObject {
   }
 
   private func probeAutomation(_ permission: ClementinePermission) {
+    guard environment == nil else { return }
     guard !probesInFlight.contains(permission), automationRequests[permission] == nil,
       let installed = installedApplication(for: permission) else { return }
     if NSRunningApplication.runningApplications(withBundleIdentifier: installed.bundleID).isEmpty {
-      guard monitoring, monitorLaunches.insert(permission).inserted else { return }
+      guard monitoring else { return }
+      if monitorLaunches.contains(permission) {
+        // Read TCC's decision without relaunching an app the probe has already
+        // closed. Transient/process errors preserve the last known decision.
+        probesInFlight.insert(permission)
+        let epoch = automationEpochs[permission, default: 0]
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+          guard let self else { return }
+          let result = self.appleEventPermission(bundleID: installed.bundleID, ask: false)
+          DispatchQueue.main.async {
+            if self.automationEpochs[permission, default: 0] == epoch,
+              self.automationRequests[permission] == nil,
+              result == self.eventNotPermitted || result == self.wouldRequireConsent {
+              self.recordPassiveAutomationResult(result, for: permission)
+            }
+            self.probesInFlight.remove(permission)
+          }
+        }
+        return
+      }
+      monitorLaunches.insert(permission)
       probesInFlight.insert(permission)
       let leases = applicationLeases
       withRunningApplication(for: permission, failure: { [weak self] in
@@ -400,7 +468,8 @@ final class PermissionCenter: ObservableObject {
         }
         self.probesInFlight.remove(permission)
         self.monitorProbeAttempts[permission, default: 0] += 1
-        if self.status(forAppleEventResult: result) != nil || self.monitorProbeAttempts[permission, default: 0] >= 3 {
+        if self.automationRequests[permission] == nil &&
+          (self.status(forAppleEventResult: result) != nil || self.monitorProbeAttempts[permission, default: 0] >= 3) {
           leases.finish(bundleID: installed.bundleID)
         }
       }
@@ -408,6 +477,10 @@ final class PermissionCenter: ObservableObject {
   }
 
   func recordPassiveAutomationResult(_ result: OSStatus, for permission: ClementinePermission) {
+    if lastPassiveResults[permission] != result {
+      lastPassiveResults[permission] = result
+      logger.notice("Passive \(permission.id, privacy: .public): \(result)")
+    }
     guard let status = status(forAppleEventResult: result) else { return }
     recordAutomationStatus(status, for: permission)
   }
@@ -418,7 +491,9 @@ final class PermissionCenter: ObservableObject {
     let update = { [self] in
       guard let permission = ClementinePermission.automation(bundleID: bundleID),
         let status = status(forAppleEventResult: result) else { return }
-      recordAutomationStatus(status, for: permission)
+      if automationRequests[permission] != nil {
+        completeAutomationRequest(permission, epoch: automationEpochs[permission, default: 0], result: result)
+      } else { recordAutomationStatus(status, for: permission) }
       guard result == eventNotPermitted || result == wouldRequireConsent else { return }
       if let recoveryOverride { recoveryOverride(permission); return }
       guard workflowRecoveries.insert(permission).inserted else { return }
@@ -437,35 +512,86 @@ final class PermissionCenter: ObservableObject {
       if let completion { automationRequests[permission]?.append(completion) }
       return
     }
+    timedOutRequests.removeValue(forKey: permission)
     automationRequests[permission] = completion.map { [$0] } ?? []
     automationEpochs[permission, default: 0] += 1
     let epoch = automationEpochs[permission, default: 0]
+    automationIssues.removeValue(forKey: permission)
+    let deadline = DispatchWorkItem { [weak self] in
+      guard let self, self.automationEpochs[permission, default: 0] == epoch,
+        self.automationRequests[permission] != nil else { return }
+      self.automationEpochs[permission, default: 0] += 1
+      self.timedOutRequests[permission] = epoch
+      self.automationIssues[permission] = "La demande n’a pas abouti. Réessayez ou vérifiez Automatisation dans Réglages Système."
+      self.releaseRequestLease(permission)
+      // Do not chain three unresponsive system prompts after a timeout.
+      self.finishConfiguration(generation: self.requestGeneration)
+      self.finishAutomationRequest(permission)
+    }
+    requestDeadlines[permission] = deadline
+    DispatchQueue.main.asyncAfter(deadline: .now() + requestTimeout, execute: deadline)
+    if let environment {
+      environment.requestAutomation(permission) { [weak self] result in
+        DispatchQueue.main.async { self?.completeAutomationRequest(permission, epoch: epoch, result: result) }
+      }
+      return
+    }
     let leases = monitoring ? applicationLeases : PermissionApplicationLeases()
+    requestLeases[permission] = leases
     withRunningApplication(for: permission, failure: { [weak self] in
-      self?.finishAutomationRequest(permission)
+      self?.completeAutomationRequest(permission, epoch: epoch, result: -600)
     }) { [weak self] bundleID, app, launched in
       guard let self else { return }
       if self.activatedProcessIdentifiers.contains(app.processIdentifier) { leases.protect(bundleID: bundleID) }
       leases.track(app, bundleID: bundleID, launched: launched)
-      guard !leases.isClosed else { self.finishAutomationRequest(permission); return }
+      guard self.automationEpochs[permission, default: 0] == epoch,
+        self.automationRequests[permission] != nil else { leases.finish(bundleID: bundleID); return }
+      guard !leases.isClosed else { self.completeAutomationRequest(permission, epoch: epoch, result: -600); return }
       self.determineAutomationPermission(bundleID: bundleID, ask: true) { result in
         DispatchQueue.main.async {
-          if self.automationEpochs[permission, default: 0] == epoch,
-            let status = self.status(forAppleEventResult: result) {
-            self.recordAutomationStatus(status, for: permission)
-          }
           if self.activatedProcessIdentifiers.contains(app.processIdentifier) { leases.protect(bundleID: bundleID) }
-          leases.finish(bundleID: bundleID)
-          self.refresh()
-          self.finishAutomationRequest(permission)
+          if self.automationEpochs[permission, default: 0] == epoch { leases.finish(bundleID: bundleID) }
+          self.completeAutomationRequest(permission, epoch: epoch, result: result)
         }
       }
     }
   }
 
+  private func completeAutomationRequest(_ permission: ClementinePermission, epoch: Int, result: OSStatus) {
+    if timedOutRequests[permission] == epoch,
+      automationEpochs[permission, default: 0] == epoch + 1,
+      automationRequests[permission] == nil,
+      let status = status(forAppleEventResult: result) {
+      timedOutRequests.removeValue(forKey: permission)
+      recordAutomationStatus(status, for: permission)
+      automationIssues.removeValue(forKey: permission)
+      refresh()
+      return
+    }
+    guard automationEpochs[permission, default: 0] == epoch,
+      automationRequests[permission] != nil else { return }
+    if let status = status(forAppleEventResult: result) {
+      recordAutomationStatus(status, for: permission)
+      automationIssues.removeValue(forKey: permission)
+    } else {
+      automationEpochs[permission, default: 0] += 1
+      automationIssues[permission] = "Impossible de vérifier \(permission.title). Réessayez ; votre dernier choix est conservé."
+    }
+    requestLeases.removeValue(forKey: permission)
+    refresh()
+    finishAutomationRequest(permission)
+  }
+
   private func finishAutomationRequest(_ permission: ClementinePermission) {
+    requestDeadlines.removeValue(forKey: permission)?.cancel()
     let callbacks = automationRequests.removeValue(forKey: permission) ?? []
     callbacks.forEach { $0() }
+  }
+
+  private func releaseRequestLease(_ permission: ClementinePermission) {
+    guard let leases = requestLeases.removeValue(forKey: permission) else { return }
+    if let installed = installedApplication(for: permission) { leases.finish(bundleID: installed.bundleID) }
+    else if leases !== applicationLeases { leases.finishAll() }
   }
 
   private func requestAutomationSequence(
@@ -483,7 +609,7 @@ final class PermissionCenter: ObservableObject {
     failure: (() -> Void)? = nil,
     completion: @escaping (String, NSRunningApplication, Bool) -> Void
   ) {
-    guard let installed = installedApplication(for: permission) else { return }
+    guard let installed = installedApplication(for: permission) else { failure?(); return }
     if let running = NSRunningApplication.runningApplications(
       withBundleIdentifier: installed.bundleID).first {
       completion(installed.bundleID, running, false)
@@ -539,7 +665,10 @@ final class PermissionCenter: ObservableObject {
         // Check the actual event after the explicit consent request too: the
         // preflight can lag behind a change in System Settings.
         let observed = self.passiveAutomationResult(bundleID: bundleID)
-        completion(self.status(forAppleEventResult: observed) != nil ? observed : result)
+        // A real event is authoritative when TCC's preflight cached a grant.
+        // Keep an explicit refusal even if a stale read-only probe says yes.
+        if result == self.eventNotPermitted { completion(result) }
+        else { completion(self.status(forAppleEventResult: observed) != nil ? observed : result) }
       }
     }
   }
@@ -601,7 +730,9 @@ final class PermissionCenter: ObservableObject {
     defer { AEDisposeDesc(&target) }
     let eventClass = kAECoreSuite
     let eventID = kAEGetData
-    return AEDeterminePermissionToAutomateTarget(&target, eventClass, eventID, ask)
+    let result = AEDeterminePermissionToAutomateTarget(&target, eventClass, eventID, ask)
+    if ask { logger.notice("Automation request \(bundleID, privacy: .public): \(result)") }
+    return result
   }
 
 
@@ -670,6 +801,10 @@ struct PermissionsView: View {
       .buttonStyle(.borderedProminent)
       .tint(citrus)
       .disabled(center.isRequestingAll)
+      if center.isRequestingAll {
+        Button("Annuler") { center.cancelRequests() }
+          .buttonStyle(.bordered)
+      }
     }
     .padding(18)
     .background(citrus.opacity(0.1), in: RoundedRectangle(cornerRadius: 15))
@@ -682,12 +817,12 @@ struct PermissionsView: View {
     HStack(spacing: 15) {
       Image(systemName: permission.icon)
         .font(.system(size: 18, weight: .medium))
-        .foregroundStyle(citrus)
+        .foregroundStyle(status == .unavailable ? Color.secondary : citrus)
         .frame(width: 42, height: 42)
         .background(citrus.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
       VStack(alignment: .leading, spacing: 4) {
         Text(permission.title).font(.system(size: 15, weight: .semibold))
-        Text(permission.detail)
+        Text(status == .unavailable ? "Application non installée · aucune autorisation nécessaire." : permission.detail)
           .font(.system(size: 12))
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
@@ -700,12 +835,19 @@ struct PermissionsView: View {
     .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color.clementineBorder))
   }
 
-  private func permissionControl(
+  @ViewBuilder private func permissionControl(
     _ permission: ClementinePermission, status: ClementinePermissionStatus, hovered: Bool
   ) -> some View {
+    if status == .unavailable {
+      Image(systemName: "minus.circle.fill")
+        .font(.system(size: 20, weight: .medium)).foregroundStyle(.secondary)
+        .frame(width: 36, height: 36)
+        .accessibilityLabel("\(permission.title) : app non installée")
+        .help("Application non installée · aucune autorisation à demander")
+    } else {
     let granted = status == .granted
     let color = granted ? permissionGreen : Color.red
-    return Button {
+    Button {
       if status == .notRequested { center.request(permission) }
       else { center.openSettings(for: permission) }
     } label: {
@@ -718,9 +860,10 @@ struct PermissionsView: View {
     }
     .buttonStyle(.plain)
     .accessibilityLabel("\(permission.title) : \(status.label)")
-    .help(permissionHelp(permission, status: status))
+    .help(center.automationIssues[permission] ?? permissionHelp(permission, status: status))
     .onHover { hover.id = $0 ? "permission-\(permission.id)" : nil }
     .animation(.easeInOut(duration: 0.18), value: hovered)
+    }
   }
 
   private func permissionHelp(
