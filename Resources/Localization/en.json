@@ -514,5 +514,17 @@
   "Choisissez un nom valide, sans / ni :.": "Choose a valid name without / or :.",
   "Un élément porte déjà ce nom. Choisissez un autre nom.": "An item already has this name. Choose another name.",
   "Ce document est en cours d’utilisation. Réessayez après l’opération.": "This document is in use. Try again when the operation has finished.",
-  "Rechercher une mise à jour": "Check for updates"
+  "Rechercher une mise à jour": "Check for updates",
+  "Nouveau PDF": "New PDF",
+  "Insérer un PDF ici": "Insert a PDF here",
+  "Valider": "Confirm",
+  "La sélection a changé dans le Finder. Relancez l’opération avec les fichiers restants.": "The selection changed in Finder. Run the operation again with the remaining files.",
+  "0 ko": "0 KB",
+  "Image {0}": "Image {0}",
+  "« {0} » sera déplacé dans la Corbeille.": "“{0}” will be moved to the Trash.",
+  "Options de la page": "Page options",
+  "Les fichiers extraits ne sont pas disponibles sur le disque.": "The extracted files are not available on disk.",
+  "Placez au moins une page valide dans les PDF à créer.": "Place at least one valid page in the PDFs to create.",
+  "Pivoter": "Rotate",
+  "Dupliquer": "Duplicate"
 }

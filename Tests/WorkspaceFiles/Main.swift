@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import PDFKit
 
 @main struct WorkspaceFilesCheck {
   @MainActor static func wait(_ condition:()->Bool) {
@@ -13,7 +14,7 @@ import SwiftUI
     let fm = FileManager.default
     let root = fm.temporaryDirectory.appendingPathComponent("clementine-files-"+UUID().uuidString)
     try fm.createDirectory(at:root,withIntermediateDirectories:true)
-    defer { if !CommandLine.arguments.contains("--ui") { try? fm.removeItem(at:root) } }
+    defer { if !CommandLine.arguments.contains("--ui") && Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String != "WorkspaceRevisionPreview" { try? fm.removeItem(at:root) } }
     let input = root.appendingPathComponent("Originaux",isDirectory:true)
     try fm.createDirectory(at:input,withIntermediateDirectories:true)
     let a = input.appendingPathComponent("Été et espaces.txt")
@@ -29,7 +30,7 @@ import SwiftUI
     precondition(WorkspaceFileOperations.editableName(hidden) == ".env")
     let state = AppState(); state.sound=false; state.reveal=false
     state.showingOnboarding=false; state.page="workspace"; state.files=[zip,a,folder]
-    if CommandLine.arguments.contains("--ui") {
+    if CommandLine.arguments.contains("--ui") || Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String == "WorkspaceRevisionPreview" {
       state.appearance="dark"; state.applyAppearance()
       let window = NSWindow(contentRect:NSRect(x:0,y:0,width:1136,height:790),
         styleMask:[.titled,.closable,.resizable],backing:.buffered,defer:false)
@@ -61,6 +62,8 @@ import SwiftUI
     precondition(fm.fileExists(atPath:zip.path) && state.jobs.count == 1 && !state.jobs[0].failed)
     let extractedFile = contents.first { $0.lastPathComponent == a.lastPathComponent }!
     precondition(read(extractedFile) == "Texte à conserver")
+    precondition(contents.allSatisfy {fm.fileExists(atPath:$0.path) && !$0.path.contains("/.clementine-")})
+    precondition(contents.allSatisfy {$0.resolvingSymlinksInPath().path.hasPrefix(root.resolvingSymlinksInPath().path+"/")})
     precondition(state.pinnedFileOperations.isEmpty)
     let broken = root.appendingPathComponent("Corrompu.zip")
     try "Not a ZIP".write(to:broken,atomically:true,encoding:.utf8)
@@ -89,6 +92,65 @@ import SwiftUI
       precondition(tools.contains(where:{$0.id == "extract"}))
     }
     precondition(Tool.all.first(where:{$0.id == "extract"})!.name == "Dézip")
+    // Stable identities must follow Finder renames and collapse hard links.
+    let tracked = input.appendingPathComponent("Suivi.txt")
+    let moved = input.appendingPathComponent("Nom modifié.txt")
+    try "stable".write(to:tracked,atomically:true,encoding:.utf8)
+    state.files=[tracked]
+    try fm.moveItem(at:tracked,to:moved)
+    state.refreshPinnedFiles()
+    precondition(state.files == [moved],"Bookmark must follow a Finder rename")
+    state.add([moved])
+    precondition(state.files.count == 1,"Renaming/re-adding cannot pin the same file twice")
+    let link = input.appendingPathComponent("Lien.txt")
+    try fm.linkItem(at:moved,to:link)
+    state.add([link])
+    precondition(state.files.count == 1,"Hard-linked aliases must not duplicate pins")
+    let revision=state.fileRevision
+    try "updated metadata".write(to:moved,atomically:false,encoding:.utf8)
+    state.refreshPinnedFiles()
+    precondition(state.fileRevision > revision)
+    let simulatedTrash=root.appendingPathComponent(".Trash",isDirectory:true)
+    try fm.createDirectory(at:simulatedTrash,withIntermediateDirectories:true)
+    try fm.moveItem(at:moved,to:simulatedTrash.appendingPathComponent(moved.lastPathComponent))
+    state.refreshPinnedFiles()
+    precondition(state.files.isEmpty,"Trashed bookmarks must be removed even when the file still exists")
+    precondition(TrackedFiles.isInTrash(URL(fileURLWithPath:"/Volumes/Data/.Trashes/501/Doc.pdf")))
+    precondition(!TrackedFiles.isInTrash(URL(fileURLWithPath:"/Documents/Trash Notes.txt")))
+    state.files=[link]
+    try fm.removeItem(at:link)
+    state.refreshPinnedFiles()
+    precondition(state.files.isEmpty,"Deleted files must be removed")
+
+    let pdfs=(0..<2).map {root.appendingPathComponent("Suivi-\($0).pdf")}
+    for pdf in pdfs {
+      let doc=PDFDocument();doc.insert(PDFPage(),at:0);doc.insert(PDFPage(),at:1)
+      precondition(doc.write(to:pdf))
+    }
+    let session=ModuleSession(tool:"split",files:pdfs,defaults:Options(),reveal:false)
+    wait {!session.loading}
+    let tracker=TrackedFiles();tracker.observe(session.files)
+    let renamedPDF=root.appendingPathComponent("PDF renommé.pdf")
+    try fm.moveItem(at:pdfs[1],to:renamedPDF)
+    session.reconcileFiles(tracker.refresh(session.files))
+    precondition(session.files == [pdfs[0],renamedPDF] && session.options.pdfSplitGroups[renamedPDF.path] != nil)
+    try fm.moveItem(at:pdfs[0],to:simulatedTrash.appendingPathComponent(pdfs[0].lastPathComponent))
+    session.reconcileFiles(tracker.refresh(session.files))
+    precondition(session.files == [renamedPDF] && session.activeFile == 0 && session.canSave)
+    var closed=false;session.close={closed=true}
+    try fm.moveItem(at:renamedPDF,to:simulatedTrash.appendingPathComponent(renamedPDF.lastPathComponent))
+    session.reconcileFiles(tracker.refresh(session.files))
+    precondition(closed,"Editors must close when all inputs are trashed")
+    // A Finder change during initial loading must not be overwritten by an older callback.
+    let loadingPDFs=(0..<2).map {root.appendingPathComponent("Chargement-\($0).pdf")}
+    for pdf in loadingPDFs {let doc=PDFDocument();doc.insert(PDFPage(),at:0);doc.insert(PDFPage(),at:1);precondition(doc.write(to:pdf))}
+    let loadingSession=ModuleSession(tool:"split",files:loadingPDFs,defaults:Options(),reveal:false)
+    let loadingTracker=TrackedFiles();loadingTracker.observe(loadingSession.files)
+    try fm.moveItem(at:loadingPDFs[0],to:simulatedTrash.appendingPathComponent(loadingPDFs[0].lastPathComponent))
+    loadingSession.reconcileFiles(loadingTracker.refresh(loadingSession.files))
+    wait {!loadingSession.loading}
+    precondition(loadingSession.files == [loadingPDFs[1]] && loadingSession.canSave)
+    precondition(loadingSession.splitThumbnails[loadingPDFs[0]] == nil)
     print("PASS: rename/extension/collision/invalid names, real ZIP contents and preserved original, duplicate click, corrupt archive, recycle success/refusal, late results and archive tools")
   }
 }

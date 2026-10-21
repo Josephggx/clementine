@@ -194,6 +194,7 @@ struct WorkspaceView: View {
               .frame(maxWidth: .infinity)
               if let previewFile {
                 PreviewPane(url: previewFile, options: $state.options, selection: false)
+                  .id("\(previewFile.path):\(state.fileRevision)")
                   .frame(width: 270, height: 220)
                   .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                   .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(citrus.opacity(0.24)))
@@ -261,24 +262,21 @@ struct WorkspaceView: View {
     .onDrop(
       of: [UTType.fileURL.identifier], isTargeted: $state.hoverDrop, perform: state.acceptDrop
     )
-    .sheet(item:$fileSelection.rename) { request in
-      WorkspaceRenameSheet(source:request.url,onSave: { name in
-        let renamed = try state.renamePinnedFile(request.url,to:name)
-        if fileSelection.selectedFile == request.url { fileSelection.selectedFile = renamed }
-        fileSelection.rename = nil
-      },onCancel: { fileSelection.rename = nil })
-    }
     .alert(tr("Supprimer le document ?"),isPresented:Binding(
       get:{fileSelection.deletingFile != nil},set:{if !$0 {fileSelection.deletingFile = nil}}),
       presenting:fileSelection.deletingFile) { url in
         Button(tr("Mettre à la Corbeille"),role:.destructive) { state.trashPinnedFile(url) }
         Button(tr("Annuler"),role:.cancel) {}
       } message: { url in
-        Text(tr("« \(url.lastPathComponent) » sera déplacé dans la Corbeille. Vous pourrez le restaurer depuis le Finder."))
+        Text(tr("« \(url.lastPathComponent) » sera déplacé dans la Corbeille."))
       }
     .animation(.easeInOut(duration: 0.18), value: state.hoverDrop)
     .onChange(of: state.files) { _, files in
-      if let selectedFile = fileSelection.selectedFile, !files.contains(selectedFile) { fileSelection.selectedFile = files.first }
+      if let request=fileSelection.rename, !files.contains(request.url) {fileSelection.rename=nil}
+      if let deleting=fileSelection.deletingFile, !files.contains(deleting) {fileSelection.deletingFile=nil}
+      if let selectedFile = fileSelection.selectedFile, !files.contains(selectedFile) {
+        fileSelection.selectedFile = state.fileRelocations[selectedFile].flatMap {files.contains($0) ? $0 : nil} ?? files.first
+      }
       else if fileSelection.selectedFile == nil { fileSelection.selectedFile = files.first }
     }
   }
@@ -325,7 +323,7 @@ struct WorkspaceView: View {
   }
   func size(_ u: URL) -> String {
     let n = (try? u.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-    return ByteCountFormatter.string(fromByteCount: Int64(n), countStyle: .file) + " · "
+    return (n == 0 ? tr("0 ko") : ByteCountFormatter.string(fromByteCount: Int64(n), countStyle: .file)) + " · "
       + Family.singularName(for: u)
   }
 
@@ -343,7 +341,13 @@ struct WorkspaceView: View {
     return HStack {
       Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 30, height: 30)
       VStack(alignment: .leading) {
-        Text(url.lastPathComponent).lineLimit(1)
+        WorkspaceInlineName(url:url,editing:Binding(
+          get:{fileSelection.rename?.url == url},
+          set:{if !$0 && fileSelection.rename?.url == url {fileSelection.rename=nil}})) { name in
+          let renamed=try state.renamePinnedFile(url,to:name)
+          if fileSelection.selectedFile == url {fileSelection.selectedFile=renamed}
+          fileSelection.rename=nil
+        }
         Text(trString(size(url))).font(.caption).foregroundStyle(.secondary)
       }
       Spacer()
@@ -376,6 +380,17 @@ struct WorkspaceView: View {
       .accessibilityLabel(tr("Afficher dans le Finder : \(url.lastPathComponent)"))
       .onHover { fileSelection.hoveredControlID = $0 ? finderHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: finderHovered)
+      if !Family.isFolder(url), url.pathExtension.lowercased() == "zip" {
+        pinnedFileButton(url,role:"unzip",icon:"archivebox",title:tr("Dézip")) {
+          let selected = previewFile == url
+          state.unzipPinnedFile(url) { contents in
+            if selected { fileSelection.selectedFile = contents.first }
+          }
+        }
+      }
+      pinnedFileButton(url,role:"rename",icon:"pencil",title:tr("Renommer")) {
+        fileSelection.rename = WorkspaceRenameRequest(url:url)
+      }
       Button {
         NSWorkspace.shared.open(url)
       } label: {
@@ -389,17 +404,6 @@ struct WorkspaceView: View {
       .accessibilityLabel(tr("Ouvrir \(url.lastPathComponent)"))
       .onHover { fileSelection.hoveredControlID = $0 ? openHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: openHovered)
-      if !Family.isFolder(url), url.pathExtension.lowercased() == "zip" {
-        pinnedFileButton(url,role:"unzip",icon:"archivebox",title:tr("Dézip")) {
-          let selected = previewFile == url
-          state.unzipPinnedFile(url) { contents in
-            if selected { fileSelection.selectedFile = contents.first }
-          }
-        }
-      }
-      pinnedFileButton(url,role:"rename",icon:"pencil",title:tr("Renommer")) {
-        fileSelection.rename = WorkspaceRenameRequest(url:url)
-      }
       pinnedFileButton(url,role:"delete",icon:"trash",title:tr("Supprimer")) {
         fileSelection.deletingFile = url
       }
@@ -431,6 +435,7 @@ struct WorkspaceView: View {
     return Button(action:action) {
       Group {
         if state.pinnedFileOperations[url] == role { ProgressView().controlSize(.mini).tint(citrus) }
+        else if role == "unzip" { WheelGlyphView(key:"extract").frame(width:17,height:17).foregroundStyle(.secondary) }
         else { Image(systemName:icon).foregroundStyle(.secondary) }
       }
       .frame(width:25,height:25)

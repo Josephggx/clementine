@@ -15,6 +15,12 @@ Sources synchronisées le 21 octobre 2026. Cette version n’est pas encore publ
 - Atelier : boutons Renommer et Supprimer sur les éléments épinglés ; confirmation avant déplacement dans la Corbeille. Retirer continue de désépingler uniquement.
 - Réglages : le bouton de vérification devient « Rechercher une mise à jour ».
 
+### Correctifs de la version de travail
+
+- Split : miniatures PDF/Image, insertion discrète de PDF avant/entre/après les groupes, rotation/duplication/suppression, suppression du groupe vidé après déplacement et cadres de hauteur constante. Split est masqué pour les PDF d’une seule page.
+- Atelier : renommage inline, suivi des fichiers déplacés dans la Corbeille ou renommés dans le Finder, déduplication par identité du fichier et aperçu actualisé. Dézip épingle uniquement les fichiers réellement extraits sur disque.
+- Langue : sélecteur sans globe ; dans l’onboarding il reste seul à droite de Retour. Rotation des outils accélérée.
+- Validation : exports PDF éditables et rotations/duplications, 500 déplacements, scénarios de suivi des fichiers et Corbeille, 2401 assertions de compatibilité, traductions FR/EN et essais graphiques clair/sombre.
 
 ## Construire et mettre à jour
 

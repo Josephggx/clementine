@@ -22,14 +22,16 @@ import CoreText
     _ = NSApplication.shared
     let root = FileManager.default.temporaryDirectory.appendingPathComponent("clementine-split-"+UUID().uuidString)
     try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
-    defer { if !CommandLine.arguments.contains("--ui") { try? FileManager.default.removeItem(at:root) } }
+    defer { if !CommandLine.arguments.contains("--ui") && Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String != "SplitRevisionPreview" { try? FileManager.default.removeItem(at:root) } }
     let source = root.appendingPathComponent("Document.pdf")
     let second = root.appendingPathComponent("Autre.pdf")
     try fixture(source,count:4); try fixture(second,count:2)
-    if CommandLine.arguments.contains("--ui") {
+    if CommandLine.arguments.contains("--ui") || Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String == "SplitRevisionPreview" {
       NSApp.setActivationPolicy(.regular)
       let module = ModuleWindowController(tool:"split",files:[source,second],defaults:Options(),reveal:false)
       module.show(); NSApp.activate(ignoringOtherApps:true)
+      module.window.makeKeyAndOrderFront(nil)
+      module.onClose={NSApp.terminate(nil)}
       withExtendedLifetime(module) { NSApp.run() }
       return
     }
@@ -60,6 +62,25 @@ import CoreText
       do { _ = try export("invalid-"+UUID().uuidString); fatalError("Invalid grouping accepted") }
       catch is ClementineError { }
     }
+    // Edited instances can duplicate, rotate and deliberately remove source pages.
+    options.pdfSplitGroups[source.path] = [[4,0],[2]]
+    options.pdfSplitEdits[source.path] = [0:ModulePage(index:0,rotation:90),
+      4:ModulePage(index:0,rotation:180),2:ModulePage(index:2)]
+    let edited = try export("edited")
+    precondition(edited.count == 2 && contents(edited[0]) == ["Source page 1","Source page 1"])
+    precondition(contents(edited[1]) == ["Source page 3"])
+    let editedPDF = PDFDocument(url:edited[0])!
+    precondition(editedPDF.page(at:0)!.rotation == 180 && editedPDF.page(at:1)!.rotation == 90)
+    for malformed in [[[0,0],[2,4]],[[0,4]],[[0,2,4,99]],[]] {
+      precondition(!PDFSplitLayout.isValid(malformed,count:4,edits:options.pdfSplitEdits[source.path]))
+    }
+    options.pdfSplitEdits.removeAll()
+    let single = root.appendingPathComponent("Une page.pdf")
+    try fixture(single,count:1)
+    precondition(!Tool.available([single]).contains(where:{$0.id == "split"}))
+    precondition(!Tool.available([source,single]).contains(where:{$0.id == "split"}))
+    precondition(Tool.available([source]).contains(where:{$0.id == "split"}))
+    precondition(Tool.catalogue(for:single).contains(where:{$0.id == "split"}))
     options.pdfSplitFormat = "png"
     let images = try export("images")
     precondition(images.count == 4)
@@ -78,13 +99,18 @@ import CoreText
     }
     var layout = PDFSplitLayout.individual(count:4)
     layout = PDFSplitLayout.moving(2,in:layout,to:0,before:0)
-    precondition(layout == [[2,0],[1],[],[3]])
+    precondition(layout == [[2,0],[1],[3]])
     layout = PDFSplitLayout.moving(0,in:layout,to:0,before:2)
     precondition(layout[0] == [0,2])
     for move in 0..<500 {
-      layout = PDFSplitLayout.moving(move % 4,in:layout,to:(move / 4) % 4)
+      layout = PDFSplitLayout.moving(move % 4,in:layout,to:(move / 4) % layout.count)
       precondition(PDFSplitLayout.isComplete(layout,count:4))
     }
+    precondition(PDFSplitLayout.inserting(nil,in:[[0],[1]],at:0) == [[],[0],[1]])
+    precondition(PDFSplitLayout.inserting(nil,in:[[0],[1]],at:1) == [[0],[],[1]])
+    precondition(PDFSplitLayout.inserting(nil,in:[[0],[1]],at:2) == [[0],[1],[]])
+    precondition(PDFSplitLayout.inserting(1,in:[[0],[1]],at:0) == [[1],[0]])
+    precondition(PDFSplitLayout.inserting(0,in:[[0],[1]],at:2) == [[1],[0]])
     precondition(PDFSplitLayout.moving(99,in:layout,to:0) == layout)
     precondition(PDFSplitLayout.moving(0,in:layout,to:99) == layout)
     for tools in [Tool.available([source,second]),Tool.catalogue(for:source)] {

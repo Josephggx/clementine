@@ -103,6 +103,8 @@ struct OnboardingView: View {
       navButton(id: "back", icon: "chevron.left", title: "Retour", visible: state.onboardingPage > 0) {
         move(to: state.onboardingPage - 1)
       }
+      LanguagePicker(compact:true).controlSize(.small)
+        .disabled(permissions.isRequestingAll)
       Spacer()
       navButton(id: "next", icon: nextIcon, title: nextTitle, trailingIcon: true) {
         if state.onboardingPage == pageCount - 1 {
@@ -111,8 +113,6 @@ struct OnboardingView: View {
         } else { move(to: state.onboardingPage + 1) }
       }
       .disabled(permissions.isRequestingAll)
-      LanguagePicker(compact:true).controlSize(.small)
-        .disabled(permissions.isRequestingAll)
 
     }
     .overlay {
@@ -398,7 +398,7 @@ private struct OnboardingToolsSlide: View {
       }
       .task {
         while !Task.isCancelled {
-          do { try await Task.sleep(for: .seconds(2.3)) } catch { break }
+          do { try await Task.sleep(for: .seconds(1.8)) } catch { break }
           guard !reduceMotion, !examples.isEmpty else { continue }
           withAnimation(.easeInOut(duration: 0.28)) { animation.selected = (animation.selected + 1) % examples.count }
         }

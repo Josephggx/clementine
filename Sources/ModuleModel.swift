@@ -106,6 +106,7 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
   private var playerObserver: Any?
   private var previewTask: DispatchWorkItem?
   private var previewGeneration = UUID()
+  private var loadGeneration = UUID()
   private var token: CancellationToken?
   private var previewToken: CancellationToken?
   private var scratch = FileManager.default.temporaryDirectory.appendingPathComponent("clementine-module-" + UUID().uuidString)
@@ -141,7 +142,7 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
   }
   var specification: ModuleSpecification { .get(tool,family:family) }
   var canSave: Bool {
-    if busy || loading { return false }
+    if busy || loading || files.isEmpty { return false }
     switch tool {
     case "annotate", "redact", "bleep": return !options.marks.isEmpty
     case "snapshot": return !frames.isEmpty
@@ -150,7 +151,7 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
         return files.allSatisfy { file in
           guard let thumbs = splitThumbnails[file], !thumbs.isEmpty else { return false }
           return ["png","jpg"].contains(options.pdfSplitFormat) || options.pdfSplitMode == "pages" ||
-            PDFSplitLayout.isComplete(options.pdfSplitGroups[file.path] ?? [], count: thumbs.count)
+            PDFSplitLayout.isValid(options.pdfSplitGroups[file.path] ?? [], count: thumbs.count, edits:options.pdfSplitEdits[file.path])
         }
       }
       return !splitPoints.isEmpty
@@ -285,14 +286,16 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
     return context.makeImage()!
   }
   func load() {
-    let url = files[0], tool = tool, family = family
+    guard let url=files.first else {return}
+    let inputFiles=files, tool=tool, family=family, generation=UUID()
+    loadGeneration=generation;loading=true
     Task.detached(priority: .userInitiated) { [weak self] in
       guard let self else { return }
       do {
         if tool != "strip" && tool != "archive" && family == .image {
-          if tool == "crop",self.files.count>1 {
+          if tool == "crop",inputFiles.count>1 {
             var crops:[String:ModuleCrop]=[:],thumbnails:[URL:NSImage]=[:]
-            for file in self.files {
+            for file in inputFiles {
               if let source=CGImageSourceCreateWithURL(file as CFURL,nil),let properties=CGImageSourceCopyPropertiesAtIndex(source,0,nil) as? [CFString:Any] {
                 var w=properties[kCGImagePropertyPixelWidth] as? Int ?? 1,h=properties[kCGImagePropertyPixelHeight] as? Int ?? 1
                 if [5,6,7,8].contains(properties[kCGImagePropertyOrientation] as? Int ?? 1) {swap(&w,&h)}
@@ -300,10 +303,14 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
                 if let thumb=CGImageSourceCreateThumbnailAtIndex(source,0,[kCGImageSourceCreateThumbnailFromImageAlways:true,kCGImageSourceCreateThumbnailWithTransform:true,kCGImageSourceThumbnailMaxPixelSize:120] as CFDictionary) {thumbnails[file]=NSImage(cgImage:thumb,size:.zero)}
               }
             }
-            DispatchQueue.main.async {self.options.moduleCrops=crops;self.fileThumbnails=thumbnails}
+            DispatchQueue.main.async {
+            guard self.loadGeneration == generation else {return}
+self.options.moduleCrops=crops;self.fileThumbnails=thumbnails}
           }
           let image = try Engine().loadImage(url)
           DispatchQueue.main.async {
+            guard self.loadGeneration == generation else {return}
+
             self.sourceImage = image; self.sourceSize = CGSize(width:image.width,height:image.height); self.preview = NSImage(cgImage:image,size:.zero)
             if tool == "crop" { self.options.width = image.width; self.options.height = image.height }
             if tool == "collage" { self.options.width = 2048; self.options.height = 2048; self.renderPreview() }
@@ -325,6 +332,8 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
           }
           let samples = await Self.waveforms(url,duration:duration)
           DispatchQueue.main.async {
+            guard self.loadGeneration == generation else {return}
+
             self.duration = max(0.001,duration); self.options.duration = max(0.001,duration)
             self.waveform = samples.mix; self.leftWaveform = samples.left; self.rightWaveform = samples.right; self.thumbnails = thumbs
             if let video {
@@ -341,7 +350,7 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
         if tool == "split", family == .pdf {
           var thumbnails: [URL: [Int:NSImage]] = [:]
           var groups: [String: [[Int]]] = [:]
-          for file in self.files {
+          for file in inputFiles {
             guard let doc = PDFDocument(url:file), !doc.isLocked, doc.pageCount > 0 else {
               throw ClementineError(tr("PDF illisible, vide ou verrouillé : \(file.lastPathComponent)"))
             }
@@ -353,16 +362,24 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
             thumbnails[file] = pages
             groups[file.path] = PDFSplitLayout.individual(count:doc.pageCount)
           }
-          DispatchQueue.main.async { self.splitThumbnails = thumbnails; self.options.pdfSplitGroups = groups }
+          DispatchQueue.main.async {
+            guard self.loadGeneration == generation else {return}
+ self.splitThumbnails = thumbnails; self.options.pdfSplitGroups = groups }
         }
         if tool == "organize", let doc = PDFDocument(url:url) {
           var thumbs: [Int:NSImage] = [:]
           for i in 0..<doc.pageCount { thumbs[i] = doc.page(at:i)?.thumbnail(of:CGSize(width:180,height:240),for:.mediaBox) }
           let pages = (0..<doc.pageCount).map { ModulePage(index:$0) }
-          DispatchQueue.main.async { self.options.modulePages = pages; self.pageThumbnails = thumbs }
+          DispatchQueue.main.async {
+            guard self.loadGeneration == generation else {return}
+ self.options.modulePages = pages; self.pageThumbnails = thumbs }
         }
-      } catch { DispatchQueue.main.async { self.error = error.localizedDescription } }
-      DispatchQueue.main.async { self.loading = false }
+      } catch { DispatchQueue.main.async {
+            guard self.loadGeneration == generation else {return}
+ self.error = error.localizedDescription } }
+      DispatchQueue.main.async {
+            guard self.loadGeneration == generation else {return}
+ self.loading = false }
     }
   }
   static func waveforms(_ url:URL,duration:Double) async ->(mix:[Float],left:[Float],right:[Float]) {
@@ -564,5 +581,29 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
     }
   }
   func playOriginal() { pause(); player.replaceCurrentItem(with:AVPlayerItem(url:files[0])); seek(0); togglePlay() }
-  func cancel() { token?.cancel(); previewToken?.cancel(); pause(); close?() }
+  func refreshImageAfterFileChange() {
+    guard files.indices.contains(activeFile) else {return}
+    let url=files[activeFile]
+    sourceImage=nil;preview=nil;loading=true
+    DispatchQueue.global(qos:.userInitiated).async { [weak self] in
+      let result=Result {try Engine().loadImage(url)}
+      DispatchQueue.main.async {
+        guard let self, self.files.indices.contains(self.activeFile),self.files[self.activeFile] == url else {return}
+        self.loading=false
+        switch result {
+        case .success(let image):
+          self.sourceImage=image;self.sourceSize=CGSize(width:image.width,height:image.height)
+          let crop=self.options.moduleCrops[url.path] ?? ModuleCrop(x:0,y:0,width:image.width,height:image.height)
+          self.options.x=crop.x;self.options.y=crop.y;self.options.width=crop.width;self.options.height=crop.height
+          self.preview=NSImage(cgImage:image,size:.zero)
+        case .failure(let error): self.error=error.localizedDescription
+        }
+      }
+    }
+  }
+  func interruptForFileChange() {
+    token?.cancel(); previewToken?.cancel(); previewTask?.cancel()
+    error = tr("La sélection a changé dans le Finder. Relancez l’opération avec les fichiers restants.")
+  }
+  func cancel() { loadGeneration=UUID(); token?.cancel(); previewToken?.cancel(); pause(); close?() }
 }

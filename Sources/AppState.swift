@@ -8,7 +8,17 @@ final class AppState: ObservableObject {
   @Published private(set) var login = UserDefaults.standard.object(forKey: "launchAtLogin") as? Bool ?? true
   private var appliedIconResource: String?
   private var appearanceIcons: [String: NSImage] = [:]
-  @Published var files: [URL] = []
+  let pinnedTracker = TrackedFiles()
+  var fileRelocations:[URL:URL] = [:]
+  private var pinnedRefreshTimer: Timer?
+  @Published var fileRevision = 0
+  @Published var files: [URL] = [] {
+    didSet {
+      let unique = TrackedFiles.unique(files)
+      if unique != files {files = unique}
+      pinnedTracker.observe(files)
+    }
+  }
   @Published var jobs: [Job] = []
   @Published var options = Options()
   @Published var pinnedFileOperations: [URL:String] = [:]
@@ -77,7 +87,9 @@ final class AppState: ObservableObject {
     let original = wheelModifiers
     let normalized = WheelShortcutAssignments.normalized(original)
     if normalized != original { applyWheelModifiers(normalized) }
+    pinnedRefreshTimer = Timer.scheduledTimer(withTimeInterval:0.8,repeats:true) { [weak self] _ in self?.refreshPinnedFiles() }
   }
+  deinit {pinnedRefreshTimer?.invalidate()}
   private var wheelModifiers: [String: String] {
     ["formats": conversionModifier, "tools": toolModifier, "actions": actionModifier]
   }
@@ -164,9 +176,10 @@ final class AppState: ObservableObject {
     showingOnboarding = false
   }
   func add(_ urls: [URL], replace: Bool = false) {
-    let clean = urls.filter { $0.isFileURL && FileManager.default.fileExists(atPath: $0.path) }
+    refreshPinnedFiles()
+    let clean = urls.filter { $0.isFileURL && !TrackedFiles.isInTrash($0) && FileManager.default.fileExists(atPath: $0.path) }
     if replace { files = [] }
-    for u in clean where !files.contains(u) { files.append(u) }
+    for u in clean where !files.contains(where:{TrackedFiles.sameItem($0,u)}) { files.append(u) }
     if !Tool.available(files).contains(where: { $0.id == selectedTool }) { selectedTool = nil }
     if !formats.contains(format) { format = formats.first ?? "png" }
   }
@@ -186,7 +199,8 @@ final class AppState: ObservableObject {
   }
   var showModule: ((String,[URL]) -> Void)?
   func configure(_ tool: String) {
-    guard !files.isEmpty else { return }
+    refreshPinnedFiles()
+    guard !files.isEmpty, Tool.available(files).contains(where:{$0.id == tool}) else { return }
     showModule?(tool, files)
   }
   func submit(_ action: String, files selected: [URL]? = nil, overrideOptions: Options? = nil,

@@ -11,6 +11,8 @@ final class ModuleWindowController: NSObject, NSWindowDelegate {
   let window: NSPanel
   var onClose: (() -> Void)?
   var subscriptions = Set<AnyCancellable>()
+  private let fileTracker = TrackedFiles()
+  private var fileTimer: Timer?
   init(tool: String, files: [URL], defaults: Options, reveal: Bool) {
     session = ModuleSession(tool:tool,files:files,defaults:defaults,reveal:reveal)
     let spec = session.specification
@@ -24,6 +26,11 @@ final class ModuleWindowController: NSObject, NSWindowDelegate {
     window.contentView = NSHostingView(rootView:ModuleRoot(session:session, movableHeader:true))
     session.close = { [weak self] in self?.window.close() }
     window.center()
+    fileTracker.observe(session.files)
+    fileTimer = Timer.scheduledTimer(withTimeInterval:0.8,repeats:true) { [weak self] _ in
+      guard let self else {return}
+      self.session.reconcileFiles(self.fileTracker.refresh(self.session.files))
+    }
     session.$targetEnabled.dropFirst().sink { [weak self] enabled in
       guard let self else { return }
       DispatchQueue.main.async { [weak self] in
@@ -41,7 +48,8 @@ final class ModuleWindowController: NSObject, NSWindowDelegate {
     // Space even for a nonactivating panel. A user click can focus the module.
     if NSApp.isActive { window.makeKey() }
   }
-  func windowWillClose(_ notification: Notification) { session.pause(); DispatchQueue.main.async { [self] in onClose?() } }
+  deinit {fileTimer?.invalidate()}
+  func windowWillClose(_ notification: Notification) { fileTimer?.invalidate(); session.pause(); DispatchQueue.main.async { [self] in onClose?() } }
 }
 struct ModuleGlass: ViewModifier {
   static let cornerRadius: CGFloat = 21

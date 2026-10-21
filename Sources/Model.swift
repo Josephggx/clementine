@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import PDFKit
 import SwiftUI
 
 let imageFormats = ["jpg", "png", "webp", "heic", "tiff", "bmp", "gif", "avif", "svg", "pdf"]
@@ -176,6 +177,13 @@ struct Tool: Identifiable, Hashable {
         return ids(Compatibility.format(url)).contains(id)
       }
     }
+    // Real selections only: an absent catalogue fixture is handled separately below.
+    compatible.removeAll { id in
+      id == "split" && Family.of(first) == .pdf && !urls.allSatisfy {
+        guard let pdf = PDFDocument(url:$0), !pdf.isLocked else { return false }
+        return pdf.pageCount > 1
+      }
+    }
     if group || Family.of(first) != .archive {
       compatible.append("archive")
     }
@@ -202,6 +210,10 @@ struct Tool: Identifiable, Hashable {
     var result = candidates.filter { $0.id != "archive" && seen.insert($0.id).inserted }
     if candidates.contains(where: { $0.id == "archive" }), let archive = all.first(where: { $0.id == "archive" }) {
       result.append(archive)
+    }
+    if Family.of(source) == .pdf, !result.contains(where:{$0.id == "split"}),
+      let split = all.first(where:{$0.id == "split"}) {
+      result.insert(split,at:result.firstIndex(where:{$0.id == "organize"}) ?? result.count)
     }
     if Family.of(source) == .pdf,
       let merge = result.firstIndex(where: { $0.id == "mergepdf" }) {
@@ -238,6 +250,7 @@ struct Options: Codable {
   var targetEncoding = "Accurate"
   var pdfSplitFormat = "pdf", pdfSplitMode = "pages"
   var pdfSplitGroups: [String: [[Int]]] = [:]
+  var pdfSplitEdits: [String: [Int:ModulePage]] = [:]
   var splitRemoved: [Int] = [], splitExportMode = "Clips"
   var silenceThreshold = -40.0
   var photoAdjustments: [String: Double] = [:]

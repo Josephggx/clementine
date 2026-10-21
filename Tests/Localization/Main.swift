@@ -4,7 +4,7 @@ import SwiftUI
 @main struct LanguageCheck {
   @MainActor static func main() throws {
     _ = NSApplication.shared
-    if CommandLine.arguments.contains("--ui") {
+    if CommandLine.arguments.contains("--ui") || Bundle.main.object(forInfoDictionaryKey:"CFBundleName") as? String == "LanguageRevisionPreview" {
       let state = AppState()
       state.showingOnboarding = true
       state.appearance = "dark"; state.applyAppearance()
