@@ -330,6 +330,7 @@ struct WorkspaceView: View {
   private func fileRow(_ url: URL) -> some View {
     let selectable = state.files.count > 1
     let selected = selectable && previewFile == url
+    let editing = fileSelection.rename?.url == url
     let previewHoverID = "preview:" + url.path
     let finderHoverID = "finder:" + url.path
     let openHoverID = "open:" + url.path
@@ -343,14 +344,16 @@ struct WorkspaceView: View {
       VStack(alignment: .leading) {
         WorkspaceInlineName(url:url,editing:Binding(
           get:{fileSelection.rename?.url == url},
-          set:{if !$0 && fileSelection.rename?.url == url {fileSelection.rename=nil}})) { name in
+          set:{if $0 {fileSelection.rename=WorkspaceRenameRequest(url:url)}
+            else if fileSelection.rename?.url == url {fileSelection.rename=nil}})) { name in
           let renamed=try state.renamePinnedFile(url,to:name)
           if fileSelection.selectedFile == url {fileSelection.selectedFile=renamed}
           fileSelection.rename=nil
         }
-        Text(trString(size(url))).font(.caption).foregroundStyle(.secondary)
+        if !editing { Text(trString(size(url))).font(.caption).foregroundStyle(.secondary) }
       }
       Spacer()
+      if !editing {
       if selectable {
         Button {
           fileSelection.selectedFile = url
@@ -421,6 +424,7 @@ struct WorkspaceView: View {
       .accessibilityLabel(tr("Retirer \(url.lastPathComponent)"))
       .onHover { fileSelection.hoveredControlID = $0 ? removeHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: removeHovered)
+      }
     }
     .padding(8)
     .background(Color.clementineRaisedSurface.opacity(selectable ? 0.72 : 0.46),
@@ -435,7 +439,7 @@ struct WorkspaceView: View {
     return Button(action:action) {
       Group {
         if state.pinnedFileOperations[url] == role { ProgressView().controlSize(.mini).tint(citrus) }
-        else if role == "unzip" { WheelGlyphView(key:"extract").frame(width:17,height:17).foregroundStyle(.secondary) }
+        else if role == "unzip" { WheelGlyphView(key:"extract",color:.secondaryLabelColor).frame(width:17,height:17) }
         else { Image(systemName:icon).foregroundStyle(.secondary) }
       }
       .frame(width:25,height:25)
@@ -503,15 +507,19 @@ struct WorkspaceView: View {
 
 struct WheelGlyphView: NSViewRepresentable {
   let key: String
-  func makeNSView(context: Context) -> NSView { GlyphHost(key: key) }
-  func updateNSView(_ view: NSView, context: Context) { (view as? GlyphHost)?.key = key; view.needsDisplay = true }
+  var color:NSColor = NSColor(hex: "F56D30")
+  func makeNSView(context: Context) -> NSView { GlyphHost(key: key,color:color) }
+  func updateNSView(_ view: NSView, context: Context) {
+    (view as? GlyphHost)?.key = key; (view as? GlyphHost)?.color = color; view.needsDisplay = true
+  }
   private final class GlyphHost: NSView {
     var key: String
-    init(key: String) { self.key = key; super.init(frame: .zero) }
+    var color:NSColor
+    init(key: String,color:NSColor) { self.key = key; self.color=color; super.init(frame: .zero) }
     required init?(coder: NSCoder) { fatalError() }
     override func draw(_ dirtyRect: NSRect) {
       guard let context = NSGraphicsContext.current?.cgContext else { return }
-      WheelGlyph.draw(key, in: bounds.insetBy(dx: 0.5, dy: 0.5), color: NSColor(hex: "F56D30"), context: context)
+      WheelGlyph.draw(key, in: bounds.insetBy(dx: 0.5, dy: 0.5), color: color, context: context)
     }
   }
 }

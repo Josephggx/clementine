@@ -25,6 +25,10 @@ import PDFKit
     try fm.createDirectory(at:folder,withIntermediateDirectories:true)
     try Data([1,2,3]).write(to:folder.appendingPathComponent("Document.bin"))
     var settings = Options(); settings.outputFolder = root.path; settings.archiveFormat = "zip"
+    // Finder launches without a UTF-8 locale on some Macs. Accented archive
+    // names must still extract, while traversal and links remain forbidden.
+    setenv("LC_ALL","C",1)
+    defer {unsetenv("LC_ALL")}
     let zip = try Engine().run([a,hidden,folder],action:"archive",options:settings)[0]
     func read(_ url:URL) -> String { try! String(contentsOf:url,encoding:.utf8) }
     precondition(WorkspaceFileOperations.editableName(hidden) == ".env")
@@ -65,6 +69,29 @@ import PDFKit
     precondition(contents.allSatisfy {fm.fileExists(atPath:$0.path) && !$0.path.contains("/.clementine-")})
     precondition(contents.allSatisfy {$0.resolvingSymlinksInPath().path.hasPrefix(root.resolvingSymlinksInPath().path+"/")})
     precondition(state.pinnedFileOperations.isEmpty)
+    try Engine().process("/usr/bin/python3",["-c", """
+import pathlib, sys, zipfile, stat
+root = pathlib.Path(sys.argv[1])
+for filename, member in [('traversal.zip', '../outside.txt'), ('absolute.zip', '/outside.txt')]:
+    with zipfile.ZipFile(root / filename, 'w') as z:
+        z.writestr(member, 'must not extract')
+with zipfile.ZipFile(root / 'link.zip', 'w') as z:
+    info = zipfile.ZipInfo('link')
+    info.create_system = 3
+    info.external_attr = (stat.S_IFLNK | 0o777) << 16
+    z.writestr(info, '../outside')
+""", root.path])
+    for filename in ["traversal.zip","absolute.zip","link.zip"] {
+      let staging=root.appendingPathComponent(UUID().uuidString)
+      try fm.createDirectory(at:staging,withIntermediateDirectories:true)
+      do {
+        _ = try Engine().extract(root.appendingPathComponent(filename),stage:staging)
+        fatalError("Unsafe archive accepted: \(filename)")
+      } catch {
+        let remaining=try fm.contentsOfDirectory(atPath:staging.path)
+        precondition(remaining.isEmpty)
+      }
+    }
     let broken = root.appendingPathComponent("Corrompu.zip")
     try "Not a ZIP".write(to:broken,atomically:true,encoding:.utf8)
     state.files=[broken,renamed]

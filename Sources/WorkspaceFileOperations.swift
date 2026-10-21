@@ -117,6 +117,7 @@ struct WorkspaceRenameRequest: Identifiable {
 private final class WorkspaceInlineDraft: ObservableObject {
   @Published var name=""
   @Published var error:String?
+  @Published var hovered:String?
 }
 
 struct WorkspaceInlineName: View {
@@ -125,26 +126,53 @@ struct WorkspaceInlineName: View {
   let save:(String)throws->Void
   @StateObject private var draft=WorkspaceInlineDraft()
   @FocusState private var focused:Bool
+  private var suffix:String {
+    Family.isFolder(url) || url.pathExtension.isEmpty ? "" : "."+url.pathExtension
+  }
   var body: some View {
     Group {
       if editing {
-        HStack(spacing:5) {
-          TextField(tr("Nouveau nom"),text:$draft.name)
-            .textFieldStyle(.plain).focused($focused)
-            .padding(.vertical,3)
-            .overlay(alignment:.bottom) {Rectangle().fill(draft.error == nil ? citrus : .red).frame(height:1)}
-            .onSubmit(commit).onExitCommand(perform:cancel)
-          if let error=draft.error { Image(systemName:"exclamationmark.circle").foregroundStyle(.red).help(error) }
-          Button(action:commit) {Image(systemName:"checkmark").frame(width:23,height:23)}
-            .buttonStyle(.borderless).help(tr("Valider"))
-          Button(action:cancel) {Image(systemName:"xmark").frame(width:23,height:23)}
-            .buttonStyle(.borderless).help(tr("Annuler"))
+        HStack(alignment:.center,spacing:5) {
+          // Text supplies the intrinsic width; the field can still compress in
+          // a narrow workspace without pushing its controls out of the row.
+          Text(draft.name.isEmpty ? " " : draft.name).lineLimit(1).hidden()
+            .frame(minWidth:24)
+            .overlay {
+              TextField(tr("Nouveau nom"),text:$draft.name)
+                .textFieldStyle(.plain).focused($focused)
+                .onSubmit(commit).onExitCommand(perform:cancel)
+            }
+            .padding(.vertical,4)
+            .overlay(alignment:.bottom) {
+              Rectangle().fill(draft.error == nil ? Color.secondary.opacity(0.35) : .red).frame(height:1)
+            }
+          if !suffix.isEmpty { Text(suffix).fixedSize() }
+          if let error=draft.error {
+            Image(systemName:"exclamationmark.circle").foregroundStyle(.red).help(error)
+          }
+          editButton("checkmark",title:tr("Valider"),action:commit)
+          editButton("xmark",title:tr("Annuler"),action:cancel)
         }
-      } else {Text(url.lastPathComponent).lineLimit(1)}
+        .font(.system(size:13))
+        .background(WorkspaceRenameDismissArea(cancel:cancel))
+      } else {
+        Text(url.lastPathComponent).lineLimit(1)
+          .onTapGesture(count:2) { editing=true }
+      }
     }
     .onChange(of:editing) { _,value in
       if value {draft.name=WorkspaceFileOperations.editableName(url);draft.error=nil;focused=true}
     }
+  }
+  private func editButton(_ icon:String,title:String,action:@escaping()->Void)->some View {
+    Button(action:action) {
+      Image(systemName:icon).font(.system(size:11,weight:.medium))
+        .foregroundStyle(.secondary).frame(width:25,height:25)
+        .background(draft.hovered == icon ? Color.secondary.opacity(0.14) : .clear,in:Circle())
+    }
+    .buttonStyle(.plain).help(title).accessibilityLabel(title)
+    .onHover {draft.hovered=$0 ? icon : nil}
+    .animation(.easeInOut(duration:0.16),value:draft.hovered == icon)
   }
   private func commit() {
     do {try save(draft.name);editing=false;draft.error=nil}
@@ -153,3 +181,36 @@ struct WorkspaceInlineName: View {
   private func cancel() {editing=false;draft.error=nil}
 }
 
+/// Observe outside clicks without consuming them: the clicked control still
+/// performs its usual action. Monitoring exists only while this editor exists.
+private struct WorkspaceRenameDismissArea:NSViewRepresentable {
+  let cancel:()->Void
+  func makeNSView(context:Context)->MonitorView { MonitorView(cancel:cancel) }
+  func updateNSView(_ view:MonitorView,context:Context) {view.cancel=cancel}
+  static func dismantleNSView(_ view:MonitorView,coordinator:()) {view.stop()}
+  final class MonitorView:NSView {
+    var cancel:()->Void
+    private var monitor:Any?
+    private var observers=[NSObjectProtocol]()
+    init(cancel:@escaping()->Void) {
+      self.cancel=cancel;super.init(frame:.zero)
+      monitor=NSEvent.addLocalMonitorForEvents(matching:[.leftMouseDown,.rightMouseDown]) { [weak self] event in
+        guard let self,let window=self.window else {return event}
+        let inside=event.window === window && self.bounds.contains(self.convert(event.locationInWindow,from:nil))
+        if !inside {self.cancel()}
+        return event
+      }
+      observers.append(NotificationCenter.default.addObserver(forName:NSApplication.didResignActiveNotification,object:nil,queue:.main) { [weak self] _ in self?.cancel() })
+      observers.append(NotificationCenter.default.addObserver(forName:NSWindow.didResignKeyNotification,object:nil,queue:.main) { [weak self] note in
+        if let self,let window=note.object as? NSWindow,window === self.window {self.cancel()}
+      })
+    }
+    required init?(coder:NSCoder) {fatalError()}
+    override func hitTest(_ point:NSPoint)->NSView? {nil}
+    func stop() {
+      if let monitor {NSEvent.removeMonitor(monitor);self.monitor=nil}
+      observers.forEach {NotificationCenter.default.removeObserver($0)};observers.removeAll()
+    }
+    deinit {stop()}
+  }
+}

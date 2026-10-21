@@ -1049,14 +1049,17 @@ final class Engine {
     return dest
   }
   func extract(_ u: URL, stage: URL) throws -> URL {
-    let names = try process("/usr/bin/tar", ["-tf", u.path]).split(separator: "\n").map(String.init)
+    // Finder-launched apps often inherit the C locale. bsdtar then escapes
+    // accents as backslash-octal sequences, which are not archive path separators.
+    let archiveLocale = ["LC_ALL":"en_US.UTF-8"]
+    let names = try process("/usr/bin/tar", ["-tf", u.path], environment:archiveLocale).split(separator: "\n").map(String.init)
     guard names.count <= 100000 else { throw ClementineError(tr("Archive trop volumineuse")) }
     guard
       names.allSatisfy({
         !$0.hasPrefix("/") && !$0.split(separator: "/").contains("..") && !$0.contains("\\")
       })
     else { throw ClementineError(tr("L’archive contient des chemins dangereux.")) }
-    let listing = try process("/usr/bin/tar", ["-tvf", u.path])
+    let listing = try process("/usr/bin/tar", ["-tvf", u.path], environment:archiveLocale)
     guard
       !listing.split(separator: "\n").contains(where: {
         $0.first == "l" || $0.first == "h" || $0.first == "b" || $0.first == "c" || $0.first == "p"
