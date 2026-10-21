@@ -27,7 +27,7 @@ check(Compatibility.targets(urls(["gif"])).count == 6, "GIF is video input")
 check(Compatibility.targets(urls(["mp4"])).filter { audioFormats.contains($0) } == ["mp3"], "Video audio export")
 check(Tool.available(urls(["png"])).map(\.id) == ["compress", "strip", "adjust", "annotate", "frame", "crop", "redact", "archive"], "Single image tools")
 check(Tool.available(urls(["png", "jpg"])).map(\.id) == ["compress", "crop", "mergepdf", "collage", "archive"], "Image group tools")
-check(Tool.available(urls(["pdf", "pdf"])).map(\.id) == ["compress", "split", "mergepdf", "archive"], "PDF group tools")
+check(Tool.available(urls(["pdf", "pdf"])).map(\.id) == ["compress", "mergepdf", "split", "archive"], "PDF group tools")
 for formats in [["svg", "svg"], ["gif", "gif"], ["mp3", "wav"], ["mp4", "mov"],
                 ["zip", "rar"], ["docx", "csv"], ["unknown", "unknown"], ["pdf", "png"]] {
   check(!Tool.available(urls(formats)).contains { $0.id == "strip" || $0.id == "metadata" },
@@ -55,7 +55,7 @@ let catalogueFolder = URL(fileURLWithPath: "/Dossier", isDirectory: true)
 check(Tool.catalogue(for: catalogueFolder).map(\.id) == ["archive"], "Synthetic directory catalogue matches real directories")
 check(Tool.available(urls(["zip"])).map(\.id) == ["strip", "extract"], "Existing ZIP does not offer ZIP")
 check(Tool.available(urls(["rar"])).map(\.id) == ["strip", "extract"], "Existing archive does not offer ZIP")
-check(Tool.catalogue(for: urls(["pdf"])[0]).map(\.id) == ["compress", "strip", "split", "organize", "mergepdf", "archive"], "PDF feature catalogue includes batch actions")
+check(Tool.catalogue(for: urls(["pdf"])[0]).map(\.id) == ["compress", "strip", "mergepdf", "split", "organize", "archive"], "PDF feature catalogue includes batch actions")
 check(Tool.catalogue(for: urls(["jpg"])[0]).map(\.id) == ["compress", "strip", "adjust", "annotate", "frame", "crop", "redact", "mergepdf", "collage", "archive"], "Image feature catalogue includes batch actions")
 check(Tool.catalogue(for: urls(["mp3"])[0]).map(\.id) == ["compress", "strip", "normalize", "visualize", "trim", "channels", "bleep", "join", "archive"], "Audio feature catalogue includes assembly")
 check(Tool.catalogue(for: urls(["docx"])[0]).map(\.id) == ["strip", "archive"], "Document feature catalogue includes archive")

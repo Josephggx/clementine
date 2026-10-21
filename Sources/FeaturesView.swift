@@ -210,7 +210,6 @@ struct FeaturesView: View {
           state.add(urls, replace: true)
           state.page = "workspace"
           let opensWithoutSettings = tool.id == "mute" || tool.id == "extract" || tool.id == "archive"
-            || (tool.id == "split" && Family.of(urls[0]) == .pdf)
             || (tool.id == "mergepdf" && Family.of(urls[0]) == .image)
           if opensWithoutSettings { state.selectedTool = tool.id }
           else { DispatchQueue.main.async { state.configure(tool.id) } }

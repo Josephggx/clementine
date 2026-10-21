@@ -124,7 +124,9 @@ struct ModuleContent: View {
       case "trim": if session.family == .video { mediaCanvas }; trimControls
       case "speed": mediaCanvas; speedControls; playback
       case "snapshot": mediaCanvas; snapshotControls
-      case "split": mediaCanvas; splitControls
+      case "split":
+        if session.family == .pdf { PDFSplitControls(session:session) }
+        else { mediaCanvas; splitControls }
       case "normalize": audioOverview; normalizeControls
       case "channels": channelControls
       case "bleep": bleepControls

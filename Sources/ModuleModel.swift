@@ -20,6 +20,7 @@ struct ModuleSpecification {
   let title: String, button: String
   let width: CGFloat, height: CGFloat
   static func get(_ tool: String, family: Family) -> ModuleSpecification {
+    if tool == "split", family == .pdf { return .init(title:"Split PDF",button:"Split",width:640,height:660) }
     let video = family == .video
     let values: [String: (String,String,CGFloat,CGFloat)] = [
       "compress": ("Compress","Compress",380,375), "strip": ("Metadata","Save",480,540),
@@ -38,7 +39,7 @@ struct ModuleSpecification {
       "visualize": ("Audio Visualizer","Create Visualization",400,631),
       "channels": ("Convert Audio Channels","Apply",400,400),
       "bleep": ("Bleep Audio","Save Bleeped Copy",400,400),
-      "mergepdf": ("Fusionner en PDF","Créer le PDF",320,298),
+      "mergepdf": ("Merge","Créer le PDF",320,298),
       "archive": ("ZIP","Créer le ZIP",360,230),
       "organize": ("Organize PDF","Save Organized PDF",560,600)
     ]
@@ -94,6 +95,7 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
   @Published var frameThumbnails: [Double:NSImage] = [:]
   var autoTrimOriginal: (Double,Double)?
   var silenceGeneration = UUID()
+  @Published var splitThumbnails: [URL: [Int:NSImage]] = [:]
   @Published var pageThumbnails: [Int:NSImage] = [:]
   @Published var hoveredPage: UUID?
   @Published var draggedPage: ModulePage?
@@ -143,7 +145,15 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
     switch tool {
     case "annotate", "redact", "bleep": return !options.marks.isEmpty
     case "snapshot": return !frames.isEmpty
-    case "split": return !splitPoints.isEmpty
+    case "split":
+      if family == .pdf {
+        return files.allSatisfy { file in
+          guard let thumbs = splitThumbnails[file], !thumbs.isEmpty else { return false }
+          return options.pdfSplitFormat == "png" || options.pdfSplitMode == "pages" ||
+            PDFSplitLayout.isComplete(options.pdfSplitGroups[file.path] ?? [], count: thumbs.count)
+        }
+      }
+      return !splitPoints.isEmpty
     case "organize": return !options.modulePages.isEmpty
     default: return true
     }
@@ -189,7 +199,15 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
       let image = NSImage(cgImage:Self.cataloguePage(),size:.zero)
       pageThumbnails = Dictionary(uniqueKeysWithValues:(0..<3).map {($0,image)})
     }
-    if tool == "split" { splitPoints = [10, 21] }
+    if tool == "split" {
+      if family == .pdf {
+        let image = NSImage(cgImage:Self.cataloguePage(),size:.zero)
+        for file in files {
+          splitThumbnails[file] = Dictionary(uniqueKeysWithValues:(0..<4).map { ($0,image) })
+          options.pdfSplitGroups[file.path] = PDFSplitLayout.individual(count:4)
+        }
+      } else { splitPoints = [10, 21] }
+    }
     if tool == "snapshot" { frames = [8, 18] }
     if tool == "annotate" {
       drawingTool = "draw"
@@ -320,6 +338,23 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
           }
         }
         if tool == "strip" { try self.loadMetadata() }
+        if tool == "split", family == .pdf {
+          var thumbnails: [URL: [Int:NSImage]] = [:]
+          var groups: [String: [[Int]]] = [:]
+          for file in self.files {
+            guard let doc = PDFDocument(url:file), !doc.isLocked, doc.pageCount > 0 else {
+              throw ClementineError("PDF illisible, vide ou verrouillé : \(file.lastPathComponent)")
+            }
+            var pages: [Int:NSImage] = [:]
+            for i in 0..<doc.pageCount {
+              pages[i] = doc.page(at:i)?.thumbnail(of:CGSize(width:150,height:180),for:.mediaBox)
+            }
+            guard pages.count == doc.pageCount else { throw ClementineError("Aperçu des pages impossible") }
+            thumbnails[file] = pages
+            groups[file.path] = PDFSplitLayout.individual(count:doc.pageCount)
+          }
+          DispatchQueue.main.async { self.splitThumbnails = thumbnails; self.options.pdfSplitGroups = groups }
+        }
         if tool == "organize", let doc = PDFDocument(url:url) {
           var thumbs: [Int:NSImage] = [:]
           for i in 0..<doc.pageCount { thumbs[i] = doc.page(at:i)?.thumbnail(of:CGSize(width:180,height:240),for:.mediaBox) }

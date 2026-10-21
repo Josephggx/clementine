@@ -43,8 +43,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         self.state.error = "Sélectionnez un seul fichier pour consulter ses métadonnées."
         return
       }
-      if ["mute", "extract", "split", "mergepdf", "archive"].contains(tool),
-        (tool == "mute" || tool == "extract" || tool == "archive" || (tool == "split" && Family.of(files[0]) == .pdf) || (tool == "mergepdf" && Family.of(files[0]) == .image)) {
+      if ["mute", "extract", "mergepdf", "archive"].contains(tool),
+        (tool == "mute" || tool == "extract" || tool == "archive" || (tool == "mergepdf" && Family.of(files[0]) == .image)) {
         let previous = self.state.jobs.first?.id
         self.state.submit(tool, files:files)
         if let job = self.state.jobs.first, job.id != previous { self.wheel.showProgress(job) }

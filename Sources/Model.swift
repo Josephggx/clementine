@@ -133,7 +133,7 @@ struct Tool: Identifiable, Hashable {
     Tool("channels", "Canaux et balance", "hifispeaker.2", [.audio]),
     Tool("silence", "Retirer les silences", "waveform.slash", [.audio]),
     Tool("visualize", "Audio vers vidéo", "waveform.path.ecg.rectangle", [.audio]),
-    Tool("mergepdf", "Fusionner / créer un PDF", "doc.on.doc", [.pdf, .image], group: true),
+    Tool("mergepdf", "Merge", "doc.on.doc", [.pdf, .image], group: true),
     Tool("organize", "Réorganiser les pages", "rectangle.3.group", [.pdf]),
     Tool("extract", "Extraire l’archive", "archivebox", [.archive]),
     Tool("archive", "ZIP", "doc.zipper", Array(Family.allCases), group: true),
@@ -142,7 +142,7 @@ struct Tool: Identifiable, Hashable {
     ["compress": "COMPRESS", "strip": "METADATA", "adjust": "EDIT", "annotate": "ANNOTATE",
      "frame": "ADD BG", "crop": "CROP", "redact": "REDACT", "normalize": "NORMALIZE",
      "mute": "MUTE", "trim": "TRIM", "split": "SPLIT", "organize": "ORGANIZE",
-     "extract": "EXTRACT", "mergepdf": "MERGE PDF", "speed": "SPEED", "join": "JOIN",
+     "extract": "EXTRACT", "mergepdf": "MERGE", "speed": "SPEED", "join": "JOIN",
      "snapshot": "SNAPSHOT", "visualize": "VISUALIZE", "channels": "CHANNELS",
      "collage": "COLLAGE", "archive": "ZIP", "qr": "READ QR", "bleep": "BLEEP"][id] ?? name.uppercased()
   }
@@ -163,7 +163,7 @@ struct Tool: Identifiable, Hashable {
         return group ? ["compress", "strip", "mute", "join"]
           : ["compress", "strip", "mute", "trim", "crop", "speed", "snapshot", "split", "redact"]
       case "gif": return ["strip"]
-      case "pdf": return group ? ["compress", "strip", "split", "mergepdf"]
+      case "pdf": return group ? ["compress", "strip", "mergepdf", "split"]
         : ["compress", "strip", "split", "organize"]
       case "zip", "tar", "gz", "rar": return ["strip", "extract"]
       default: return ["strip"]
@@ -201,6 +201,11 @@ struct Tool: Identifiable, Hashable {
     if candidates.contains(where: { $0.id == "archive" }), let archive = all.first(where: { $0.id == "archive" }) {
       result.append(archive)
     }
+    if Family.of(source) == .pdf,
+      let merge = result.firstIndex(where: { $0.id == "mergepdf" }) {
+      let tool = result.remove(at: merge)
+      if let split = result.firstIndex(where: { $0.id == "split" }) { result.insert(tool, at: split) }
+    }
     return result
   }
 }
@@ -229,6 +234,8 @@ struct Options: Codable {
   var moduleEditor = false
   var compressionReduction: Double? = nil
   var targetEncoding = "Accurate"
+  var pdfSplitFormat = "pdf", pdfSplitMode = "pages"
+  var pdfSplitGroups: [String: [[Int]]] = [:]
   var splitRemoved: [Int] = [], splitExportMode = "Clips"
   var silenceThreshold = -40.0
   var photoAdjustments: [String: Double] = [:]

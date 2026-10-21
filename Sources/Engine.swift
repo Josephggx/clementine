@@ -818,16 +818,7 @@ final class Engine {
       throw ClementineError("PDF illisible ou verrouillé")
     }
     if action == "split" {
-      var result: [URL] = []
-      for i in 0..<doc.pageCount {
-        try token.check()
-        let part = PDFDocument()
-        part.insert(doc.page(at: i)!.copy() as! PDFPage, at: 0)
-        let d = output(u, "pdf", stage, suffix: "-page-\(i+1)")
-        guard part.write(to: d) else { throw ClementineError("Écriture impossible") }
-        result.append(d)
-      }
-      return result
+      return try splitPDF(doc, source:u, stage:stage, options:o)
     }
     let d = output(u, "pdf", stage, suffix: "-\(action)")
     if action == "organize" {

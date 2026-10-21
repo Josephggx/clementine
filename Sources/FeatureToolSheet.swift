@@ -62,11 +62,16 @@ struct FeatureToolSheet: View {
       defaults: Options(), reveal: false, cataloguePreview: true))
   }
 
-  private var copy: FeatureToolCopy { .forTool(tool) }
+  private var copy: FeatureToolCopy {
+    if tool.id == "split", family == .pdf {
+      return .init(summary: "Séparez les pages en PDF ou en images.",
+        benefits: ["Une page par fichier par défaut", "Regroupez les pages par glisser-déposer"])
+    }
+    return .forTool(tool)
+  }
   private var specification: ModuleSpecification { .get(tool.id, family: family) }
   private var hasNativeModule: Bool {
     !(tool.id == "mute" || tool.id == "extract" || tool.id == "archive" ||
-      (tool.id == "split" && family == .pdf) ||
       (tool.id == "mergepdf" && family == .image))
   }
 
