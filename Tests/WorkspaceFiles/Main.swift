@@ -178,6 +178,7 @@ with zipfile.ZipFile(root / 'link.zip', 'w') as z:
     wait {!loadingSession.loading}
     precondition(loadingSession.files == [loadingPDFs[1]] && loadingSession.canSave)
     precondition(loadingSession.splitThumbnails[loadingPDFs[0]] == nil)
+    try coherence(root)
     print("PASS: rename/extension/collision/invalid names, real ZIP contents and preserved original, duplicate click, corrupt archive, recycle success/refusal, late results and archive tools")
   }
 }

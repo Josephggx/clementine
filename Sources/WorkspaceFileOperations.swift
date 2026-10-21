@@ -11,10 +11,10 @@ enum WorkspaceFileOperations {
     var name = input.trimmingCharacters(in:.whitespacesAndNewlines)
     let suffix = Family.isFolder(source) || source.pathExtension.isEmpty ? "" : "."+source.pathExtension
     if !suffix.isEmpty, name.lowercased().hasSuffix(suffix.lowercased()) { name = String(name.dropLast(suffix.count)) }
-    guard !name.isEmpty, name != ".", name != "..",
+    guard !name.isEmpty, !name.hasPrefix("."),
       !name.contains("/"), !name.contains(":"), !name.contains("\0"),
       !name.contains("\n"), !name.contains("\r") else {
-      throw ClementineError(tr("Choisissez un nom valide, sans / ni :."))
+      throw ClementineError(tr("Choisissez un nom sans / ni : et ne commençant pas par un point."))
     }
     let destination = source.deletingLastPathComponent().appendingPathComponent(name+suffix)
     if destination == source { return source }

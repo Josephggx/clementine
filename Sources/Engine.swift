@@ -1034,8 +1034,10 @@ final class Engine {
     for (i, u) in urls.enumerated() {
       try token.check()
       var d = root.appendingPathComponent(u.lastPathComponent)
-      if fm.fileExists(atPath: d.path) {
-        d = root.appendingPathComponent("\(i)-" + u.lastPathComponent)
+      var collision = i
+      while fm.fileExists(atPath: d.path) {
+        d = root.appendingPathComponent("\(collision)-" + u.lastPathComponent)
+        collision += 1
       }
       try fm.copyItem(at: u, to: d)
     }
@@ -1071,8 +1073,15 @@ final class Engine {
     let dest = stage.appendingPathComponent(
       u.deletingPathExtension().lastPathComponent + "-extrait", isDirectory: true)
     try fm.createDirectory(at: dest, withIntermediateDirectories: true)
-    try process(
-      "/usr/bin/tar", ["-xf", u.path, "-C", dest.path, "--no-same-owner", "--no-same-permissions"])
+    if u.pathExtension.lowercased() == "zip" {
+      // bsdtar interprets a literal backslash in a ZIP member as a directory
+      // separator. ditto preserves valid Mac filenames and restores Mac metadata.
+      // Both paths use the same traversal/special-file validation above.
+      try process("/usr/bin/ditto",["-x","-k",u.path,dest.path],environment:archiveLocale)
+    } else {
+      try process(
+        "/usr/bin/tar", ["-xf", u.path, "-C", dest.path, "--no-same-owner", "--no-same-permissions"])
+    }
     return dest
   }
   func subtitle(_ u: URL, to dest: URL) throws {
