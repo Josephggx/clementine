@@ -379,7 +379,7 @@ struct WorkspaceView: View {
             in: Circle())
       }
       .buttonStyle(.plain)
-      .documentTooltip(url.path, hovered: finderHovered)
+      .documentTooltip(url.deletingLastPathComponent().path, hovered: finderHovered)
       .accessibilityLabel(tr("Afficher dans le Finder : \(url.lastPathComponent)"))
       .onHover { fileSelection.hoveredControlID = $0 ? finderHoverID : nil }
       .animation(.easeInOut(duration: 0.18), value: finderHovered)

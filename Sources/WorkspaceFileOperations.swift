@@ -136,9 +136,10 @@ struct WorkspaceInlineName: View {
           // Text supplies the intrinsic width; the field can still compress in
           // a narrow workspace without pushing its controls out of the row.
           Text(draft.name.isEmpty ? " " : draft.name).lineLimit(1).hidden()
-            .frame(minWidth:24)
+            .frame(minWidth:100)
             .overlay {
-              TextField(tr("Nouveau nom"),text:$draft.name)
+              TextField("",text:$draft.name)
+                .accessibilityLabel(tr("Nouveau nom"))
                 .textFieldStyle(.plain).focused($focused)
                 .onSubmit(commit).onExitCommand(perform:cancel)
             }
