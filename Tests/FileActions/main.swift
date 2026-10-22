@@ -58,6 +58,11 @@ CGImageDestinationAddImage(writer,context.makeImage()!,nil);check(CGImageDestina
 let originalPDF=try Data(contentsOf:pdf),originalImage=try Data(contentsOf:image)
 let prepared=try PrintAction.prepare([pdf,image],in:root.appendingPathComponent("job"),options:Options())
 check(prepared.pageCount==3,"One print job contains every PDF page and image")
+let operation=prepared.printOperation(for:NSPrintInfo(),scalingMode:.pageScaleToFit,autoRotate:true)!
+let nativePanelOptions=operation.printPanel.options
+PrintAction.configurePanel(for:operation)
+check(operation.printPanel.options.contains(.showsPreview),"Native print preview remains available with custom close controls")
+check(operation.printPanel.options.intersection(nativePanelOptions)==nativePanelOptions,"All original native print controls are preserved")
 check(prepared.page(at:0)?.bounds(for:.mediaBox)==source.page(at:0)?.bounds(for:.mediaBox),"PDF page size preserved")
 let finalPDF=try Data(contentsOf:pdf),finalImage=try Data(contentsOf:image)
 check(finalPDF==originalPDF,"Source PDF remains unchanged")

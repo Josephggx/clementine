@@ -76,6 +76,14 @@ final class PrintAction {
   private(set) var busy=false
   private init() {}
 
+  static func configurePanel(for operation: NSPrintOperation) {
+    let panel = ClementinePrintPanel()
+    // A panel created by NSPrintOperation includes the preview; a standalone
+    // NSPrintPanel does not. Retain all native controls when replacing it.
+    panel.options = operation.printPanel.options.union(.showsPreview)
+    operation.printPanel = panel
+  }
+
   static func prepare(_ files:[URL],in root:URL,options:Options)throws->PDFDocument {
     guard PrintEligibility.supports(files) else {throw ClementineError(tr("Aucun fichier imprimable."))}
     let engine=Engine(),combined=PDFDocument()
@@ -124,7 +132,7 @@ final class PrintAction {
             throw ClementineError(tr("Impossible de préparer l’impression."))
           }
           operation.jobTitle=files.count == 1 ? files[0].lastPathComponent : "Clémentine — \(files.count) \(tr("fichiers"))"
-          operation.printPanel = ClementinePrintPanel()
+          Self.configurePanel(for:operation)
           operation.showsPrintPanel=true;operation.showsProgressPanel=true
           // run() presents the system print panel. Cancel does not print or error.
           withExtendedLifetime(document) {_ = operation.run()}

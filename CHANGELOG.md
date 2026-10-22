@@ -1,5 +1,10 @@
 # Nouveautés de Clémentine
 
+## 1.0.18 — 22 octobre 2026
+
+- Print : restaure l’aperçu natif et conserve les contrôles d’impression macOS lors de l’ajout de la fermeture.
+- Test de régression sur le panneau d’impression réellement préparé, sans ouvrir de dialogue ni envoyer d’impression.
+
 ## 1.0.17 — 22 octobre 2026
 
 - Finovox reste activé sur les installations existantes ; le défaut désactivé concerne uniquement les nouvelles installations. Le choix effectué ensuite dans Réglages est conservé.
