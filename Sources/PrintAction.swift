@@ -1,6 +1,65 @@
 import AppKit
 import PDFKit
 
+/// Scope window changes to this print panel's modal session. NSPrintPanel does
+/// not expose its window, so observe the modal window only while it is running.
+private final class ClementinePrintPanel: NSPrintPanel {
+  override func runModal(with printInfo: NSPrintInfo) -> Int {
+    let previousModal = NSApp.modalWindow
+    let controls = PrintPanelWindowControls()
+    let timer = Timer(timeInterval:0.03,repeats:true) { _ in
+      guard let window = NSApp.modalWindow, window !== previousModal else { return }
+      controls.attach(to:window)
+    }
+    RunLoop.main.add(timer,forMode:.modalPanel)
+    RunLoop.main.add(timer,forMode:.common)
+    defer {timer.invalidate(); controls.detach()}
+    return super.runModal(with:printInfo)
+  }
+}
+
+private final class PrintPanelWindowControls: NSObject {
+  private weak var window: NSWindow?
+  private var originalStyle: NSWindow.StyleMask?
+  private weak var closeTarget: AnyObject?
+  private var closeAction: Selector?
+  private var zoomHidden = false
+  private var zoomEnabled = true
+
+  func attach(to candidate: NSWindow) {
+    guard window == nil else { return }
+    window = candidate
+    originalStyle = candidate.styleMask
+    closeTarget = candidate.standardWindowButton(.closeButton)?.target
+    closeAction = candidate.standardWindowButton(.closeButton)?.action
+    zoomHidden = candidate.standardWindowButton(.zoomButton)?.isHidden ?? false
+    zoomEnabled = candidate.standardWindowButton(.zoomButton)?.isEnabled ?? true
+    candidate.styleMask.insert([.titled,.closable])
+    candidate.styleMask.remove(.resizable)
+    candidate.standardWindowButton(.closeButton)?.target = self
+    candidate.standardWindowButton(.closeButton)?.action = #selector(cancelPrinting)
+    candidate.standardWindowButton(.closeButton)?.isEnabled = true
+    candidate.standardWindowButton(.closeButton)?.isHidden = false
+    candidate.standardWindowButton(.zoomButton)?.isEnabled = false
+    candidate.standardWindowButton(.zoomButton)?.isHidden = true
+  }
+
+  @objc private func cancelPrinting() {
+    NSApp.stopModal(withCode:.cancel)
+    window?.orderOut(nil)
+  }
+
+  func detach() {
+    guard let window else {return}
+    if let originalStyle {window.styleMask = originalStyle}
+    window.standardWindowButton(.closeButton)?.target = closeTarget
+    window.standardWindowButton(.closeButton)?.action = closeAction
+    window.standardWindowButton(.zoomButton)?.isHidden = zoomHidden
+    window.standardWindowButton(.zoomButton)?.isEnabled = zoomEnabled
+    self.window = nil
+  }
+}
+
 enum PrintEligibility {
   static func supports(_ files:[URL])->Bool {
     !files.isEmpty && files.allSatisfy {
@@ -65,6 +124,7 @@ final class PrintAction {
             throw ClementineError(tr("Impossible de préparer l’impression."))
           }
           operation.jobTitle=files.count == 1 ? files[0].lastPathComponent : "Clémentine — \(files.count) \(tr("fichiers"))"
+          operation.printPanel = ClementinePrintPanel()
           operation.showsPrintPanel=true;operation.showsProgressPanel=true
           // run() presents the system print panel. Cancel does not print or error.
           withExtendedLifetime(document) {_ = operation.run()}

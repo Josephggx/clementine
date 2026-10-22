@@ -4,9 +4,9 @@ Application macOS de conversion et de traitement de fichiers. Apple Silicon, mac
 
 L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
 
-## Version 1.0.16
+## Version 1.0.17
 
-Version 1.0.16 du 22 octobre 2026 : dépôt unique public `Josephggx/clementine` pour les sources, la documentation, les installateurs et les mises à jour. Les anciennes installations passent par une release de transition dans `clementine-releases`, puis utilisent le flux du dépôt unique.
+Version 1.0.17 du 22 octobre 2026 : migration du réglage Finovox pour conserver son accès sur les installations existantes, défaut désactivé pour les nouvelles installations, et fermeture du dialogue d’impression sans agrandissement inutile. Le dépôt public unique est `Josephggx/clementine`.
 
 ## Construire et mettre à jour
 
@@ -29,12 +29,12 @@ Le dépôt public unique `Josephggx/clementine` contient les sources, la documen
 Après compilation et `zsh package-release.sh`, lancer :
 
 ```sh
-python3 Scripts/prepare-update.py ../Clementine-1.0.16-arm64.dmg --notes "Nouveautés de cette version."
+python3 Scripts/prepare-update.py ../Clementine-1.0.17-arm64.dmg --notes "Nouveautés de cette version."
 ```
 
 Remplacer le nom du DMG par celui de la version publiée. Créer une release publique `vVERSION` et joindre le DMG, son fichier `.sha256` et `appcast.xml`. Publier la release seulement après l’envoi des trois fichiers. L’URL stable du flux pointe vers l’asset `appcast.xml` de la dernière release ; chaque téléchargement du flux utilise l’URL immuable du DMG correspondant.
 
-À chaque itération demandée, incrémenter la version et le numéro de build, vérifier le changement, synchroniser les sources privées et publier la nouvelle release. Ne jamais remplacer les fichiers d’une release déjà publiée : les signatures, URL et versions doivent rester cohérentes. Ne pas remplacer directement `/Applications/Clémentine.app`, sauf demande explicite ; Joseph déclenche la mise à jour pour contrôler le résultat.
+À chaque itération demandée, incrémenter la version et le numéro de build, vérifier le changement, synchroniser les sources et publier la nouvelle release. Ne jamais remplacer les fichiers d’une release déjà publiée : les signatures, URL et versions doivent rester cohérentes. Ne pas remplacer directement `/Applications/Clémentine.app`, sauf demande explicite ; Joseph déclenche la mise à jour pour contrôler le résultat.
 
 L’installateur DMG présente deux vraies icônes Finder sur un fond Retina généré par `Scripts/generate-installer-background.swift`. `Scripts/dmg-settings.py` fixe leurs positions et l’apparence de la fenêtre sans modifier les préférences du Finder. Les outils de packaging restent dans `.build/packaging-python` ; ils ne sont pas intégrés à l’app.
 

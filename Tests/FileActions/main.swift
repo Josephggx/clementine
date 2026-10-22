@@ -5,6 +5,27 @@ import UniformTypeIdentifiers
 var checks=0
 func check(_ value:@autoclosure()->Bool,_ message:String) {precondition(value(),message);checks += 1}
 func urls(_ extensions:[String])->[URL] {extensions.map {URL(fileURLWithPath:"/sample."+$0)}}
+let preferenceSuite = "clementine-finovox-check-" + UUID().uuidString
+let preferences = UserDefaults(suiteName:preferenceSuite)!
+defer {preferences.removePersistentDomain(forName:preferenceSuite)}
+check(!FinovoxPreference.load(in:preferences),"New installations default to Finovox disabled")
+preferences.set(true,forKey:"didCompleteProductOnboarding20261019v1")
+check(!FinovoxPreference.load(in:preferences),"New installation remains disabled after onboarding and restart")
+preferences.set(true,forKey:FinovoxPreference.key)
+check(FinovoxPreference.load(in:preferences),"Explicit enable survives restart")
+preferences.set(false,forKey:FinovoxPreference.key)
+check(!FinovoxPreference.load(in:preferences),"Explicit disable survives restart")
+for savedValue in [false,true] {
+  preferences.removePersistentDomain(forName:preferenceSuite)
+  preferences.set("dark",forKey:"appearance")
+  preferences.set(savedValue,forKey:FinovoxPreference.key)
+  check(FinovoxPreference.load(in:preferences),"Existing installation retains historical Finovox access")
+  preferences.set(false,forKey:FinovoxPreference.key)
+  check(!FinovoxPreference.load(in:preferences),"Migration never overrides a subsequent disable")
+}
+preferences.removePersistentDomain(forName:preferenceSuite)
+preferences.set(true,forKey:"didEnableWheelHoverClick20261018")
+check(FinovoxPreference.load(in:preferences),"Pre-switch installation without Finovox key stays enabled")
 for ext in ["pdf","docx","doc","pages","rtf","txt","md","html","xlsx","xls","csv","tsv","ods","numbers","jpg","png","heic","pptx","ppt","odp","key"] {
  check(WheelActionItems.forURLs(urls([ext]),preview:true).contains {$0.action=="action:print"},"Print missing for \(ext)")
 }

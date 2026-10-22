@@ -31,7 +31,7 @@ final class AppState: ObservableObject {
   @Published var wheelEnabled = true
   @Published var reveal = true
   @Published var sound = UserDefaults.standard.object(forKey: "sound") as? Bool ?? true
-  @Published var finovoxEnabled = UserDefaults.standard.bool(forKey: "finovoxEnabled")
+  @Published var finovoxEnabled = FinovoxPreference.load()
   @Published var haptics = UserDefaults.standard.object(forKey: "haptics") as? Bool ?? true
   @Published var appearance = UserDefaults.standard.string(forKey: "appearance") ?? "dark"
   @Published var floatBehavior = UserDefaults.standard.string(forKey: "floatBehavior") ?? "append"

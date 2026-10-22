@@ -1,5 +1,11 @@
 # Nouveautés de Clémentine
 
+## 1.0.17 — 22 octobre 2026
+
+- Finovox reste activé sur les installations existantes ; le défaut désactivé concerne uniquement les nouvelles installations. Le choix effectué ensuite dans Réglages est conservé.
+- Print : bouton de fermeture pour annuler le dialogue macOS, sans bouton vert d’agrandissement.
+- 62 contrôles de disponibilité, de migration des préférences et de préparation d’impression réussis sans fenêtre de test ni impression envoyée.
+
 ## 1.0.16 — 22 octobre 2026
 
 - Sources, documentation, installateurs et mises à jour réunis dans le dépôt public Josephggx/clementine.
