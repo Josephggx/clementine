@@ -49,6 +49,9 @@ final class WorkspacePreviewController:NSObject,NSWindowDelegate {
     self.preview=preview
     preview.translatesAutoresizingMaskIntoConstraints=false
     preview.autostarts=false
+    // Quick Look owns teardown when its window closes. Explicit close() in
+    // windowWillClose would deactivate the same preview twice and abort macOS.
+    preview.shouldCloseWithWindow=true
     preview.previewItem=url as NSURL
     glass.addSubview(preview)
     NSLayoutConstraint.activate([
@@ -76,12 +79,14 @@ final class WorkspacePreviewController:NSObject,NSWindowDelegate {
   func windowDidFailToEnterFullScreen(_ window:NSWindow) {fullScreenTransition=false}
   func windowDidFailToExitFullScreen(_ window:NSWindow) {fullScreenTransition=false}
   func windowDidResignKey(_ notification:Notification) {
+    guard let resigning=notification.object as? NSWindow,resigning === panel else {return}
     if !fullScreenTransition {panel?.close()}
   }
   func windowWillClose(_ notification:Notification) {
+    guard let closing=notification.object as? NSWindow,closing === panel else {return}
     if let outsideMonitor {NSEvent.removeMonitor(outsideMonitor)}
     outsideMonitor=nil;fileTimer?.invalidate();fileTimer=nil;fullScreenTransition=false
-    preview?.close();preview=nil
-    panel?.delegate=nil;panel=nil
+    preview=nil
+    closing.delegate=nil;panel=nil
   }
 }

@@ -4,9 +4,11 @@ Application macOS de conversion et de traitement de fichiers. Apple Silicon, mac
 
 L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
 
-## Version 1.0.11
+## Version 1.0.12
 
-Version 1.0.11 du 21 octobre 2026 : mise à jour directe vers la dernière version, résolution fraîche du catalogue GitHub et correctifs directs depuis toutes les archives locales conservées.
+Version 1.0.12 du 22 octobre 2026 : corrige le crash de fermeture des aperçus Quick Look (double désactivation). La fermeture est confiée une seule fois à macOS, y compris via la croix, clic extérieur, remplacement et disparition du fichier.
+
+Version 1.0.11 : mise à jour directe vers la dernière version, résolution fraîche du catalogue GitHub et correctifs directs depuis toutes les archives locales conservées.
 
 Raccourcis : Maj ouvre les conversions, Option les outils, Commande les actions. Les préférences existantes sont migrées une seule fois.
 
