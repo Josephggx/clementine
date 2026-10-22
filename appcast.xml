@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+  <channel>
+    <title>Clémentine</title>
+    <language>fr</language>
+    <item>
+      <title>Clémentine 1.0.16</title>
+      <pubDate>Thu, 22 Oct 2026 11:47:34 +0000</pubDate>
+      <sparkle:version>26</sparkle:version>
+      <sparkle:shortVersionString>1.0.16</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description>Sources, installateurs et mises à jour réunis dans Josephggx/clementine.</description>
+      <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.16-arm64.dmg" length="385170123" type="application/octet-stream" sparkle:edSignature="29mYa51u6Daf906kOoQChjdrt5Mn1VOoIYzdIpbOMSeaIoSZq4A78Dsviwzw/bMJ/RcVbX6xml5r11rZGNQsDA=="></enclosure>
+      <sparkle:deltas>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.15-to-1.0.16-arm64.delta" length="101386" type="application/octet-stream" sparkle:edSignature="UGwc2MejtvC3bofnOrm4TygLLWLCX1+mWecV9tLhe52Z4ziEexO7nWrEDkABwasX5LLQrl80JpT6leWqPzvNBA==" sparkle:deltaFrom="25"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.14-to-1.0.16-arm64.delta" length="258238" type="application/octet-stream" sparkle:edSignature="9WmF7aTkCY0JnBZyBuXzyXO8jbPRWW/ALRSIbrq3MtSPaaoua4k9ELO0P1B1SLG7my6H64J34T+laOAd3Bl/AQ==" sparkle:deltaFrom="24"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.13-to-1.0.16-arm64.delta" length="293386" type="application/octet-stream" sparkle:edSignature="C4GksfH6Z9YibBKkNPftDrv+tXDf4n3A6kdpesQ/p0EU/8Lbui9TOHAzIERULlfrDg9qUM8nTGT3Hj1rXq16Dg==" sparkle:deltaFrom="23"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.12-to-1.0.16-arm64.delta" length="293062" type="application/octet-stream" sparkle:edSignature="bDwir11i3HM0pftI+cKWt2CL0qHDYHBCpOdAjjNKLSS97gEVthhhbZmSXJUji4dysY0sTxcRGLifBM6Ij7kYAA==" sparkle:deltaFrom="22"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.11-to-1.0.16-arm64.delta" length="296418" type="application/octet-stream" sparkle:edSignature="jc54GbsAWdsa132LTAFKBEtytp8LxmaoU25EFEWF2nEb16S9DrdatcqI+dPxcitPDKEqbQ1QtEkT96lftRFpAA==" sparkle:deltaFrom="21"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.10-to-1.0.16-arm64.delta" length="304506" type="application/octet-stream" sparkle:edSignature="y8usLn2sSB7UcN76BQq6qxIFoxJ1zYTmEVAQ0h9Wjw4zJVOJGSmjdJ/Qf1rYHmqk+uPuRcoIbmCULxzEt0YIAQ==" sparkle:deltaFrom="20"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.9-to-1.0.16-arm64.delta" length="376582" type="application/octet-stream" sparkle:edSignature="+UY6nA+2ynsqubLug51+8Ln0eWnsFhkHqe36PLBLgNcCLJaLjgVy8x5UFToWNfXa6U481c7dmLS2hHyJ5dFKDA==" sparkle:deltaFrom="19"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.8-to-1.0.16-arm64.delta" length="382446" type="application/octet-stream" sparkle:edSignature="87pcwMbiHcDjOqq3o5TFjB6MrRSoU5a7tCU+F68qvwanXjbiRinjQQ2m6RzlMRczkDvtggcvjcV83n8+IJzVDg==" sparkle:deltaFrom="18"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.7-to-1.0.16-arm64.delta" length="856930" type="application/octet-stream" sparkle:edSignature="9PnkVqGzHSZJh1i0uxDT+S92/DbJlhE1y+Wa2rmKSxPmMSY2naxeKp9xsfncXEELrBxewRd0lpwdPRlQBMHsBQ==" sparkle:deltaFrom="17"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.6-to-1.0.16-arm64.delta" length="864570" type="application/octet-stream" sparkle:edSignature="ta+CXQJbSfa4vvJQcbQ1AkfYhEhj1eNFnEUoaGv3JcLR1OIyuX6EJyVLI7ppHx7whj5CE+8C82Q8IruQ34etBQ==" sparkle:deltaFrom="16"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.5-to-1.0.16-arm64.delta" length="862942" type="application/octet-stream" sparkle:edSignature="1ZwweT8TnQDKuD4+WoseLZ82hQhOtTrYgULvfFQ8cQNA6XQO7T6fWRwbkVvNHBCrkEgTluxAPDXrzyXL/UOuDg==" sparkle:deltaFrom="15"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.4-to-1.0.16-arm64.delta" length="864734" type="application/octet-stream" sparkle:edSignature="LAaO4BcAp2IIHjeSN4l/IEsq1jqyxKnpIxZ9d2xePbWZwKicIYYRh56Iyl6QE3CXz5uYLto+6iHrA5vXNHHhDQ==" sparkle:deltaFrom="14"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.3-to-1.0.16-arm64.delta" length="886894" type="application/octet-stream" sparkle:edSignature="zuJTP0W+Idy8sIUihoCd74PsfVFHg9UEbyCjY10HD6G6Uzbi7E4oYeTraGsxrpY8wqle248okr2fFUQjCNSqAw==" sparkle:deltaFrom="13"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.2-to-1.0.16-arm64.delta" length="921978" type="application/octet-stream" sparkle:edSignature="PfXhJbMDBDn6UklmJgrWSBE46ros21h63BHTYzkxRulkH9i9mcRxorbherzNKfrz+rKMJE9HBTOsS2q3B6vQDQ==" sparkle:deltaFrom="12"></enclosure>
+        <enclosure url="https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.1-to-1.0.16-arm64.delta" length="933594" type="application/octet-stream" sparkle:edSignature="PzIJoLOfdTp2ecIgsTAWVi6OkO865yrzTTQkoLhwFcvq443Qiknrrfqf0PqhVYeoVM6t16wpL9UJ9OmcJpR3Dg==" sparkle:deltaFrom="11"></enclosure>
+      </sparkle:deltas>
+    </item>
+  </channel>
+</rss><!-- sparkle-signatures:
+edSignature: MWgJVBBAguCAA3CF2y/U6gB4GcQ58TNXJ8A7Tusn3GCxl/FxPug6hMUYaEbM2oS8y3CZECvHBvReXNGNqwPAAA==
+length: 6103
+-->
