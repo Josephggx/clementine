@@ -8,6 +8,11 @@ final class FloatPanel:NSPanel {
   override var canBecomeKey:Bool {true}
   override var canBecomeMain:Bool {false}
 }
+/// A visible nonactivating island must respond while another app owns focus.
+/// This also covers SwiftUI controls such as the close button.
+final class FloatHostingView:NSHostingView<FloatView> {
+  override func acceptsFirstMouse(for event:NSEvent?)->Bool {true}
+}
 final class FloatController:NSObject,NSWindowDelegate {
   let panel:FloatPanel
   let model:FloatModel
@@ -24,8 +29,10 @@ final class FloatController:NSObject,NSWindowDelegate {
     panel.isMovableByWindowBackground=false
     panel.title="Float";panel.backgroundColor = .clear;panel.isOpaque=false;panel.hasShadow=false
     panel.level = .floating;panel.hidesOnDeactivate=false;panel.isReleasedWhenClosed=false
+    panel.becomesKeyOnlyIfNeeded=true
+    panel.worksWhenModal=true
     panel.collectionBehavior=FloatingWindowPresentation.wheel;panel.delegate=self
-    panel.contentView=NSHostingView(rootView:FloatView(state:state,model:model,onResize:{[weak self] in self?.resize(animated:true)},onClose:{[weak self] in self?.panel.close()}))
+    panel.contentView=FloatHostingView(rootView:FloatView(state:state,model:model,onResize:{[weak self] in self?.resize(animated:true)},onClose:{[weak self] in self?.panel.close()}))
     let screen=NSScreen.screens.first{$0.frame.contains(NSEvent.mouseLocation)} ?? NSScreen.main!
     let point=NSEvent.mouseLocation
     let anchor=CGRect(x:point.x+18,y:point.y-FloatLayout.compact.height/2,width:100,height:115)
@@ -325,6 +332,7 @@ final class FloatDragSource:NSView,NSDraggingSource {
   }
   override var mouseDownCanMoveWindow:Bool {false}
   override var acceptsFirstResponder:Bool {true}
+  override func acceptsFirstMouse(for event:NSEvent?)->Bool {true}
   override func accessibilityPerformPress()->Bool {onClick?();return true}
   override func mouseDown(with event:NSEvent) {
     press=event.locationInWindow;dragging=false
