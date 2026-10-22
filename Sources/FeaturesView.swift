@@ -190,7 +190,7 @@ struct FeaturesView: View {
           }
         }
         wheelCard(title: "Actions", symbol: state.actionModifier,
-          items: WheelActionItems.forURLs([exampleURL], preview: true))
+          items: WheelActionItems.forURLs([exampleURL], preview: true, finovoxEnabled: state.finovoxEnabled))
       }.padding(24)
     }
       .overlay {

@@ -152,7 +152,7 @@ struct WorkspaceView: View {
       .filter { seen.insert($0.id).inserted }
   }
   private var workspaceActions: [WheelItem] {
-    WheelActionItems.forURLs(state.files).filter { $0.action != "action:workspace" }
+    WheelActionItems.forURLs(state.files, finovoxEnabled: state.finovoxEnabled).filter { $0.action != "action:workspace" }
   }
   var body: some View {
     VStack(alignment: .leading, spacing: 22) {
@@ -720,6 +720,7 @@ struct SettingsView: View {
           Text(tr("Texte adaptable à l’écran")).tag("adjustableText")
           Text(tr("Fidélité visuelle · pages en images")).tag("preservePages")
         }
+        Toggle(tr("Ouvrir dans Finovox"), isOn: $state.finovoxEnabled)
       } header: {
         Text(tr("Préférences"))
       } footer: {
@@ -728,6 +729,7 @@ struct SettingsView: View {
     }.formStyle(.grouped).onDisappear { state.persist() }
       .onChange(of: state.sound) { _, _ in state.persist() }
       .onChange(of: state.haptics) { _, _ in state.persist() }
+      .onChange(of: state.finovoxEnabled) { _, _ in state.persist() }
       .onChange(of: state.options.quality) { _, _ in state.persist() }
       .onChange(of: state.options.strip) { _, _ in state.persist() }
       .onChange(of: state.appearance) { _, _ in state.persist(); state.applyAppearance() }

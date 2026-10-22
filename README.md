@@ -4,9 +4,9 @@ Application macOS de conversion et de traitement de fichiers. Apple Silicon, mac
 
 L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
 
-## Version 1.0.14
+## Version 1.0.15
 
-Version 1.0.14 du 22 octobre 2026 : surface d’interaction native du Float séparée du rendu glass. Le fond et les fichiers reçoivent directement leurs clics, la croix est native et les dépôts de fichiers sont pris en charge par la même surface. Le Float ne reprend plus le comportement transitoire de la roue.
+Version 1.0.15 du 22 octobre 2026 : action Print pour PDF, documents, tableurs, images et présentations, avec dialogue d’impression natif macOS. Préférence « Ouvrir dans Finovox » désactivée par défaut ; l’action disparaît de la roue, de l’Atelier et des démonstrations quand elle est désactivée.
 
 ## Construire et mettre à jour
 

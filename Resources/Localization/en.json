@@ -531,5 +531,12 @@
   "DUPLICATE": "DUPLICATE",
   "ATELIER": "WORKSPACE",
   "Appuyez sur Commande": "Press Command",
-  "⌥ Option": "⌥ Option"
+  "⌥ Option": "⌥ Option",
+  "Ouvrir dans Finovox": "Open in Finovox",
+  "PRINT": "PRINT",
+  "Aucun fichier imprimable.": "No printable files.",
+  "Impossible de préparer l’impression.": "Unable to prepare printing.",
+  "Ce PDF ne permet pas l’impression : {0}": "This PDF does not allow printing: {0}",
+  "Document illisible pour l’impression : {0}": "Unable to read document for printing: {0}",
+  "Gardez vos fichiers à portée de main : AirDrop, Float, copie et déplacement.": "Keep files close at hand: AirDrop, Float, copying and moving."
 }

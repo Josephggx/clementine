@@ -280,7 +280,7 @@ private struct OnboardingDragDemo: View {
         let time = elapsed.truncatingRemainder(dividingBy: 6.8)
         let example = examples[cycle % examples.count]
         let url = URL(fileURLWithPath: "/" + example.0)
-        let items = actions ? WheelActionItems.forURLs([url], preview: true) :
+        let items = actions ? WheelActionItems.forURLs([url], preview: true, finovoxEnabled: state.finovoxEnabled) :
           Array(Compatibility.targets([url]).prefix(7)).map {
             WheelItem(title: Compatibility.label($0), icon: "", action: "convert:" + $0)
           }
@@ -440,7 +440,7 @@ private struct OnboardingActionsSlide: View {
   @ObservedObject var state: AppState
   var body: some View {
     OnboardingSlideShell(eyebrow: "3 · Actions", title: "Envoyez vos fichiers là où ils doivent être",
-      detail: "Gardez vos fichiers à portée de main : AirDrop, Float, copie, déplacement et envoi vers Finovox.") {
+      detail: state.finovoxEnabled ? "Gardez vos fichiers à portée de main : AirDrop, Float, copie, déplacement et envoi vers Finovox." : "Gardez vos fichiers à portée de main : AirDrop, Float, copie et déplacement.") {
       OnboardingDragDemo(state: state, actions: true)
     }
   }

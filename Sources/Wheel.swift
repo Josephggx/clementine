@@ -15,7 +15,7 @@ enum WheelActionItems {
     }
     return FinovoxUploader.accepts(urls)
   }
-  static func forURLs(_ urls: [URL], preview: Bool = false) -> [WheelItem] {
+  static func forURLs(_ urls: [URL], preview: Bool = false, finovoxEnabled: Bool = false) -> [WheelItem] {
     [
       WheelItem(title: "AIRDROP", icon: "wheel:airdrop", action: "action:airdrop"),
       WheelItem(title: "FLOAT", icon: "wheel:float", action: "action:float"),
@@ -25,7 +25,9 @@ enum WheelActionItems {
       WheelItem(title: "MOVE", icon: "wheel:moveto", action: "action:moveto"),
       WheelItem(title: "COPY PATH", icon: "wheel:path", action: "action:path"),
       WheelItem(title: "TERMINAL", icon: "wheel:terminal", action: "action:terminal"),
-    ] + (supportsFinovox(urls, preview: preview)
+    ] + (PrintEligibility.supports(urls)
+      ? [WheelItem(title: "PRINT", icon: "wheel:print", action: "action:print")] : [])
+      + (finovoxEnabled && supportsFinovox(urls, preview: preview)
       ? [WheelItem(title: "FINOVOX", icon: "wheel:finovox", action: "action:finovox")] : [])
   }
 }
@@ -277,7 +279,7 @@ final class WheelController {
     case "tools": return Tool.available(urls).map {
       WheelItem(title: $0.id == "mergepdf" && Family.of(urls[0]) == .image ? "CREATE PDF" : $0.wheelTitle, icon: WheelGlyph.key($0.id, family: Family.of(urls[0])), action: $0.id)
     }
-    default: return WheelActionItems.forURLs(urls)
+    default: return WheelActionItems.forURLs(urls, finovoxEnabled: state.finovoxEnabled)
     }
   }
   // Menu preview has explicit click semantics; an actual drag only commits through AppKit's drop callback.

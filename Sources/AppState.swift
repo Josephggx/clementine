@@ -31,6 +31,7 @@ final class AppState: ObservableObject {
   @Published var wheelEnabled = true
   @Published var reveal = true
   @Published var sound = UserDefaults.standard.object(forKey: "sound") as? Bool ?? true
+  @Published var finovoxEnabled = UserDefaults.standard.bool(forKey: "finovoxEnabled")
   @Published var haptics = UserDefaults.standard.object(forKey: "haptics") as? Bool ?? true
   @Published var appearance = UserDefaults.standard.string(forKey: "appearance") ?? "dark"
   @Published var floatBehavior = UserDefaults.standard.string(forKey: "floatBehavior") ?? "append"
@@ -127,6 +128,7 @@ final class AppState: ObservableObject {
     d.set(true, forKey: "reveal")
     d.set(sound, forKey: "sound")
     d.set(haptics, forKey: "haptics")
+    d.set(finovoxEnabled, forKey: "finovoxEnabled")
     d.set(appearance, forKey: "appearance")
     d.set(floatBehavior, forKey: "floatBehavior")
     d.set(conversionModifier, forKey: "conversionModifier")
@@ -288,7 +290,11 @@ final class AppState: ObservableObject {
   func fileAction(_ action: String, urls: [URL]) {
     guard !urls.isEmpty else { return }
     switch action {
-    case "finovox": FinovoxUploader.shared.start(urls)
+    case "finovox":
+      guard finovoxEnabled else {return}
+      FinovoxUploader.shared.start(urls)
+    case "print":
+      PrintAction.shared.start(urls,options:options) { [weak self] error in self?.error=error.localizedDescription }
     case "float": showFloat?(urls)
     case "reveal": NSWorkspace.shared.activateFileViewerSelecting(urls)
     case "path":
