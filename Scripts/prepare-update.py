@@ -206,7 +206,7 @@ if __name__ == "__main__":
         print("Verified application signature inside", archive.name)
         raise SystemExit(0)
     version = info["CFBundleShortVersionString"]
-    url = args.url or f"https://github.com/Josephggx/clementine-releases/releases/download/v{version}/{archive.name}"
+    url = args.url or f"https://github.com/Josephggx/clementine/releases/download/v{version}/{archive.name}"
     previous = args.previous_archive
     if previous is None:
         previous = sorted(archive.parent.glob("Clementine-*-arm64.dmg"))

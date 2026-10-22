@@ -5,7 +5,8 @@ enum UpdateFeed {
   /// archives and signatures remain untouched; local test feeds stay local.
   static func isLatestRelease(_ url:URL)->Bool {
     url.scheme == "https" && url.host?.lowercased() == "github.com" &&
-      url.path == "/Josephggx/clementine-releases/releases/latest/download/appcast.xml"
+      ["/Josephggx/clementine/releases/latest/download/appcast.xml",
+       "/Josephggx/clementine-releases/releases/latest/download/appcast.xml"].contains(url.path)
   }
   static func freshURL(_ configured:String,nonce:String=UUID().uuidString)->String? {
     guard let url=URL(string:configured),isLatestRelease(url),

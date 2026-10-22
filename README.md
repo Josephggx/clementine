@@ -1,66 +1,45 @@
 # Clémentine
 
-Application macOS de conversion et de traitement de fichiers. Apple Silicon, macOS 14 minimum.
+Convertissez et modifiez vos fichiers directement sur votre Mac.
 
-L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
+Ce dépôt réunit le code source, les installateurs et les mises à jour de Clémentine.
 
-## Version 1.0.15
+[![Télécharger Clémentine pour Mac](https://img.shields.io/badge/T%C3%A9l%C3%A9charger_Cl%C3%A9mentine-pour_Mac-f56d30?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.16-arm64.dmg)
 
-Version 1.0.15 du 22 octobre 2026 : action Print pour PDF, documents, tableurs, images et présentations, avec dialogue d’impression natif macOS. Préférence « Ouvrir dans Finovox » désactivée par défaut ; l’action disparaît de la roue, de l’Atelier et des démonstrations quand elle est désactivée.
+**[⬇ Télécharger l’installateur — version 1.0.16](https://github.com/Josephggx/clementine/releases/download/v1.0.16/Clementine-1.0.16-arm64.dmg)**
 
-## Construire et mettre à jour
+Mac Apple Silicon (M1 ou ultérieur) · macOS 14 ou ultérieur.
 
-Lancer `./build.sh`. La compilation produit `.build/Clémentine.app` et ne remplace pas l’application installée. Les mises à jour sont publiées sur GitHub ; Joseph les installe depuis l’app pour vérifier les changements.
+## Installation
 
-Pour compiler ailleurs : `CLEMENTINE_APP_PATH="/chemin/Clémentine.app" ./build.sh`. Le moteur bureautique est repris de l’app installée s’il est disponible ; sinon `prepare-runtime.sh` le télécharge depuis The Document Foundation.
+1. Téléchargez le fichier **`.dmg`** avec le bouton ci-dessus.
+2. Ouvrez-le, puis glissez **Clémentine** dans **Applications**.
+3. Lancez Clémentine et suivez le guide de démarrage.
 
-## Installateurs
+L’app est signée localement, sans notarisation Apple. macOS peut demander une autorisation manuelle lors de la première ouverture dans **Réglages Système → Confidentialité et sécurité**.
 
-Après avoir construit et vérifié `.build/Clémentine.app`, lancer `zsh package-release.sh` pour créer l’installateur standard, ou `zsh package-beta.sh` pour la bêta indépendante. Les fichiers DMG sont placés dans le dossier parent. Ces scripts ne remplacent pas l’app installée.
-
-Les paquets actuels utilisent une signature locale, sans certificat Developer ID ni notarisation Apple : ils peuvent nécessiter une autorisation manuelle lors de la première ouverture sur un autre Mac.
+<img src="https://github.com/user-attachments/assets/7473d17a-a8e1-463e-80b5-29dcf0c48892" alt="Autoriser Clémentine dans les réglages Confidentialité et sécurité de macOS : Ouvrir quand même" width="700">
 
 ## Mises à jour
 
-Sparkle 2.10.0 est téléchargé depuis sa publication officielle par `Scripts/prepare-sparkle.sh`, avec vérification SHA-256. Le framework est intégré dans `Contents/Frameworks` ; ses exécutables conservent leur signature officielle.
+Clémentine recherche les nouvelles versions au lancement, puis toutes les heures en arrière-plan. Elles sont proposées via le bouton **Mettre à jour**. Vous pouvez aussi vérifier depuis les **Réglages**, à côté du numéro de version.
 
-Le dépôt public `Josephggx/clementine-releases` reçoit uniquement les installateurs, empreintes et le flux `appcast.xml`. Le code est conservé dans le dépôt privé `Josephggx/clementine`.
+Une seule mise à jour vous fait passer directement à la dernière version, même si vous avez plusieurs versions de retard. Un correctif différentiel plus léger est proposé lorsqu’il est disponible pour votre version. L’installateur complet reste nécessaire pour une première installation et sert de secours si le correctif ne peut pas être appliqué.
 
-Après compilation et `zsh package-release.sh`, lancer :
+[Consulter les nouveautés](CHANGELOG.md)
 
-```sh
-python3 Scripts/prepare-update.py ../Clementine-1.0.1-arm64.dmg --notes "Nouveautés de cette version."
-```
+## Raccourcis
 
-Remplacer le nom du DMG par celui de la version publiée. Créer une release publique `vVERSION` et joindre le DMG, son fichier `.sha256` et `appcast.xml`. Publier la release seulement après l’envoi des trois fichiers. L’URL stable du flux pointe vers l’asset `appcast.xml` de la dernière release ; chaque téléchargement du flux utilise l’URL immuable du DMG correspondant.
+Glissez un fichier, puis appuyez sur la touche choisie :
 
-À chaque itération demandée, incrémenter la version et le numéro de build, vérifier le changement, synchroniser les sources privées et publier la nouvelle release. Ne jamais remplacer les fichiers d’une release déjà publiée : les signatures, URL et versions doivent rester cohérentes. Ne pas remplacer directement `/Applications/Clémentine.app`, sauf demande explicite ; Joseph déclenche la mise à jour pour contrôler le résultat.
+- **Maj** : Conversion
+- **Option** : Outils
+- **Commande** : Actions
 
-L’installateur DMG présente deux vraies icônes Finder sur un fond Retina généré par `Scripts/generate-installer-background.swift`. `Scripts/dmg-settings.py` fixe leurs positions et l’apparence de la fenêtre sans modifier les préférences du Finder. Les outils de packaging restent dans `.build/packaging-python` ; ils ne sont pas intégrés à l’app.
+[Toutes les versions et nouveautés](https://github.com/Josephggx/clementine/releases)
 
-Les écritures et publications GitHub doivent passer exclusivement par le connecteur GitHub, sur le compte personnel Josephggx. Ne pas contourner une absence de droits avec le navigateur ou GitHub Desktop. Si la connexion fournie n’a pas les droits nécessaires, conserver les changements et les artefacts localement et signaler précisément la publication en attente.
+Les fichiers `.sha256` servent uniquement à vérifier l’intégrité des installateurs. Le fichier `appcast.xml` est utilisé par le système de mise à jour : vous n’avez pas à les télécharger pour installer l’app.
 
-`Scripts/prepare-update.py` génère désormais le flux signé et les correctifs différentiels depuis toutes les archives locales plus anciennes disponibles. Les archives déjà diffusées sont immuables et conservées pour servir de bases. Il est possible de limiter explicitement les bases avec `--previous-archive`. Chaque correctif est appliqué sur une copie de la base ; signature, contenu, liens symboliques et permissions du résultat doivent correspondre à la nouvelle version avant publication. Le rapport `.build/release-assets.json` liste tous les fichiers à joindre à la même release : DMG complet, correctifs `.delta` et flux signé. Toujours joindre également le SHA-256 du DMG. Si une base est absente ou qu’un correctif ne s’applique pas, Sparkle utilise automatiquement l’archive complète signée. Ne pas publier uniquement le flux sans ses correctifs.
+## Construire l’app
 
-Le moteur bureautique est normalisé une fois par `Scripts/normalize-runtime-signatures.py` : seuls quatre anciens fichiers vides sont retirés, puis la signature de son bundle est refaite. Ceci supprime des signatures détachées en attributs étendus, incompatibles avec une reconstruction différentielle. Les exécutables et bibliothèques du moteur restent identiques.
-
-Après le choix « Installer et relancer », un second appel de terminaison normale effectué par l’app prend le relais si la première demande macOS n’aboutit pas. L’app ne force jamais la fermeture et attend la fin des conversions, y compris dans les modules. Un reçu local de version n’est confirmé qu’après le démarrage effectif sur le build attendu. Si les fichiers sur disque ont déjà été mis à jour mais qu’un ancien processus est resté ouvert, le CTA propose une relance au lieu d’un nouveau téléchargement.
-
-Un lancement depuis le DMG ou une copie transloquée ouvre la copie de `/Applications/Clémentine.app` avant de démarrer les roues, l’onboarding ou les demandes d’autorisation. En l’absence de copie installée, le bouton « Installer et ouvrir » effectue une première copie complète dans Applications. Ce chemin ne remplace jamais une app existante ; les mises à jour restent gérées par Sparkle ou par le glisser-déposer du Finder. Une copie Finder ne peut pas lancer automatiquement l’app : le double-clic suivant ouvre toujours la copie installée.
-
-Le DMG et le flux sont signés en Ed25519. La clé privée est dans le Trousseau macOS sous le compte `io.joseph.clementine.desktop` ; elle n’est ni dans le projet, ni dans les dépôts GitHub. Conserver une sauvegarde sécurisée du Trousseau : perdre cette clé empêcherait de signer les prochaines mises à jour reconnues par les installations existantes.
-
-Les vérifications automatiques restent silencieuses. Le bouton « Mettre à jour » apparaît dans la sidebar lorsqu’une version est disponible ; le clic ouvre l’interface d’installation Sparkle. Aucune installation automatique n’est activée. Une conversion en cours retarde le redémarrage. La version installée figure au bas des Réglages.
-
-## Icône
-
-`Scripts/generate-icon.sh` régénère l’icône macOS multi-résolution depuis `Scripts/generate-icon.swift`. Le PNG intermédiaire reste temporaire et n’est pas inclus dans l’application.
-
-## Tests et documentation
-
-Les scripts `Tests/check-*.sh` exécutent les tests ; les scripts `Tests/build-*.sh` construisent les applications de vérification. Tous les résultats et caches sont recréés dans `.build/`, ignoré par le dépôt.
-Pour vérifier les conversions bureautiques et le rendu PDF dans le contexte macOS réel, construire `Tests/check-documents.sh --build-gui`, puis ouvrir l’application de vérification produite dans `.build/`.
-
-Les suites `SelfTests.swift` et `ConversionParityTests.swift` ne font plus partie du binaire normal. Pour les intégrer à une compilation de diagnostic, définir `CLEMENTINE_INTERNAL_TESTS=1` lors de `./build.sh`.
-
-`Docs/Utilisation.txt` décrit les raccourcis et l’action Finovox. `Docs/Validation.json` et les rapports associés conservent les résultats et limites des vérifications, notamment les écarts de parité avec Tangerine. `THIRDPARTY.txt` documente les composants et leurs licences.
+Consultez le [guide de développement](Docs/DEVELOPMENT.md) pour compiler, tester et préparer une version. Les dépendances et leurs licences sont détaillées dans [THIRDPARTY.txt](THIRDPARTY.txt).
