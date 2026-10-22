@@ -7,6 +7,10 @@ enum FloatingWindowPresentation {
   static let wheel: NSWindow.CollectionBehavior = [
     .canJoinAllSpaces, .canJoinAllApplications, .fullScreenAuxiliary, .transient, .ignoresCycle
   ]
+  // A Float is a persistent file shelf, not a transient drag/menu overlay.
+  static let float: NSWindow.CollectionBehavior = [
+    .canJoinAllSpaces, .canJoinAllApplications, .fullScreenAuxiliary, .ignoresCycle
+  ]
   static let tool: NSWindow.CollectionBehavior = [
     .moveToActiveSpace, .canJoinAllApplications, .fullScreenAuxiliary, .transient, .ignoresCycle
   ]

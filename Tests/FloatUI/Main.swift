@@ -74,7 +74,7 @@ final class FloatFixture:NSObject,NSApplicationDelegate {
     let background=FloatDragSource(frame:hitRoot.bounds);background.backgroundOnly=true
     hitRoot.addSubview(fileRegion);hitRoot.addSubview(background)
     require(background.hitTest(CGPoint(x:10,y:10)) === background,"Empty float background receives fold and move gestures")
-    require(background.hitTest(CGPoint(x:30,y:30)) == nil,"Background leaves visible file cells available for selection and dragging")
+    require(background.hitTest(CGPoint(x:30,y:30)) === fileRegion,"Background routes directly to a visible file instead of dropping its mouse target")
     fileRegion.isHidden=true
     require(background.hitTest(CGPoint(x:30,y:30)) === background,"Hidden file cells do not block background gestures")
     fileRegion.isHidden=false

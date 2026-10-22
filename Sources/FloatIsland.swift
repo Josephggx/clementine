@@ -8,9 +8,86 @@ final class FloatPanel:NSPanel {
   override var canBecomeKey:Bool {true}
   override var canBecomeMain:Bool {false}
 }
-/// A visible nonactivating island must respond while another app owns focus.
-/// This also covers SwiftUI controls such as the close button.
-final class FloatHostingView:NSHostingView<FloatView> {
+/// Keep the native input surface independent of SwiftUI's glass/compositing tree.
+/// A glass drawing can remain visible even when its hosting view has no mouse region.
+final class FloatSurfaceView:NSView {
+  private let model:FloatModel
+  private let hosting:NSHostingView<FloatView>
+  private let input=FloatDragSource()
+  private let closeButton=FloatCloseButton()
+  private var tracking:NSTrackingArea?
+  private let close:()->Void
+  init(rootView:FloatView,model:FloatModel,onClose:@escaping ()->Void) {
+    self.model=model;self.close=onClose
+    hosting=NSHostingView(rootView:rootView)
+    super.init(frame:CGRect(origin:.zero,size:FloatLayout.compact))
+    hosting.sizingOptions=[]
+    input.model=model;input.backgroundOnly=true;input.fileHitRoot=self
+    input.onClick={ [weak model] in model?.expanded.toggle() }
+    input.actions={rootView.menuActions(model.files)}
+    input.setAccessibilityElement(true);input.setAccessibilityRole(.button)
+    closeButton.isBordered=false;closeButton.imagePosition = .imageOnly
+    closeButton.focusRingType = .none;closeButton.isHidden=true
+    closeButton.image=NSImage(systemSymbolName:"xmark.circle.fill",accessibilityDescription:nil)?
+      .withSymbolConfiguration(.init(paletteColors:[.white,NSColor(white:0.16,alpha:1)]))
+    closeButton.toolTip=trString("Fermer le Float sans supprimer les fichiers")
+    closeButton.setAccessibilityLabel(closeButton.toolTip)
+    closeButton.target=self;closeButton.action=#selector(closeFloat)
+    hosting.frame=bounds;input.frame=bounds
+    hosting.autoresizingMask=[.width,.height];input.autoresizingMask=[.width,.height]
+    closeButton.frame=CGRect(x:8,y:bounds.height-29,width:16,height:16)
+    addSubview(hosting);addSubview(input);addSubview(closeButton)
+    registerForDraggedTypes([.fileURL])
+  }
+  required init?(coder:NSCoder) {fatalError()}
+  override func acceptsFirstMouse(for event:NSEvent?)->Bool {true}
+  override func draw(_ dirtyRect:NSRect) {
+    // Non-zero native pixels give WindowServer a real mouse surface, including
+    // where the glass itself is rendered by a separate compositing surface.
+    NSColor.black.withAlphaComponent(0.02).setFill()
+    NSBezierPath(roundedRect:bounds,xRadius:26+6*model.expansion,yRadius:26+6*model.expansion).fill()
+  }
+  override func layout() {
+    super.layout()
+    hosting.frame=bounds;input.frame=bounds
+    closeButton.frame=CGRect(x:8+10*model.expansion,y:bounds.height-29,width:16,height:16)
+    input.setAccessibilityLabel(trString(model.expanded ? "Replier ou déplacer le Float" : "Déployer ou déplacer le Float"))
+    needsDisplay=true
+  }
+  override func updateTrackingAreas() {
+    super.updateTrackingAreas()
+    if let tracking {removeTrackingArea(tracking)}
+    let next=NSTrackingArea(rect:.zero,options:[.activeAlways,.inVisibleRect,.mouseEnteredAndExited],owner:self,userInfo:nil)
+    addTrackingArea(next);tracking=next
+  }
+  override func mouseEntered(with event:NSEvent) {model.hovering=true;closeButton.isHidden=false}
+  override func mouseExited(with event:NSEvent) {model.hovering=false;closeButton.isHidden=true}
+  override func hitTest(_ point:NSPoint)->NSView? {
+    let local=convert(point,from:superview)
+    guard !isHidden,bounds.contains(local) else{return nil}
+    let shape=NSBezierPath(roundedRect:bounds,xRadius:26+6*model.expansion,yRadius:26+6*model.expansion)
+    guard shape.contains(local) else{return nil}
+    if !closeButton.isHidden,closeButton.frame.contains(local) {return closeButton}
+    return input.hitTest(local)
+  }
+  private func droppedFiles(_ sender:NSDraggingInfo)->[URL] {
+    (sender.draggingPasteboard.readObjects(forClasses:[NSURL.self],options:[.urlReadingFileURLsOnly:true]) as? [URL]) ?? []
+  }
+  override func draggingEntered(_ sender:NSDraggingInfo)->NSDragOperation {
+    model.dropping = !droppedFiles(sender).isEmpty
+    return model.dropping ? .copy : []
+  }
+  override func draggingUpdated(_ sender:NSDraggingInfo)->NSDragOperation {draggingEntered(sender)}
+  override func draggingExited(_ sender:NSDraggingInfo?) {model.dropping=false}
+  override func performDragOperation(_ sender:NSDraggingInfo)->Bool {
+    let files=droppedFiles(sender);model.dropping=false
+    guard !files.isEmpty else{return false}
+    model.add(files);return true
+  }
+  override func concludeDragOperation(_ sender:NSDraggingInfo?) {model.dropping=false}
+  @objc private func closeFloat() {close()}
+}
+private final class FloatCloseButton:NSButton {
   override func acceptsFirstMouse(for event:NSEvent?)->Bool {true}
 }
 final class FloatController:NSObject,NSWindowDelegate {
@@ -31,8 +108,9 @@ final class FloatController:NSObject,NSWindowDelegate {
     panel.level = .floating;panel.hidesOnDeactivate=false;panel.isReleasedWhenClosed=false
     panel.becomesKeyOnlyIfNeeded=true
     panel.worksWhenModal=true
-    panel.collectionBehavior=FloatingWindowPresentation.wheel;panel.delegate=self
-    panel.contentView=FloatHostingView(rootView:FloatView(state:state,model:model,onResize:{[weak self] in self?.resize(animated:true)},onClose:{[weak self] in self?.panel.close()}))
+    panel.collectionBehavior=FloatingWindowPresentation.float;panel.delegate=self
+    let view=FloatView(state:state,model:model,onResize:{[weak self] in self?.resize(animated:true)})
+    panel.contentView=FloatSurfaceView(rootView:view,model:model,onClose:{[weak self] in self?.panel.close()})
     let screen=NSScreen.screens.first{$0.frame.contains(NSEvent.mouseLocation)} ?? NSScreen.main!
     let point=NSEvent.mouseLocation
     let anchor=CGRect(x:point.x+18,y:point.y-FloatLayout.compact.height/2,width:100,height:115)
@@ -71,6 +149,7 @@ final class FloatController:NSObject,NSWindowDelegate {
     applyingFrame=true
     model.expansion=expansion;model.presentationSize=frame.size
     panel.setFrame(frame,display:true)
+    panel.contentView?.needsLayout=true
     lastAnimationFrame=frame;applyingFrame=false
   }
   func windowDidMove(_ notification:Notification) {
@@ -173,7 +252,6 @@ struct FloatView:View {
   @ObservedObject var state:AppState
   @ObservedObject var model:FloatModel
   let onResize:()->Void
-  let onClose:()->Void
   private var size:CGSize {model.presentationSize}
   private var cornerRadius:CGFloat {26+6*model.expansion}
   var body:some View {
@@ -200,30 +278,14 @@ struct FloatView:View {
             .scaleEffect(0.94+0.06*model.expansion,anchor:.top)
         }
       }
-      FloatDragRegion(model:model,file:nil,onClick:{model.expanded.toggle()},context:{menuActions(model.files)},backgroundOnly:true)
-        .frame(width:size.width,height:size.height)
-      if model.hovering {
-        Button(action:onClose) {Image(systemName:"xmark.circle.fill").symbolRenderingMode(.palette).foregroundStyle(.white,Color(white:0.16)).font(.system(size:16))}
-          .buttonStyle(.plain).help(tr("Fermer le Float sans supprimer les fichiers"))
-          .accessibilityLabel(tr("Fermer le Float sans supprimer les fichiers"))
-          .padding(.leading,8+10*model.expansion).padding(.top,13)
-      }
+
     }.frame(width:size.width,height:size.height,alignment:.top)
       .clipShape(RoundedRectangle(cornerRadius:cornerRadius,style:.continuous))
       .preferredColorScheme(ClementineAppearance(rawValue:state.appearance)?.colorScheme)
       .overlay {if model.dropping {RoundedRectangle(cornerRadius:cornerRadius).stroke(Color.orange.opacity(0.7),lineWidth:1.5).allowsHitTesting(false)}}
-      .onHover {model.hovering=$0}
       .onChange(of:model.expanded) { _, _ in onResize() }
       .onChange(of:model.files.count) { _, _ in onResize() }
-      .onDrop(of:["public.file-url"],isTargeted:$model.dropping) {providers in
-        let accepted=providers.filter{$0.hasItemConformingToTypeIdentifier("public.file-url")}
-        for provider in accepted {
-          provider.loadItem(forTypeIdentifier:"public.file-url",options:nil) {item,_ in
-            let url=(item as? URL) ?? (item as? Data).flatMap{URL(dataRepresentation:$0,relativeTo:nil)}
-            if let url {DispatchQueue.main.async{model.add([url])}}
-          }
-        };return !accepted.isEmpty
-      }
+
   }
   private var preview:some View {
     ZStack {
@@ -248,7 +310,7 @@ struct FloatView:View {
       .background(model.selected.contains(file) ? Color.accentColor.opacity(0.16) : .clear,in:RoundedRectangle(cornerRadius:7))
       .overlay(FloatDragRegion(model:model,file:file,onClick:{model.select(file,modifiers:NSEvent.modifierFlags)},context:{menuActions(model.carried(file))}))
   }
-  private func menuActions(_ files:[URL])->[(String,()->Void)] {
+  func menuActions(_ files:[URL])->[(String,()->Void)] {
     [("Ouvrir",{files.forEach{NSWorkspace.shared.open($0)}}),
      ("Afficher dans le Finder",{state.fileAction("reveal",urls:files)}),
      ("Copier",{state.fileAction("copy",urls:files)}),
@@ -301,6 +363,7 @@ final class FloatDragSource:NSView,NSDraggingSource {
   weak var model:FloatModel?
   var file:URL?
   var backgroundOnly=false
+  weak var fileHitRoot:NSView?
   var onClick:(()->Void)?
   var actions:(()->[(String,()->Void)])?
   private var press:NSPoint?
@@ -308,15 +371,15 @@ final class FloatDragSource:NSView,NSDraggingSource {
   private var moving=FloatMoveTracker()
   private var menuCallbacks:[()->Void]=[]
   /// Background gestures cover the island, except actual visible file cells.
-  /// Returning nil lets the original file view receive selection and dragging.
+  /// Route directly to the native file view; SwiftUI overlays are not necessarily siblings.
   override func hitTest(_ point:NSPoint)->NSView? {
     guard backgroundOnly else {return super.hitTest(point)}
     guard let parent=superview else {return nil}
     let local=convert(point,from:parent)
     guard bounds.contains(local) else {return nil}
-    if let root=window?.contentView {
+    if let root=fileHitRoot ?? window?.contentView {
       for source in descendants(root).compactMap({$0 as? FloatDragSource}) where source !== self && source.file != nil {
-        if !source.isHiddenOrHasHiddenAncestor && source.bounds.intersection(source.visibleRect).contains(source.convert(local,from:self)) {return nil}
+        if !source.isHiddenOrHasHiddenAncestor && source.bounds.intersection(source.visibleRect).contains(source.convert(local,from:self)) {return source}
       }
     }
     return self
@@ -325,7 +388,7 @@ final class FloatDragSource:NSView,NSDraggingSource {
     view.subviews.flatMap {[$0]+descendants($0)}
   }
   override func scrollWheel(with event:NSEvent) {
-    if backgroundOnly,let root=window?.contentView,
+    if backgroundOnly,let root=fileHitRoot ?? window?.contentView,
       let scroll=descendants(root).compactMap({$0 as? NSScrollView}).first {
       scroll.scrollWheel(with:event)
     } else {super.scrollWheel(with:event)}

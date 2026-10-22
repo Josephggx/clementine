@@ -4,9 +4,9 @@ Application macOS de conversion et de traitement de fichiers. Apple Silicon, mac
 
 L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
 
-## Version 1.0.13
+## Version 1.0.14
 
-Version 1.0.13 du 22 octobre 2026 : le Float accepte le premier clic sans activer l’application. Le fond, les fichiers et la croix restent interactifs quand une autre app a le focus, et le panneau fonctionne pendant les dialogues de Clémentine.
+Version 1.0.14 du 22 octobre 2026 : surface d’interaction native du Float séparée du rendu glass. Le fond et les fichiers reçoivent directement leurs clics, la croix est native et les dépôts de fichiers sont pris en charge par la même surface. Le Float ne reprend plus le comportement transitoire de la roue.
 
 ## Construire et mettre à jour
 
