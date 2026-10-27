@@ -1,11 +1,11 @@
 # Nouveautés de Clémentine
 
-## À venir
+## 1.0.19 — 27 octobre 2026
 
 - Images : Crop et Annotate réunis dans Edit, avec l’icône d’annotation et un sélecteur Annotate / Crop. Les réglages de couleur restent disponibles sous Adjust.
 - Recadrage réversible, annotations conservées dans les coordonnées d’origine, annulation et réinitialisation ; enregistrement combiné dans les deux modes.
 - Édition image par image des sélections multiples, avec conservation des modifications lors d’un renommage dans le Finder.
-- Sources synchronisées uniquement : app installée, installateur et flux de mise à jour inchangés.
+- Mise à jour disponible depuis Clémentine, avec correctifs directs depuis les versions précédentes. L’installateur reste en version 1.0.18.
 
 ## 1.0.18 — 22 octobre 2026
 

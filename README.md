@@ -8,6 +8,8 @@ Ce dépôt réunit le code source, les installateurs et les mises à jour de Cl�
 
 **[⬇ Télécharger l’installateur — version 1.0.18](https://github.com/Josephggx/clementine/releases/download/v1.0.18/Clementine-1.0.18-arm64.dmg)**
 
+La mise à jour **1.0.19** est disponible depuis Clémentine → Réglages → **Rechercher une mise à jour**. L’installateur ci-dessus reste en version 1.0.18.
+
 Mac Apple Silicon (M1 ou ultérieur) · macOS 14 ou ultérieur.
 
 ## Installation

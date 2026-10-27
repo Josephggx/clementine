@@ -192,7 +192,7 @@ if __name__ == "__main__":
     parser.add_argument("--notes", default="Améliorations et corrections de Clémentine.")
     parser.add_argument("--account", default="io.joseph.clementine.desktop")
     parser.add_argument("--previous-archive", type=Path, action="append",
-                        help="Immutable older archive; defaults to earlier sibling Clementine DMGs")
+                        help="Immutable older archive; defaults to earlier sibling Clementine DMG/ZIP archives")
     parser.add_argument("--no-deltas", action="store_true", help="Only for full-only update fixtures")
     parser.add_argument("--verify-archive-only", action="store_true",
                         help="Verify the application extracted from a finished archive without signing a feed")
@@ -209,6 +209,7 @@ if __name__ == "__main__":
     url = args.url or f"https://github.com/Josephggx/clementine/releases/download/v{version}/{archive.name}"
     previous = args.previous_archive
     if previous is None:
-        previous = sorted(archive.parent.glob("Clementine-*-arm64.dmg"))
+        previous = sorted([*archive.parent.glob("Clementine-*-arm64.dmg"),
+                           *archive.parent.glob("Clementine-*-arm64.zip")])
     prepare(archive, args.plist.resolve(), args.feed or archive.parent / "appcast.xml",
             url, args.notes, args.account, previous, args.no_deltas)
