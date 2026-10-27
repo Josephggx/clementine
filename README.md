@@ -4,11 +4,11 @@ Convertissez et modifiez vos fichiers directement sur votre Mac.
 
 Ce dépôt réunit le code source, les installateurs et les mises à jour de Clémentine.
 
-[![Télécharger Clémentine pour Mac](https://img.shields.io/badge/T%C3%A9l%C3%A9charger_Cl%C3%A9mentine-pour_Mac-f56d30?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Josephggx/clementine/releases/download/v1.0.18/Clementine-1.0.18-arm64.dmg)
+[![Télécharger Clémentine pour Mac](https://img.shields.io/badge/T%C3%A9l%C3%A9charger_Cl%C3%A9mentine-pour_Mac-f56d30?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Josephggx/clementine/releases/download/v1.0.19/Clementine-1.0.19-arm64.dmg)
 
-**[⬇ Télécharger l’installateur — version 1.0.18](https://github.com/Josephggx/clementine/releases/download/v1.0.18/Clementine-1.0.18-arm64.dmg)**
+**[⬇ Télécharger l’installateur — version 1.0.19](https://github.com/Josephggx/clementine/releases/download/v1.0.19/Clementine-1.0.19-arm64.dmg)**
 
-La mise à jour **1.0.19** est disponible depuis Clémentine → Réglages → **Rechercher une mise à jour**. L’installateur ci-dessus reste en version 1.0.18.
+Déjà installé ? Retrouvez la version **1.0.19** depuis Clémentine → Réglages → **Rechercher une mise à jour**.
 
 Mac Apple Silicon (M1 ou ultérieur) · macOS 14 ou ultérieur.
 

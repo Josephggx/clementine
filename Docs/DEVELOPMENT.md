@@ -4,9 +4,9 @@ Application macOS de conversion et de traitement de fichiers. Apple Silicon, mac
 
 L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
 
-## Version 1.0.18
+## Version 1.0.19
 
-Version 1.0.18 du 22 octobre 2026 : restaure l’aperçu et les contrôles natifs du panneau d’impression, avec fermeture et sans agrandissement inutile. Le dépôt public unique est `Josephggx/clementine`.
+Version 1.0.19 du 27 octobre 2026 : réunit Crop et Annotate dans Edit, avec recadrage réversible, annotations et sauvegarde combinée, y compris par image dans une sélection multiple. Le dépôt public unique est `Josephggx/clementine`.
 
 ## Construire et mettre à jour
 
@@ -17,6 +17,8 @@ Pour compiler ailleurs : `CLEMENTINE_APP_PATH="/chemin/Clémentine.app" ./build.
 ## Installateurs
 
 Après avoir construit et vérifié `.build/Clémentine.app`, lancer `zsh package-release.sh` pour créer l’installateur standard, ou `zsh package-beta.sh` pour la bêta indépendante. Les fichiers DMG sont placés dans le dossier parent. Ces scripts ne remplacent pas l’app installée.
+
+Le DMG standard conserve exactement le bundle signé du build, sans réécrire son Info.plist ni y ajouter de ressources. Le script compare son contenu extrait au build et, si elle existe, à l’archive ZIP de la même version. Les deux canaux doivent rester identiques pour les correctifs différentiels. Une version ou une identité différente impose de reconstruire avant de préparer le DMG.
 
 Les paquets actuels utilisent une signature locale, sans certificat Developer ID ni notarisation Apple : ils peuvent nécessiter une autorisation manuelle lors de la première ouverture sur un autre Mac.
 
@@ -29,7 +31,7 @@ Le dépôt public unique `Josephggx/clementine` contient les sources, la documen
 Après compilation et `zsh package-release.sh`, lancer :
 
 ```sh
-python3 Scripts/prepare-update.py ../Clementine-1.0.18-arm64.dmg --notes "Nouveautés de cette version."
+python3 Scripts/prepare-update.py ../Clementine-VERSION-arm64.dmg --notes "Nouveautés de cette version."
 ```
 
 Remplacer le nom du DMG par celui de la version publiée. Créer une release publique `vVERSION` et joindre le DMG, son fichier `.sha256` et `appcast.xml`. Publier la release seulement après l’envoi des trois fichiers. L’URL stable du flux pointe vers l’asset `appcast.xml` de la dernière release ; chaque téléchargement du flux utilise l’URL immuable du DMG correspondant.
@@ -40,7 +42,7 @@ L’installateur DMG présente deux vraies icônes Finder sur un fond Retina gé
 
 Les commits passent par le connecteur GitHub sur le compte personnel Josephggx. Les releases et leurs fichiers sont publiés depuis Chrome, profil Perso, avec l’exception de publication autorisée par Joseph ; ne pas utiliser le profil Finovox. Ne jamais remplacer l’app installée sans demande explicite.
 
-`Scripts/prepare-update.py` génère désormais le flux signé et les correctifs différentiels depuis toutes les archives locales plus anciennes disponibles. Les archives déjà diffusées sont immuables et conservées pour servir de bases. Il est possible de limiter explicitement les bases avec `--previous-archive`. Chaque correctif est appliqué sur une copie de la base ; signature, contenu, liens symboliques et permissions du résultat doivent correspondre à la nouvelle version avant publication. Le rapport `.build/release-assets.json` liste tous les fichiers à joindre à la même release : DMG complet, correctifs `.delta` et flux signé. Toujours joindre également le SHA-256 du DMG. Si une base est absente ou qu’un correctif ne s’applique pas, Sparkle utilise automatiquement l’archive complète signée. Ne pas publier uniquement le flux sans ses correctifs.
+`Scripts/prepare-update.py` génère désormais le flux signé et les correctifs différentiels depuis toutes les archives locales plus anciennes disponibles. Les archives déjà diffusées sont immuables et conservées pour servir de bases. Il est possible de limiter explicitement les bases avec `--previous-archive`. Chaque correctif est appliqué sur une copie de la base ; signature, contenu, liens symboliques et permissions du résultat doivent correspondre à la nouvelle version avant publication. Le rapport `.build/release-assets.json` liste tous les fichiers à joindre à la même release : archive complète (DMG ou ZIP), correctifs `.delta` et flux signé. Toujours joindre également le SHA-256 de l’archive. Un DMG peut être ajouté ensuite à une release distribuée via ZIP, après vérification que les deux contiennent exactement le même bundle signé ; le flux et les correctifs déjà publiés restent alors inchangés. Si une base est absente ou qu’un correctif ne s’applique pas, Sparkle utilise automatiquement l’archive complète signée. Ne pas publier uniquement le flux sans ses correctifs.
 
 Le moteur bureautique est normalisé une fois par `Scripts/normalize-runtime-signatures.py` : seuls quatre anciens fichiers vides sont retirés, puis la signature de son bundle est refaite. Ceci supprime des signatures détachées en attributs étendus, incompatibles avec une reconstruction différentielle. Les exécutables et bibliothèques du moteur restent identiques.
 

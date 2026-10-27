@@ -16,44 +16,17 @@ codesign --verify --deep --strict "$PWD/.build/Clémentine.app"
 rm -rf "$work"
 mkdir -p "$volume" "$output_root"
 ditto "$PWD/.build/Clémentine.app" "$app"
-plist="$app/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $bundle_id" "$plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Clémentine" "$plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleName Clémentine" "$plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build_number" "$plist"
-/usr/libexec/PlistBuddy -c "Delete :ClementineDistributionChannel" "$plist" 2>/dev/null || true
-codesign --force --sign - --identifier "$bundle_id" \
-  --requirements "=designated => identifier \"$bundle_id\"" \
-  --entitlements Entitlements.plist "$app"
-codesign --verify --deep --strict "$app"
-mkdir -p "$work/guide"
-cat > "$work/guide/Installation.txt" <<'EOF'
-CLÉMENTINE — INSTALLATION
-
-Mac Apple Silicon (M1, M2, M3 ou ultérieur), macOS 14 ou plus récent.
-
-1. Glissez Clémentine dans le dossier Applications.
-2. Ouvrez Clémentine depuis Applications.
-3. Suivez le guide de démarrage. Si vous choisissez de configurer les accès,
-   activez d’abord Accessibilité, puis autorisez les applications Apple proposées.
-
-Cette version est signée localement, sans certificat Developer ID ni notarisation
-Apple. macOS peut bloquer sa première ouverture. Dans ce cas, après la tentative
-d’ouverture, rendez-vous dans Réglages Système → Confidentialité et sécurité
-pour autoriser Clémentine.
-
-Les outils de conversion sont intégrés. Pages, Numbers et Keynote doivent être
-installés pour les opérations nécessitant ces applications.
-
-Licences : Clémentine.app/Contents/Resources/THIRDPARTY.txt.
-EOF
-# Keep the visible installation window focused on the two drag targets.
-cp "$work/guide/Installation.txt" "$app/Contents/Resources/Installation.txt"
-codesign --force --sign - --identifier "$bundle_id" \
-  --requirements "=designated => identifier \"$bundle_id\"" \
-  --entitlements Entitlements.plist "$app"
-codesign --verify --deep --strict "$app"
+# The DMG must contain the exact signed bundle used by in-app updates. Rewriting
+# Info.plist or inserting a guide here would create two incompatible delta bases
+# with the same build number. Installation instructions live in the README.
+python3 - "$app" "$version" "$build_number" "$bundle_id" <<'CHECK_BUNDLE'
+import plistlib, sys
+from pathlib import Path
+info = plistlib.loads((Path(sys.argv[1]) / "Contents/Info.plist").read_bytes())
+expected = dict(zip(["CFBundleShortVersionString", "CFBundleVersion", "CFBundleIdentifier"], sys.argv[2:]))
+if any(info.get(key) != value for key, value in expected.items()):
+    raise SystemExit("Rebuild Clémentine with the requested version and identity before packaging.")
+CHECK_BUNDLE
 
 packaging_python="$PWD/.build/packaging-python"
 if ! PYTHONPATH="$packaging_python" python3 -c 'import dmgbuild, ds_store, mac_alias' 2>/dev/null; then
@@ -66,5 +39,20 @@ xcrun swiftc -module-cache-path .build/cache Scripts/generate-installer-backgrou
 PYTHONPATH="$packaging_python" python3 -m dmgbuild -s Scripts/dmg-settings.py \
   -D app="$app" -D background="$work/background.tiff" "Clémentine" "$dmg"
 python3 Scripts/prepare-update.py "$dmg" --verify-archive-only
+python3 - "$dmg" "$PWD/.build/Clémentine.app" <<'CHECK_CONTENTS'
+import importlib.util, sys
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("updates", "Scripts/prepare-update.py")
+updates = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(updates)
+archive, built = map(Path, sys.argv[1:])
+manifest = updates.bundle_manifest(updates.extracted_app(archive))
+if manifest != updates.bundle_manifest(built):
+    raise SystemExit("Installer application differs from the verified build.")
+zip_archive = archive.with_suffix(".zip")
+if zip_archive.exists() and manifest != updates.bundle_manifest(updates.extracted_app(zip_archive)):
+    raise SystemExit("Installer application differs from the published ZIP update.")
+print("Verified identical signed application in installer and update archive")
+CHECK_CONTENTS
 (cd "$output_root" && shasum -a 256 "${dmg:t}") > "$dmg.sha256"
 echo "$dmg"
