@@ -538,5 +538,9 @@
   "Impossible de préparer l’impression.": "Unable to prepare printing.",
   "Ce PDF ne permet pas l’impression : {0}": "This PDF does not allow printing: {0}",
   "Document illisible pour l’impression : {0}": "Unable to read document for printing: {0}",
-  "Gardez vos fichiers à portée de main : AirDrop, Float, copie et déplacement.": "Keep files close at hand: AirDrop, Float, copying and moving."
+  "Gardez vos fichiers à portée de main : AirDrop, Float, copie et déplacement.": "Keep files close at hand: AirDrop, Float, copying and moving.",
+  "Recadrez et annotez votre image dans le même éditeur.": "Crop and annotate your image in the same editor.",
+  "Passez de Crop à Annotate sans perdre vos modifications": "Switch between Crop and Annotate without losing your edits",
+  "Enregistrez le cadrage et les annotations ensemble": "Save the crop and annotations together",
+  "Zone de recadrage invalide": "Invalid crop area"
 }

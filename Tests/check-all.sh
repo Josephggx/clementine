@@ -10,6 +10,7 @@ checks=(
   check-update-feed.sh
   check-workspace-files.sh
   check-modules.sh
+  check-image-edit.sh
   check-documents.sh
   check-markdown.sh
   check-pdf-office.sh

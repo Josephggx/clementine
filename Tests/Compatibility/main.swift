@@ -25,8 +25,8 @@ check(Compatibility.targets(urls(["jpg", "png"])) == ["webp", "heic", "tiff", "a
 check(Compatibility.targets(urls(["html"])).isEmpty, "HTML output-only")
 check(Compatibility.targets(urls(["gif"])).count == 6, "GIF is video input")
 check(Compatibility.targets(urls(["mp4"])).filter { audioFormats.contains($0) } == ["mp3"], "Video audio export")
-check(Tool.available(urls(["png"])).map(\.id) == ["compress", "strip", "adjust", "annotate", "frame", "crop", "redact", "archive"], "Single image tools")
-check(Tool.available(urls(["png", "jpg"])).map(\.id) == ["compress", "crop", "mergepdf", "collage", "archive"], "Image group tools")
+check(Tool.available(urls(["png"])).map(\.id) == ["compress", "strip", "adjust", "annotate", "frame", "redact", "archive"], "Single image tools")
+check(Tool.available(urls(["png", "jpg"])).map(\.id) == ["compress", "annotate", "mergepdf", "collage", "archive"], "Image group tools")
 check(Tool.available(urls(["pdf", "pdf"])).map(\.id) == ["compress", "mergepdf", "archive"], "Unknown page counts hide Split")
 for formats in [["svg", "svg"], ["gif", "gif"], ["mp3", "wav"], ["mp4", "mov"],
                 ["zip", "rar"], ["docx", "csv"], ["unknown", "unknown"], ["pdf", "png"]] {
@@ -56,7 +56,7 @@ check(Tool.catalogue(for: catalogueFolder).map(\.id) == ["archive"], "Synthetic 
 check(Tool.available(urls(["zip"])).map(\.id) == ["strip", "extract"], "Existing ZIP does not offer ZIP")
 check(Tool.available(urls(["rar"])).map(\.id) == ["strip", "extract"], "Existing archive does not offer ZIP")
 check(Tool.catalogue(for: urls(["pdf"])[0]).map(\.id) == ["compress", "strip", "mergepdf", "split", "organize", "archive"], "PDF feature catalogue includes batch actions")
-check(Tool.catalogue(for: urls(["jpg"])[0]).map(\.id) == ["compress", "strip", "adjust", "annotate", "frame", "crop", "redact", "mergepdf", "collage", "archive"], "Image feature catalogue includes batch actions")
+check(Tool.catalogue(for: urls(["jpg"])[0]).map(\.id) == ["compress", "strip", "adjust", "annotate", "frame", "redact", "mergepdf", "collage", "archive"], "Image feature catalogue includes batch actions")
 check(Tool.catalogue(for: urls(["mp3"])[0]).map(\.id) == ["compress", "strip", "normalize", "visualize", "trim", "channels", "bleep", "join", "archive"], "Audio feature catalogue includes assembly")
 check(Tool.catalogue(for: urls(["docx"])[0]).map(\.id) == ["strip", "archive"], "Document feature catalogue includes archive")
 check(Tool.catalogue(for: urls(["zip"])[0]).map(\.id) == ["strip", "extract", "archive"], "Archive catalogue includes batch ZIP")

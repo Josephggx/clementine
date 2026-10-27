@@ -10,7 +10,7 @@ struct FeatureToolCopy {
       "compress": ("Réduisez la taille du fichier en préservant l’original.", "Choisissez le niveau de compression", "Contrôlez la taille du résultat"),
       "crop": ("Gardez précisément la zone utile du visuel.", "Ajustez le cadrage", "Choisissez un format de sortie"),
       "adjust": ("Retouchez la lumière, les couleurs et les détails.", "Voyez le résultat en direct", "Réglez chaque effet séparément"),
-      "annotate": ("Ajoutez des dessins, textes et repères au visuel.", "Dessinez librement", "Placez formes et légendes"),
+      "annotate": ("Recadrez et annotez votre image dans le même éditeur.", "Passez de Crop à Annotate sans perdre vos modifications", "Enregistrez le cadrage et les annotations ensemble"),
       "redact": ("Masquez les éléments sensibles d’une image ou vidéo.", "Déplacez les zones de masquage", "Choisissez le flou ou un aplat"),
       "frame": ("Placez une image sur un nouveau fond.", "Choisissez une couleur ou une image", "Ajustez les marges et les coins"),
       "collage": ("Réunissez plusieurs images sur une planche.", "Choisissez la disposition", "Réglez l’espacement et le fond"),
@@ -156,9 +156,9 @@ struct FeatureToolSheet: View {
 
   private func chooseFiles() {
     let panel = NSOpenPanel()
-    panel.allowsMultipleSelection = tool.group
+    panel.allowsMultipleSelection = tool.group || tool.id == "annotate"
     panel.canChooseDirectories = false
-    panel.message = tool.group ? tr("Choisissez les fichiers à tester") : tr("Choisissez le fichier à tester")
+    panel.message = panel.allowsMultipleSelection ? tr("Choisissez les fichiers à tester") : tr("Choisissez le fichier à tester")
     guard panel.runModal() == .OK else { return }
     viewState.invalidSelection = !onTry(panel.urls)
   }

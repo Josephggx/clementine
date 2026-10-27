@@ -24,7 +24,7 @@ final class ModuleCanvasView: NSView {
   var drawing=false
   var gestureStarted=false
   var cropStart=CGRect.zero
-  var freehandMode:Bool {session?.tool == "annotate" && ["draw","highlight"].contains(session?.drawingTool ?? "")}
+  var freehandMode:Bool {session?.tool == "annotate" && session?.isCropping != true && ["draw","highlight"].contains(session?.drawingTool ?? "")}
   var showsSelection:Bool { !freehandMode && session?.showsOriginal != true }
   override var isFlipped:Bool {true}
   override var acceptsFirstResponder:Bool {true}
@@ -35,6 +35,13 @@ final class ModuleCanvasView: NSView {
     let size:CGSize
     if !["crop","redact","annotate"].contains(session?.tool ?? ""),let image=session?.preview {size=image.size}
     else {size=CGSize(width:max(1,width),height:max(1,height))}
+    if let session, session.tool == "annotate", !session.isCropping, !session.showsOriginal {
+      let crop=session.imageCropRect
+      let scale=min(bounds.width/max(1,crop.width*size.width),bounds.height/max(1,crop.height*size.height))*session.previewScale
+      let w=size.width*scale,h=size.height*scale
+      return CGRect(x:(bounds.width-crop.width*w)/2-crop.minX*w+session.previewOffset.width,
+        y:(bounds.height-crop.height*h)/2-crop.minY*h+session.previewOffset.height,width:w,height:h)
+    }
     let fillsCatalogueFrame = session?.cataloguePreview == true && session?.tool != "frame"
     let scale = fillsCatalogueFrame
       ? max(bounds.width/max(1,size.width),bounds.height/max(1,size.height))
@@ -42,11 +49,26 @@ final class ModuleCanvasView: NSView {
     let zoom = session?.previewScale ?? 1,offset = session?.previewOffset ?? .zero
     return CGRect(x:(bounds.width-size.width*scale*zoom)/2+offset.width,y:(bounds.height-size.height*scale*zoom)/2+offset.height,width:size.width*scale*zoom,height:size.height*scale*zoom)
   }
-  func normalized(_ point:CGPoint) -> CGPoint {let rect=contentRect;return CGPoint(x:min(1,max(0,(point.x-rect.minX)/max(1,rect.width))),y:min(1,max(0,(point.y-rect.minY)/max(1,rect.height))))}
+  var visibleImageRect: CGRect {
+    if let session, session.tool == "annotate", !session.isCropping, !session.showsOriginal {
+      return mappedRect(session.imageCropRect).intersection(bounds)
+    }
+    return contentRect.intersection(bounds)
+  }
+  func normalized(_ point:CGPoint) -> CGPoint {
+    let rect=contentRect
+    let area=session?.tool == "annotate" && session?.isCropping == false
+      ? session!.imageCropRect : CGRect(x:0,y:0,width:1,height:1)
+    return CGPoint(x:min(area.maxX,max(area.minX,(point.x-rect.minX)/max(1,rect.width))),
+      y:min(area.maxY,max(area.minY,(point.y-rect.minY)/max(1,rect.height))))
+  }
   func mappedRect(_ rect:CGRect) -> CGRect {let box=contentRect;return CGRect(x:box.minX+rect.minX*box.width,y:box.minY+rect.minY*box.height,width:rect.width*box.width,height:rect.height*box.height)}
   override func draw(_ dirtyRect:NSRect) {
     guard let session,let context=NSGraphicsContext.current?.cgContext else {return}
     let rect=contentRect
+    context.saveGState()
+    defer { context.restoreGState() }
+    if session.tool == "annotate", !session.isCropping { context.clip(to:visibleImageRect) }
     let directAnnotations=session.tool == "annotate" && session.sourceImage != nil
     let shown = session.showsOriginal || directAnnotations ? session.sourceImage.map { NSImage(cgImage:$0,size:.zero) } : session.preview
     if (!video || session.cataloguePreview),let image=shown {
@@ -64,7 +86,7 @@ final class ModuleCanvasView: NSView {
       }
       context.restoreGState()
     }
-    if session.tool == "crop" {
+    if session.isCropping {
       let width=Double(session.sourceImage?.width ?? max(1,Int(session.sourceSize.width))),height=Double(session.sourceImage?.height ?? max(1,Int(session.sourceSize.height)))
       let crop=mappedRect(CGRect(x:Double(session.options.x)/width,y:Double(session.options.y)/height,width:Double(session.options.width)/width,height:Double(session.options.height)/height))
       let mask=CGMutablePath();mask.addRect(rect);mask.addRect(crop);context.addPath(mask);context.setFillColor(CGColor(gray:0,alpha:0.35));context.fillPath(using:.evenOdd)
@@ -85,11 +107,11 @@ final class ModuleCanvasView: NSView {
   }
   func handles(_ r:CGRect) -> [CGPoint] {[CGPoint(x:r.minX,y:r.minY),CGPoint(x:r.midX,y:r.minY),CGPoint(x:r.maxX,y:r.minY),CGPoint(x:r.maxX,y:r.midY),CGPoint(x:r.maxX,y:r.maxY),CGPoint(x:r.midX,y:r.maxY),CGPoint(x:r.minX,y:r.maxY),CGPoint(x:r.minX,y:r.midY)]}
   override func mouseDown(with event:NSEvent) {
-    guard let session,["crop","redact","annotate"].contains(session.tool),!session.busy else {return}
+    guard let session,["crop","redact","annotate"].contains(session.tool),!session.busy,!session.loading else {return}
     window?.makeFirstResponder(self)
-    let point=convert(event.locationInWindow,from:nil);gestureStarted=false;guard contentRect.insetBy(dx:-8,dy:-8).contains(point) else {return};gestureStarted=true
+    let point=convert(event.locationInWindow,from:nil);gestureStarted=false;guard visibleImageRect.insetBy(dx:session.isCropping ? -8 : 0,dy:session.isCropping ? -8 : 0).contains(point) else {return};gestureStarted=true
     start=normalized(point);previous=start;handle=nil;original=nil;drawing=false
-    if session.tool == "crop" {
+    if session.isCropping {
       session.remember()
       let width=Double(session.sourceImage?.width ?? max(1,Int(session.sourceSize.width))),height=Double(session.sourceImage?.height ?? max(1,Int(session.sourceSize.height)))
       cropStart=CGRect(x:Double(session.options.x)/width,y:Double(session.options.y)/height,width:Double(session.options.width)/width,height:Double(session.options.height)/height)
@@ -113,9 +135,9 @@ final class ModuleCanvasView: NSView {
     session.options.marks.append(mark);session.selectedMark=mark.id;drawing=true
   }
   override func mouseDragged(with event:NSEvent) {
-    guard gestureStarted,let session,!session.busy else {return}
+    guard gestureStarted,let session,!session.busy,!session.loading else {return}
     let point=normalized(convert(event.locationInWindow,from:nil))
-    if session.tool == "crop" {
+    if session.isCropping {
       var rect=changed(cropStart,end:point)
       if let ratio = Engine.ratio(session.aspect), drawing || handle != nil {
         let normalizedRatio = ratio*session.sourceSize.height/max(1,session.sourceSize.width)
@@ -163,7 +185,7 @@ final class ModuleCanvasView: NSView {
   override func mouseUp(with event:NSEvent) {
     guard gestureStarted,let session else {return}
     defer {gestureStarted=false}
-    if session.tool != "crop",let index=session.options.marks.firstIndex(where:{$0.id==session.selectedMark}) {
+    if !session.isCropping,let index=session.options.marks.firstIndex(where:{$0.id==session.selectedMark}) {
       if drawing,["draw","highlight"].contains(session.options.marks[index].kind) {
         let point=normalized(convert(event.locationInWindow,from:nil))
         if let last=session.options.marks[index].points.last,last.x != point.x || last.y != point.y {
@@ -183,6 +205,7 @@ final class ModuleCanvasView: NSView {
       }
       session.renderPreview()
     }
+    if session.isCropping { session.clampImageCrop() }
     original=nil;handle=nil;drawing=false;needsDisplay=true
   }
   override func magnify(with event:NSEvent) {guard let session else {return};session.previewScale=min(8,max(1,session.previewScale*(1+event.magnification)));needsDisplay=true}

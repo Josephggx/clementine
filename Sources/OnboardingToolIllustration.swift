@@ -64,6 +64,8 @@ struct OnboardingToolIllustration: View {
       }
     case "annotate":
       photo.overlay {
+        RoundedRectangle(cornerRadius:4).stroke(.white.opacity(0.75),style:StrokeStyle(lineWidth:1,dash:[4,3])).padding(5)
+      }.overlay {
         GeometryReader { g in
           Path { p in
             p.move(to: CGPoint(x: g.size.width * 0.18, y: 38))

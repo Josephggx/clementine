@@ -25,7 +25,7 @@ struct ModuleSpecification {
     let values: [String: (String,String,CGFloat,CGFloat)] = [
       "compress": ("Compress","Compress",380,375), "strip": ("Metadata","Save",480,540),
       "adjust": ("Edit Photo","Save Edited Copy",480,787),
-      "annotate": ("Annotate Photo","Save Annotated Copy",440,728),
+      "annotate": ("Edit","Save Edited Copy",480,790),
       "frame": ("Add BG","Save with Background",440,650),
       "crop": (video ? "Crop Video" : "Crop Image","Apply",400,video ? 663 : 605),
       "redact": (video ? "Redact Video" : "Redact Photo","Save Redacted Copy",400,video ? 850 : 741),
@@ -98,7 +98,10 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
   @Published var splitThumbnails: [URL: [Int:NSImage]] = [:]
   @Published var pageThumbnails: [Int:NSImage] = [:]
   @Published var organizeInsertion: UUID?
-  @Published var undoStack: [[ModuleMark]] = []
+  @Published var undoStack: [ModuleImageEdit] = []
+  @Published var imageEditMode = "annotate"
+  var imageEditHistories: [String:[ModuleImageEdit]] = [:]
+  var isCropping: Bool { tool == "crop" || (tool == "annotate" && imageEditMode == "crop") }
   let player = AVPlayer()
   var close: (() -> Void)?
   var reveal = true
@@ -143,7 +146,8 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
   var canSave: Bool {
     if busy || loading || files.isEmpty { return false }
     switch tool {
-    case "annotate", "redact", "bleep": return !options.marks.isEmpty
+    case "annotate": return sourceImage != nil
+    case "redact", "bleep": return !options.marks.isEmpty
     case "snapshot": return !frames.isEmpty
     case "split":
       if family == .pdf {
@@ -285,14 +289,16 @@ final class ModuleSession: ObservableObject, Identifiable, @unchecked Sendable {
     return context.makeImage()!
   }
   func load() {
-    guard let url=files.first else {return}
+    guard !files.isEmpty else {return}
+    activeFile=min(activeFile,files.count-1)
+    let url=files[activeFile]
     let inputFiles=files, tool=tool, family=family, generation=UUID()
-    loadGeneration=generation;loading=true
+    loadGeneration=generation;loading=true;busy=false
     Task.detached(priority: .userInitiated) { [weak self] in
       guard let self else { return }
       do {
         if tool != "strip" && tool != "archive" && family == .image {
-          if tool == "crop",inputFiles.count>1 {
+          if ["crop","annotate"].contains(tool),inputFiles.count>1 {
             var crops:[String:ModuleCrop]=[:],thumbnails:[URL:NSImage]=[:]
             for file in inputFiles {
               if let source=CGImageSourceCreateWithURL(file as CFURL,nil),let properties=CGImageSourceCopyPropertiesAtIndex(source,0,nil) as? [CFString:Any] {
@@ -311,7 +317,8 @@ self.options.moduleCrops=crops;self.fileThumbnails=thumbnails}
             guard self.loadGeneration == generation else {return}
 
             self.sourceImage = image; self.sourceSize = CGSize(width:image.width,height:image.height); self.preview = NSImage(cgImage:image,size:.zero)
-            if tool == "crop" { self.options.width = image.width; self.options.height = image.height }
+            if ["crop","annotate"].contains(tool) { self.options.width = image.width; self.options.height = image.height }
+            if tool == "annotate" { self.restoreImageEdit(for:url,image:image) }
             if tool == "collage" { self.options.width = 2048; self.options.height = 2048; self.renderPreview() }
           }
         }
@@ -437,14 +444,21 @@ self.options.moduleCrops=crops;self.fileThumbnails=thumbnails}
   func stepFrame(_ direction: Double) {pause();seek((round(position/frameDuration)+direction)*frameDuration)}
   func step(_ amount: Double) { pause(); seek(position+amount) }
   func reset() {
-    pause(); options.marks = []; undoStack = []; selectedMark = nil
+    pause()
+    if tool == "annotate" { remember() } else { undoStack = [] }
+    options.marks = []; selectedMark = nil
+    aspect = "Free"; previewScale = 1; previewOffset = .zero
     options.photoAdjustments = [:]; options.brightness = 0; options.contrast = 1; options.saturation = 1
     options.x = 0; options.y = 0
     if let image = sourceImage { options.width = image.width; options.height = image.height }
     renderPreview()
   }
-  func remember() { undoStack.append(options.marks); if undoStack.count>80 { undoStack.removeFirst() } }
-  func undo() { if let previous = undoStack.popLast() { options.marks = previous; renderPreview() } }
+  func remember() { undoStack.append(currentImageEdit); if undoStack.count>80 { undoStack.removeFirst() } }
+  func undo() {
+    if let previous = undoStack.popLast() {
+      restoreImageEdit(previous); selectedMark = nil; aspect = "Free"; renderPreview()
+    }
+  }
   func deleteMark() { remember(); options.marks.removeAll { $0.id == selectedMark }; selectedMark = nil; renderPreview() }
   func moveFile(_ index: Int, by delta: Int) {
     let other = index+delta
@@ -478,6 +492,8 @@ self.options.moduleCrops=crops;self.fileThumbnails=thumbnails}
     }
   }
   func renderPreview() {
+    // The editable canvas draws the original and vector marks directly; never flatten on tab changes.
+    if tool == "annotate" { return }
     guard sourceImage != nil else { return }
     previewTask?.cancel()
     let generation = UUID(); previewGeneration = generation
@@ -497,6 +513,7 @@ self.options.moduleCrops=crops;self.fileThumbnails=thumbnails}
   func export(previewOnly: Bool = false, channel: String? = nil) {
     guard !busy else { return }
     pause(); error = nil; busy = true; progress = 0
+    if tool == "annotate" { persistImageEdit() }
     var settings = options
     settings.times = (tool == "snapshot" ? frames : splitPoints).map { String($0) }.joined(separator:",")
     if tool == "compress", targetEnabled {
@@ -536,20 +553,29 @@ self.options.moduleCrops=crops;self.fileThumbnails=thumbnails}
     }
   }
   func selectCropFile(_ index:Int) {
-    guard files.indices.contains(index),index != activeFile,!busy else {return}
+    guard files.indices.contains(index),index != activeFile,!busy,!loading else {return}
+    if tool == "annotate" { persistImageEdit() }
     options.moduleCrops[files[activeFile].path]=ModuleCrop(x:options.x,y:options.y,width:options.width,height:options.height)
-    activeFile=index;busy=true
+    activeFile=index;busy=true;loading=true;sourceImage=nil;preview=nil
+    let generation=UUID();loadGeneration=generation
     let url=files[index]
     DispatchQueue.global(qos:.userInitiated).async {
       do {
         let image=try Engine().loadImage(url)
         DispatchQueue.main.async {
+          guard self.loadGeneration==generation else {return}
+          self.loading=false
           self.sourceImage=image;self.sourceSize=CGSize(width:image.width,height:image.height);self.preview=NSImage(cgImage:image,size:.zero)
           let crop=self.options.moduleCrops[url.path] ?? ModuleCrop(x:0,y:0,width:image.width,height:image.height)
           self.options.x=crop.x;self.options.y=crop.y;self.options.width=crop.width;self.options.height=crop.height
-          self.aspect="Free";self.busy=false
+          if self.tool == "annotate" { self.restoreImageEdit(for:url, image:image) }
+          self.previewScale=1;self.previewOffset = .zero
+          self.aspect="Free";self.error=nil;self.busy=false
         }
-      } catch {DispatchQueue.main.async {self.error=error.localizedDescription;self.busy=false}}
+      } catch {DispatchQueue.main.async {
+        guard self.loadGeneration==generation else {return}
+        self.error=error.localizedDescription;self.busy=false;self.loading=false
+      }}
     }
   }
   func detectSilentEnds() {
@@ -583,11 +609,12 @@ self.options.moduleCrops=crops;self.fileThumbnails=thumbnails}
   func refreshImageAfterFileChange() {
     guard files.indices.contains(activeFile) else {return}
     let url=files[activeFile]
-    sourceImage=nil;preview=nil;loading=true
+    let generation=UUID();loadGeneration=generation
+    sourceImage=nil;preview=nil;loading=true;busy=false
     DispatchQueue.global(qos:.userInitiated).async { [weak self] in
       let result=Result {try Engine().loadImage(url)}
       DispatchQueue.main.async {
-        guard let self, self.files.indices.contains(self.activeFile),self.files[self.activeFile] == url else {return}
+        guard let self, self.loadGeneration==generation, self.files.indices.contains(self.activeFile),self.files[self.activeFile] == url else {return}
         self.loading=false
         switch result {
         case .success(let image):
@@ -595,6 +622,7 @@ self.options.moduleCrops=crops;self.fileThumbnails=thumbnails}
           let crop=self.options.moduleCrops[url.path] ?? ModuleCrop(x:0,y:0,width:image.width,height:image.height)
           self.options.x=crop.x;self.options.y=crop.y;self.options.width=crop.width;self.options.height=crop.height
           self.preview=NSImage(cgImage:image,size:.zero)
+          if self.tool == "annotate" { self.restoreImageEdit(for:url, image:image) }
         case .failure(let error): self.error=error.localizedDescription
         }
       }

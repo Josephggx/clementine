@@ -472,7 +472,7 @@ private struct OnboardingWorkspaceSlide: View {
         .overlay(RoundedRectangle(cornerRadius:16).stroke(citrus.opacity(0.42)))
         HStack(alignment:.top,spacing:10) {
           mockColumn("Conversion", [("JPG", "photo"), ("PDF", "doc.richtext"), ("PNG", "photo")])
-          mockColumn("Outils", [("ANNOTATE", "wheel:annotate"), ("COMPRESS", "wheel:compress"), ("CROP", "wheel:crop")])
+          mockColumn("Outils", [("EDIT", "wheel:annotate"), ("COMPRESS", "wheel:compress"), ("ADJUST", "wheel:adjust")])
           mockColumn("Actions", [("AIRDROP", "wheel:airdrop"), ("FLOAT", "wheel:float"), ("COPY", "wheel:copy")])
         }
       }

@@ -115,9 +115,9 @@ struct Tool: Identifiable, Hashable {
     Tool("target", "Taille cible", "target", [.image, .video, .audio, .pdf]),
     Tool("resize", "Redimensionner", "arrow.up.left.and.arrow.down.right", [.image, .video]),
     Tool("rotate", "Rotation / miroir", "rotate.right", [.image, .video]),
-    Tool("crop", "Recadrer", "crop", [.image, .video]),
+    Tool("crop", "Recadrer", "crop", [.video]),
     Tool("adjust", "Ajuster les couleurs", "slider.horizontal.3", [.image]),
-    Tool("annotate", "Annoter", "pencil.tip", [.image]),
+    Tool("annotate", "Edit", "pencil.tip", [.image]),
     Tool("redact", "Caviarder", "eye.slash", [.image, .video]),
     Tool("frame", "Ajouter un cadre", "square.dashed.inset.filled", [.image]),
     Tool("collage", "Créer un collage", "square.grid.2x2", [.image], group: true),
@@ -142,7 +142,7 @@ struct Tool: Identifiable, Hashable {
     Tool("archive", "ZIP", "doc.zipper", Array(Family.allCases), group: true),
   ]
   var wheelTitle: String {
-    ["compress": "COMPRESS", "strip": "METADATA", "adjust": "EDIT", "annotate": "ANNOTATE",
+    ["compress": "COMPRESS", "strip": "METADATA", "adjust": "ADJUST", "annotate": "EDIT",
      "frame": "ADD BG", "crop": "CROP", "redact": "REDACT", "normalize": "NORMALIZE",
      "mute": "MUTE", "trim": "TRIM", "split": "SPLIT", "organize": "ORGANIZE",
      "extract": trString("Dézip").uppercased(), "mergepdf": "MERGE", "speed": "SPEED", "join": "JOIN",
@@ -156,8 +156,8 @@ struct Tool: Identifiable, Hashable {
     func ids(_ format: String) -> [String] {
       switch format {
       case "jpg", "png", "webp", "heic", "tiff":
-        return group ? ["compress", "strip", "crop", "mergepdf", "collage"]
-          : ["compress", "strip", "adjust", "annotate", "frame", "crop", "redact"]
+        return group ? ["compress", "strip", "annotate", "mergepdf", "collage"]
+          : ["compress", "strip", "adjust", "annotate", "frame", "redact"]
       case "svg": return group ? ["strip", "mergepdf", "collage"] : ["strip"]
       case "mp3", "m4a", "wav", "flac":
         return group ? ["compress", "strip", "normalize"]
@@ -237,7 +237,12 @@ struct ModuleMark: Codable, Identifiable, Equatable {
   var points: [ModulePoint] = []
   var rect: CGRect { CGRect(x: x, y: y, width: width, height: height) }
 }
-struct ModuleCrop: Codable { var x: Int; var y: Int; var width: Int; var height: Int }
+struct ModuleCrop: Codable, Equatable { var x: Int; var y: Int; var width: Int; var height: Int }
+/// Coordinates stay in the original image, even while viewing a cropped region.
+struct ModuleImageEdit: Codable, Equatable {
+  var crop: ModuleCrop
+  var marks: [ModuleMark]
+}
 struct ModulePage: Codable, Identifiable, Equatable {
   var id = UUID()
   var index: Int
@@ -257,6 +262,7 @@ struct Options: Codable {
   var marks: [ModuleMark] = []
   var modulePages: [ModulePage] = []
   var moduleCrops: [String:ModuleCrop] = [:]
+  var moduleImageEdits: [String:ModuleImageEdit]? = nil
   var metadataChanges: [String: String] = [:]
   var metadataRemoveAll = false
   var loudnessRange = 11.0, truePeak = -1.5

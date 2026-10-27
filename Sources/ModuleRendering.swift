@@ -15,10 +15,22 @@ extension Engine {
   }
 
   func moduleImage(_ original: CGImage, action: String, options o: Options, preview: Bool = false, pixelScale: Double = 1) throws -> CGImage {
+    if action == "annotate", o.width != 0 || o.height != 0 || o.x != 0 || o.y != 0 {
+      guard o.x >= 0, o.y >= 0, o.width > 0, o.height > 0,
+        o.width <= original.width, o.height <= original.height,
+        o.x <= original.width-o.width, o.y <= original.height-o.height else {
+        throw ClementineError(tr("Zone de recadrage invalide"))
+      }
+    }
     if preview,max(original.width,original.height)>1200 {
       let scale=1200.0/Double(max(original.width,original.height))
       let smaller=try resize(original,width:max(1,Int(Double(original.width)*scale)),height:max(1,Int(Double(original.height)*scale)))
       var settings=o;settings.padding*=scale;settings.corners*=scale;settings.shadow*=scale;settings.backgroundBlur*=scale
+      if action == "annotate", o.width > 0, o.height > 0 {
+        settings.x = Int(Double(o.x)*scale); settings.y = Int(Double(o.y)*scale)
+        settings.width = max(1,Int(Double(o.x+o.width)*scale)-settings.x)
+        settings.height = max(1,Int(Double(o.y+o.height)*scale)-settings.y)
+      }
       if let blur=settings.photoAdjustments["Blur"] {settings.photoAdjustments["Blur"]=blur*scale}
       return try moduleImage(smaller,action:action,options:settings,pixelScale:scale)
     }
@@ -72,6 +84,15 @@ extension Engine {
           } else { drawAnnotation(mark,in:context,image:image,rect:rect) }
         }
       }
+    }
+    if action == "annotate", o.width != 0 || o.height != 0 || o.x != 0 || o.y != 0 {
+      guard o.x >= 0, o.y >= 0, o.width > 0, o.height > 0,
+        o.width <= image.width, o.height <= image.height,
+        o.x <= image.width-o.width, o.y <= image.height-o.height,
+        let cropped = image.cropping(to:CGRect(x:o.x,y:o.y,width:o.width,height:o.height)) else {
+        throw ClementineError(tr("Zone de recadrage invalide"))
+      }
+      image = cropped
     }
     if action == "frame" {
       let padding = Int(o.padding)

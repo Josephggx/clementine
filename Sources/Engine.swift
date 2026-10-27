@@ -292,9 +292,16 @@ final class Engine {
       o.targetMB = Double(bytes(u))*(1-reduction/100)/1_000_000
     }
     if o.moduleEditor,action == "crop",let crop=o.moduleCrops[u.path] {o.x=crop.x;o.y=crop.y;o.width=crop.width;o.height=crop.height}
+    if o.moduleEditor, action == "annotate", let edits = o.moduleImageEdits {
+      if let edit = edits[u.path] {
+        o.x=edit.crop.x; o.y=edit.crop.y; o.width=edit.crop.width; o.height=edit.crop.height
+        o.marks=edit.marks
+      } else { o.x=0; o.y=0; o.width=0; o.height=0; o.marks=[] }
+      try validateModuleOptions(o)
+    }
     let family = Family.of(u)
     let ext = u.pathExtension.lowercased()
-    var d = output(u, ext, stage, suffix: "-\(action)")
+    var d = output(u, ext, stage, suffix: "-\(action == "annotate" && o.moduleEditor ? "edit" : action)")
     if o.moduleEditor {
       if action == "strip" { return [try moduleMetadata(u, stage:stage, options:o)] }
       if action == "split", family == .video { return [try moduleSplit(u,stage:stage,options:o)] }

@@ -96,11 +96,14 @@ extension ModuleSession {
     guard !cataloguePreview else {return}
     if change.urls.isEmpty {cancel(); return}
     guard files != change.urls else {return}
+    if tool == "annotate", !loading {persistImageEdit()}
     let wasLoading=loading
     let selected=files.indices.contains(activeFile) ? files[activeFile] : files.first
     pause()
     if busy {interruptForFileChange()}
     for (old,new) in change.renamed {
+      if let value=options.moduleImageEdits?.removeValue(forKey:old.path) {options.moduleImageEdits?[new.path]=value}
+      if let value=imageEditHistories.removeValue(forKey:old.path) {imageEditHistories[new.path]=value}
       if let value=splitThumbnails.removeValue(forKey:old) {splitThumbnails[new]=value}
       if let value=fileThumbnails.removeValue(forKey:old) {fileThumbnails[new]=value}
       if let value=options.pdfSplitGroups.removeValue(forKey:old.path) {options.pdfSplitGroups[new.path]=value}
@@ -108,6 +111,7 @@ extension ModuleSession {
       if let value=options.moduleCrops.removeValue(forKey:old.path) {options.moduleCrops[new.path]=value}
     }
     for removed in change.removed {
+      options.moduleImageEdits?.removeValue(forKey:removed.path);imageEditHistories.removeValue(forKey:removed.path)
       splitThumbnails.removeValue(forKey:removed);fileThumbnails.removeValue(forKey:removed)
       options.pdfSplitGroups.removeValue(forKey:removed.path);options.pdfSplitEdits.removeValue(forKey:removed.path)
       options.moduleCrops.removeValue(forKey:removed.path)

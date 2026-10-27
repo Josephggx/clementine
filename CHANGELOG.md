@@ -1,5 +1,12 @@
 # Nouveautés de Clémentine
 
+## À venir
+
+- Images : Crop et Annotate réunis dans Edit, avec l’icône d’annotation et un sélecteur Annotate / Crop. Les réglages de couleur restent disponibles sous Adjust.
+- Recadrage réversible, annotations conservées dans les coordonnées d’origine, annulation et réinitialisation ; enregistrement combiné dans les deux modes.
+- Édition image par image des sélections multiples, avec conservation des modifications lors d’un renommage dans le Finder.
+- Sources synchronisées uniquement : app installée, installateur et flux de mise à jour inchangés.
+
 ## 1.0.18 — 22 octobre 2026
 
 - Print : restaure l’aperçu natif et conserve les contrôles d’impression macOS lors de l’ajout de la fermeture.

@@ -92,7 +92,7 @@ struct ModuleRoot: View {
         }
       Divider().opacity(0.5)
       ScrollView {
-        ModuleContent(session:session).padding(12)
+        ModuleContent(session:session).padding(12).disabled(session.tool == "annotate" && (session.loading || session.busy))
       }.scrollIndicators(.automatic)
       if let error = session.error {
         HStack(alignment:.top) { Text(trString(error)).font(.caption).foregroundStyle(.red).textSelection(.enabled); Spacer(); Button { session.error = nil } label:{Image(systemName:"xmark")} }.padding(12)
@@ -126,7 +126,14 @@ struct ModuleContent: View {
       case "compress": compression
       case "strip": metadata
       case "adjust": imageCanvas; adjustments
-      case "annotate": imageCanvas; annotations
+      case "annotate":
+        Picker("",selection:Binding(get:{session.imageEditMode},set:session.setImageEditMode)) {
+          Text("Annotate").tag("annotate")
+          Text("Crop").tag("crop")
+        }.pickerStyle(.segmented).labelsHidden().disabled(session.loading || session.busy)
+        imageFileSelector
+        imageCanvas
+        if session.isCropping { cropControls } else { annotations }
       case "frame": imageCanvas; backgroundControls
       case "crop": mediaCanvas; cropControls
       case "redact": mediaCanvas; redactControls
@@ -163,7 +170,7 @@ struct ModuleContent: View {
     }.frame(height:canvasHeight).background(Color.black.opacity(session.tool == "frame" || session.tool == "collage" || session.tool == "crop" ? 0.035 : 0.9),in:RoundedRectangle(cornerRadius:10)).clipShape(RoundedRectangle(cornerRadius:10))
   }
   var canvasHeight: CGFloat {
-    switch session.tool { case "adjust":return 290; case "frame":return 335; case "collage":return 310; case "crop":return 420; default:return 470 }
+    switch session.tool { case "adjust":return 290; case "frame":return 335; case "collage":return 310; case "crop","annotate":return 420; default:return 470 }
   }
   @ViewBuilder var mediaCanvas: some View {
     if session.family == .video {
@@ -251,23 +258,38 @@ struct ModuleContent: View {
       }
     }
   }
-  var cropControls: some View {
-    VStack(spacing:14) {
+  @ViewBuilder var imageFileSelector: some View {
       if session.files.count>1 {
         ScrollView(.horizontal) {HStack {ForEach(Array(session.files.enumerated()),id:\.offset) {index,url in
           Button {session.selectCropFile(index)} label:{VStack {if let image=session.fileThumbnails[url] {Image(nsImage:image).resizable().scaledToFit().frame(width:55,height:40)};Text(url.lastPathComponent).lineLimit(1).font(.caption2)}.padding(4).overlay(RoundedRectangle(cornerRadius:6).stroke(index==session.activeFile ? .orange : .clear))}.buttonStyle(.plain)
         }}}
       }
+  }
+  var cropControls: some View {
+    VStack(spacing:14) {
+      if session.tool != "annotate" { imageFileSelector }
       HStack { Text(tr("Aspect ratio")).foregroundStyle(.secondary); Picker(tr("Aspect ratio"),selection:$session.aspect) { ForEach(["Free","1:1","16:9","9:16","4:3","3:4"],id:\.self) { Text(trString($0)).tag($0) } }.labelsHidden().pickerStyle(.segmented).onChange(of:session.aspect) { _, value in
         if let ratio = Engine.ratio(value) {
+          session.remember()
           let maxW = session.sourceImage?.width ?? Int(session.sourceSize.width), maxH = session.sourceImage?.height ?? Int(session.sourceSize.height)
           session.options.width = min(maxW,Int(Double(maxH)*ratio)); session.options.height = Int(Double(session.options.width)/ratio)
           session.options.x = max(0,(maxW-session.options.width)/2); session.options.y = max(0,(maxH-session.options.height)/2)
         }
       } }
-      HStack { Text(tr("W")).foregroundStyle(.secondary); number(o.width); Text(tr("H")).foregroundStyle(.secondary); number(o.height); Text(tr("px")).foregroundStyle(.secondary); Spacer() }
+      HStack { Text(tr("W")).foregroundStyle(.secondary); number(cropDimension(width:true)); Text(tr("H")).foregroundStyle(.secondary); number(cropDimension(width:false)); Text(tr("px")).foregroundStyle(.secondary); Spacer() }
+      if session.tool == "annotate" {
+        HStack { Spacer(); Button { session.undo() } label:{Image(systemName:"arrow.uturn.backward")}
+          .help(tr("Undo")).disabled(session.undoStack.isEmpty) }
+      }
       if session.family == .video { Slider(value:Binding(get:{session.position},set:session.seek),in:0...max(0.001,session.duration)).tint(citrus); playback }
     }
+  }
+  func cropDimension(width: Bool) -> Binding<Int> {
+    Binding(get:{width ? session.options.width : session.options.height},set:{value in
+      session.remember()
+      if width {session.options.width=value} else {session.options.height=value}
+      session.clampImageCrop()
+    })
   }
   var annotations: some View {
     VStack(alignment:.leading,spacing:10) {
