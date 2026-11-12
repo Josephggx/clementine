@@ -21,6 +21,7 @@ struct MainView: View {
   @ObservedObject var state: AppState
   @StateObject private var hover = MainHover()
   @StateObject private var permissionCenter = PermissionCenter.shared
+  @StateObject private var news = WhatsNewStore.shared
   var body: some View {
     Group {
       if state.showingOnboarding { OnboardingView(state: state) }
@@ -40,6 +41,7 @@ struct MainView: View {
           nav("settings", "Réglages", "slider.horizontal.3")
           nav("coverage", "Fonctionnalités", "square.grid.3x3")
           nav("permissions", "Autorisations", "lock.shield")
+          nav("news", "Nouveautés", "bell")
         }
         Spacer()
         HStack {
@@ -79,6 +81,7 @@ struct MainView: View {
           case "settings": SettingsView(state: state)
           case "coverage": FeaturesView(state: state)
           case "permissions": PermissionsView()
+          case "news": WhatsNewView(news: news)
           default: WorkspaceView(state: state)
           }
         }
@@ -102,6 +105,7 @@ struct MainView: View {
       "workspace": "Atelier",
       "settings": "Réglages", "coverage": "Fonctionnalités",
       "permissions": "Autorisations",
+      "news": "Nouveautés",
     ][state.page] ?? "Atelier"
   }
   func nav(_ id: String, _ label: String, _ icon: String) -> some View {
@@ -109,11 +113,20 @@ struct MainView: View {
     let isHovered = hover.navID == id && !isSelected
     return Button {
       state.page = id
+      if id == "news" { news.markAllRead() }
     } label: {
       HStack(spacing: 11) {
         Image(systemName: icon).frame(width: 20)
         Text(trString(label)).lineLimit(1).fixedSize(horizontal: true, vertical: false)
         Spacer()
+        if id == "news", news.unreadCount > 0 {
+          Text(news.unreadCount > 99 ? "99+" : String(news.unreadCount))
+            .font(.system(size: 10, weight: .bold)).monospacedDigit()
+            .foregroundStyle(.white)
+            .padding(.horizontal, 5).frame(minWidth: 18, minHeight: 18)
+            .background(citrus, in: Capsule())
+            .accessibilityLabel(tr("\(news.unreadCount) nouveautés non lues"))
+        }
         if id == "permissions" {
           let hasMissingPermission = ClementinePermission.allCases.contains {
             let status = permissionCenter.status($0)

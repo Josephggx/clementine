@@ -1,9 +1,11 @@
 # Nouveautés de Clémentine
 
-## À publier
+## 1.0.20 — 12 novembre 2026
 
+- Nouveautés : onglet avec cloche, compteur d’annonces non lues et historique daté. Ouvrir la page remet le compteur à zéro ; l’état de lecture est conservé après redémarrage et mise à jour. Dix annonces rétrospectives proposées en français et en anglais, sans badge de notification pour cette première publication.
 - Roue : accepte la sélection complète au dépôt, même lorsque les fichiers sont publiés progressivement ou réordonnés pendant un glissement multiple. La validation suit le geste en cours et conserve la protection contre les doubles déclenchements.
-- Tests de dépôt natif hors écran avec 1, 10, 11, 25 et 100 fichiers, y compris une sélection finalisée au relâchement de la souris et la conversion réelle de chaque image.
+- Roue : le survol et le dépôt utilisent désormais le même parcours natif ; les événements de souris ordinaires ne peuvent plus effacer une cible pendant le glissement. L’entrée par le centre conserve le geste, sans permettre d’exécuter une action sur le centre ou les espaces entre boutons.
+- Tests automatisés des callbacks de dépôt avec 1, 10, 11, 14, 25, 31 et 100 fichiers, y compris une sélection finalisée au relâchement et la conversion réelle de chaque image. Ces simulations ne remplacent pas un essai depuis le Finder.
 
 ## 1.0.19 — 27 octobre 2026
 

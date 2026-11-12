@@ -2,6 +2,7 @@
 set -eu
 cd "$(dirname "$0")"
 app="${CLEMENTINE_APP_PATH:-$PWD/.build/Clémentine.app}"
+info_plist="${CLEMENTINE_INFO_PLIST:-$PWD/Info.plist}"
 mkdir -p .build/cache
 sparkle_root=$(zsh Scripts/prepare-sparkle.sh)
 test_sources=()
@@ -26,7 +27,8 @@ cp "$sparkle_root/LICENSE" "$app/Contents/Resources/Sparkle-LICENSE.txt"
 # The editable icon bitmap is generated in a temporary folder; only the icns ships.
 rm -f "$app/Contents/Resources/Icon.png" "$app/Contents/Resources/AppIconLight.png"
 cp "$compiled_binary" "$app/Contents/MacOS/Clementine"
-cp Info.plist "$app/Contents/Info.plist"
+cp "$info_plist" "$app/Contents/Info.plist"
+bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$info_plist")
 # Keep the bundled office runtime's signature stable across app updates.
 for tool_binary in "$app/Contents/Resources/Tools/ffmpeg" "$app/Contents/Resources/Tools/ffprobe"; do
   codesign --force --sign - "$tool_binary"
@@ -34,8 +36,8 @@ done
 # Keep a stable designated requirement across local prerelease builds. TCC uses
 # this identity for Accessibility; a plain ad-hoc signature changes its CDHash
 # at every update and can leave a stale, apparently enabled row in Settings.
-codesign --force --sign - --identifier "io.joseph.clementine.desktop" \
-  --requirements '=designated => identifier "io.joseph.clementine.desktop"' \
+codesign --force --sign - --identifier "$bundle_id" \
+  --requirements "=designated => identifier \"$bundle_id\"" \
   --entitlements Entitlements.plist "$app"
 codesign --verify --deep --strict "$app"
 test -x "$app/Contents/Resources/Tools/ffprobe"

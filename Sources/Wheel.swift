@@ -100,10 +100,11 @@ final class WheelController {
   private var cachedGeneration = Int.min
   private var cachedURLs: [URL] = []
   var progressPanels: [NSPanel] = []
-  var trace: ((String) -> Void)?
+  var trace: ((String) -> Void)? = { WheelDiagnostics.record($0) }
   init(state: AppState) { self.state = state }
   func start() {
     guard timer == nil else { return }
+    trace?("start build=\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") ?? "?")")
     _ = WheelHoverFeedback.shared
     let mouseMask: NSEvent.EventTypeMask = [.leftMouseDown, .leftMouseUp, .leftMouseDragged]
     // Register modifiers separately: a restricted key-down monitor must not disable mouse monitoring.
@@ -148,6 +149,7 @@ final class WheelController {
       modifiers.mouseChanged(flags: event.modifierFlags)
       refresh(down: true, flags: event.modifierFlags)
     case .leftMouseUp:
+      if panel != nil { trace?("mouse-up session=\(drag.id) phase=\(drag.phase) selected=\(surface?.wheel.selected ?? -1)") }
       modifiers.mouseChanged(flags: event.modifierFlags)
       refresh(down: false, flags: event.modifierFlags)
     case .flagsChanged:
@@ -199,7 +201,7 @@ final class WheelController {
     let change = drag.sample(down: down, flags: flags,
       generation: pb.changeCount, containsFiles: !cachedURLs.isEmpty && acceptsDragFiles?(cachedURLs) != false, cancelled: cancelled, resolve: resolve)
     if drag.phase != oldPhase || drag.mode != oldMode {
-      trace?("session=\(drag.id) phase=\(drag.phase) mode=\(drag.mode ?? "none")")
+      trace?("session=\(drag.id) phase=\(drag.phase) mode=\(drag.mode ?? "none") gen=\(pb.changeCount) count=\(cachedURLs.count)")
     }
     if change.close { close() }
     if change.began {
@@ -216,13 +218,14 @@ final class WheelController {
     if let mode = drag.mode, drag.phase == .dragging, shownMode != mode || panelSession != drag.id {
       present(files, mode: mode, session: drag.id)
     }
-    if let panel, panelSession == drag.id, drag.phase == .dragging {
-      surface?.wheel.hover(at: surface!.wheel.convert(panel.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil))
-    }
+    // During a real drag, AppKit's destination callbacks own both hover and
+    // acceptance. A separate mouse-position poll can highlight a button that
+    // the native drag destination has not accepted (or has already exited).
     if change.released {
       let id = drag.id
       let cleanup = DispatchWorkItem { [weak self] in
         guard let self, self.drag.finish(id: id, generation: NSPasteboard(name: .drag).changeCount) else { return }
+        self.trace?("release-cleanup session=\(id)")
         if self.panelSession == id { self.close() }
       }
       pendingClose?.cancel(); pendingClose = cleanup
@@ -336,6 +339,7 @@ final class WheelController {
     }
     surface.wheel.onChoose = { [weak self] item, inputs, generation in
       guard let self else { return false }
+      self.trace?("choose action=\(item.action) count=\(inputs.count) gen=\(generation ?? -1) phase=\(self.drag.phase)")
       guard self.acceptsDragFiles?(inputs) != false,
         self.items(inputs, mode: self.shownMode ?? mode).contains(where: { $0.action == item.action }) else { return false }
       if let session {
@@ -401,6 +405,7 @@ final class WheelView: NSView {
   private var pressed: Int?
   private var consumed = false
   private var nativeSequence: Int?
+  private var lastNativeDiagnostic: String?
   private var tracking: NSTrackingArea?
   private var openingTimer: Timer?
   private var hoverTimer: Timer?
@@ -480,6 +485,7 @@ final class WheelView: NSView {
   }
   private func select(_ next: Int?) {
     guard next != selected else { return }
+    if !preview { WheelDiagnostics.record("native-selection slot=\(next ?? -1) count=\(urls.count)") }
     selected=next;visualState.selected=next;animateHover(to:next);onSelectionChange?(next)
     if feedbackGate.selectionChanged(to: next.map { items[$0].action }, at: ProcessInfo.processInfo.systemUptime) {
       onHoverFeedback?()
@@ -514,10 +520,16 @@ final class WheelView: NSView {
     }
     timer.tolerance=0.001;RunLoop.main.add(timer,forMode:.common);hoverTimer=timer
   }
-  override func mouseMoved(with event: NSEvent) { hover(at: convert(event.locationInWindow, from: nil)) }
-  override func mouseEntered(with event: NSEvent) { hover(at: convert(event.locationInWindow, from: nil)) }
+  override func mouseMoved(with event: NSEvent) {
+    guard preview else { return }
+    hover(at: convert(event.locationInWindow, from: nil))
+  }
+  override func mouseEntered(with event: NSEvent) {
+    guard preview else { return }
+    hover(at: convert(event.locationInWindow, from: nil))
+  }
   override func mouseExited(with event: NSEvent) {
-    guard !preview || allowsPointerInteraction else { return }
+    guard preview, allowsPointerInteraction else { return }
     select(previewDefaultSelection)
   }
   override func mouseDown(with event: NSEvent) {
@@ -543,33 +555,52 @@ final class WheelView: NSView {
     } else { super.keyDown(with: event) }
   }
   override func wantsPeriodicDraggingUpdates() -> Bool { true }
-  override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { update(sender) }
+  override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+    WheelDiagnostics.record("native-enter seq=\(sender.draggingSequenceNumber) gen=\(sender.draggingPasteboard.changeCount)")
+    return update(sender)
+  }
   override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { update(sender) }
   private func update(_ sender: NSDraggingInfo) -> NSDragOperation {
     onRefresh?()
-    guard !consumed, onValidate?(sender) != false,
-      nativeSequence == nil || nativeSequence == sender.draggingSequenceNumber else {
+    let valid = onValidate?(sender) != false
+    let sameSequence = nativeSequence == nil || nativeSequence == sender.draggingSequenceNumber
+    let signature = "native-state seq=\(sender.draggingSequenceNumber) gen=\(sender.draggingPasteboard.changeCount) valid=\(valid) same-seq=\(sameSequence) consumed=\(consumed) mask=\(sender.draggingSourceOperationMask.rawValue)"
+    if signature != lastNativeDiagnostic { WheelDiagnostics.record(signature); lastNativeDiagnostic = signature }
+    guard !consumed, valid, sameSequence else {
       select(nil); return []
     }
     nativeSequence = sender.draggingSequenceNumber
     hover(at: convert(sender.draggingLocation, from: nil))
-    guard selected != nil else { return [] }
+    // The wheel opens under the pointer, initially in its empty centre.
+    // Accept the file gesture across the destination so Finder keeps routing
+    // it here. Only prepare/perform decide whether a petal was actually hit.
+    // A centre/gutter drop remains a no-op, as does any drop outside the wheel.
     return WheelGeometry.operation(allowed: sender.draggingSourceOperationMask)
   }
-  override func draggingExited(_ sender: NSDraggingInfo?) { select(nil) }
+  override func draggingExited(_ sender: NSDraggingInfo?) {
+    WheelDiagnostics.record("native-exit seq=\(sender?.draggingSequenceNumber ?? -1)")
+    select(nil)
+  }
   override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
-    !update(sender).isEmpty && selected != nil
+    let ready = !update(sender).isEmpty && selected != nil
+    WheelDiagnostics.record("native-prepare ready=\(ready) slot=\(selected ?? -1)")
+    return ready
   }
   override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
     // Resolve the full payload once, at drop time. The early preview snapshot
     // is deliberately not used for execution or compared with this ordering.
-    guard !consumed, let payload = WheelDropPayload(pasteboard: sender.draggingPasteboard) else { return false }
+    WheelDiagnostics.record("native-perform begin gen=\(sender.draggingPasteboard.changeCount) consumed=\(consumed)")
+    guard !consumed, let payload = WheelDropPayload(pasteboard: sender.draggingPasteboard) else {
+      WheelDiagnostics.record("native-perform rejected-payload"); return false
+    }
     guard !update(sender).isEmpty, let slot = selected else { return false }
     guard payload.generation == sender.draggingPasteboard.changeCount else { return false }
     consumed = onChoose?(items[slot], payload.urls, payload.generation) == true
+    WheelDiagnostics.record("native-perform result=\(consumed) count=\(payload.urls.count)")
     return consumed
   }
   override func draggingEnded(_ sender: NSDraggingInfo) {
+    WheelDiagnostics.record("native-end seq=\(sender.draggingSequenceNumber) consumed=\(consumed)")
     guard nativeSequence == sender.draggingSequenceNumber else { return }
     if !consumed { onEnd?() }
     nativeSequence = nil

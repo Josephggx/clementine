@@ -1,0 +1,152 @@
+[
+  {
+    "id": "image-edit",
+    "date": "2026-10-27",
+    "version": "1.0.19",
+    "icon": "pencil.and.outline",
+    "title": {
+      "fr": "Recadrage et annotation réunis dans Edit",
+      "en": "Cropping and annotation combined in Edit"
+    },
+    "body": {
+      "fr": "Le même outil permet de recadrer une image et d’y ajouter des annotations, dans l’ordre de votre choix, puis d’enregistrer le résultat.",
+      "en": "The same tool lets you crop an image and add annotations, in either order, then save the result."
+    },
+    "notify": false
+  },
+  {
+    "id": "print",
+    "date": "2026-10-22",
+    "version": "1.0.18",
+    "icon": "printer",
+    "title": {
+      "fr": "Impression depuis la roue des actions",
+      "en": "Printing from the actions wheel"
+    },
+    "body": {
+      "fr": "Print ouvre la fenêtre d’impression macOS avec aperçu. Disponible pour les PDF, images, documents, tableurs et présentations.",
+      "en": "Print opens the macOS print dialog with a preview. Available for PDFs, images, documents, spreadsheets and presentations."
+    },
+    "notify": false
+  },
+  {
+    "id": "float-clicks",
+    "date": "2026-10-22",
+    "version": "1.0.14",
+    "icon": "pin",
+    "title": {
+      "fr": "Correction des interactions du Float",
+      "en": "Float interaction fixes"
+    },
+    "body": {
+      "fr": "La gestion des clics et du déplacement du Float a été corrigée pour les cas où une autre application est active.",
+      "en": "Float click and drag handling has been corrected for cases where another application is active."
+    },
+    "notify": false
+  },
+  {
+    "id": "preview-close",
+    "date": "2026-10-22",
+    "version": "1.0.12",
+    "icon": "eye",
+    "title": {
+      "fr": "Correction du crash à la fermeture d’un aperçu",
+      "en": "Preview closing crash fixed"
+    },
+    "body": {
+      "fr": "Fermer un aperçu dans l’Atelier avec la croix, Échap ou un clic extérieur ne fait plus quitter Clémentine.",
+      "en": "Closing an Atelier preview with the close button, Escape or an outside click no longer quits Clémentine."
+    },
+    "notify": false
+  },
+  {
+    "id": "direct-updates",
+    "date": "2026-10-21",
+    "version": "1.0.11",
+    "icon": "arrow.down.circle",
+    "title": {
+      "fr": "Mise à jour directe vers la dernière version",
+      "en": "Update directly to the latest version"
+    },
+    "body": {
+      "fr": "Vous pouvez installer la dernière version sans passer par les versions intermédiaires. Lorsque c’est possible, seuls les fichiers modifiés sont téléchargés.",
+      "en": "You can install the latest version without installing intermediate versions. Where possible, only changed files are downloaded."
+    },
+    "notify": false
+  },
+  {
+    "id": "shortcuts",
+    "date": "2026-10-21",
+    "version": "1.0.10",
+    "icon": "keyboard",
+    "title": {
+      "fr": "Nouvelle répartition des raccourcis de la roue",
+      "en": "Updated wheel shortcuts"
+    },
+    "body": {
+      "fr": "Pendant un glissement, Maj ouvre les conversions, Option les outils et Commande les actions. Ces touches peuvent être modifiées dans Réglages.",
+      "en": "While dragging, Shift opens conversions, Option opens tools and Command opens actions. These keys can be changed in Settings."
+    },
+    "notify": false
+  },
+  {
+    "id": "large-preview",
+    "date": "2026-10-21",
+    "version": "1.0.10",
+    "icon": "arrow.up.left.and.arrow.down.right",
+    "title": {
+      "fr": "Aperçu des documents dans une fenêtre agrandissable",
+      "en": "Document previews in a resizable window"
+    },
+    "body": {
+      "fr": "Un clic sur l’aperçu d’un document dans l’Atelier ouvre une fenêtre que vous pouvez déplacer, redimensionner ou mettre en plein écran.",
+      "en": "Clicking a document preview in the Atelier opens a window you can move, resize or display in full screen."
+    },
+    "notify": false
+  },
+  {
+    "id": "duplicate-workspace",
+    "date": "2026-10-21",
+    "version": "1.0.10",
+    "icon": "square.on.square",
+    "title": {
+      "fr": "Ajout des actions Duplicate et Atelier",
+      "en": "New Duplicate and Atelier actions"
+    },
+    "body": {
+      "fr": "Duplicate crée une copie des fichiers sélectionnés. Atelier ajoute la sélection à l’Atelier et ouvre sa fenêtre.",
+      "en": "Duplicate creates a copy of the selected files. Atelier adds the selection to the Atelier and opens its window."
+    },
+    "notify": false
+  },
+  {
+    "id": "unarchive",
+    "date": "2026-10-21",
+    "version": "1.0.10",
+    "icon": "archivebox",
+    "title": {
+      "fr": "Extraction des archives ZIP, TAR et GZIP dans l’Atelier",
+      "en": "Extract ZIP, TAR and GZIP archives in the Atelier"
+    },
+    "body": {
+      "fr": "Dézip extrait l’archive sur le disque, puis la remplace dans l’Atelier par les fichiers extraits. L’archive d’origine est conservée sur le disque.",
+      "en": "Unzip extracts the archive to disk, then replaces it in the Atelier with the extracted files. The original archive is kept on disk."
+    },
+    "notify": false
+  },
+  {
+    "id": "custom-split",
+    "date": "2026-10-21",
+    "version": "1.0.8",
+    "icon": "square.split.2x2",
+    "title": {
+      "fr": "Découpage des PDF par page ou par groupes",
+      "en": "Split PDFs into pages or groups"
+    },
+    "body": {
+      "fr": "Split exporte les pages en PDF, JPEG ou PNG. Pour les PDF, vous pouvez créer un fichier par page ou regrouper les pages par glisser-déposer.",
+      "en": "Split exports pages as PDF, JPEG or PNG. For PDFs, create one file per page or group pages using drag and drop."
+    },
+    "notify": false
+  }
+]

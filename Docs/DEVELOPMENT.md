@@ -4,11 +4,21 @@ Application macOS de conversion et de traitement de fichiers. Apple Silicon, mac
 
 L’application installée est **`/Applications/Clémentine.app`**. Le dépôt contient uniquement les sources, les ressources nécessaires, les tests et la documentation.
 
-## Version 1.0.19
+## Version 1.0.20
 
-Version 1.0.19 du 27 octobre 2026 : réunit Crop et Annotate dans Edit, avec recadrage réversible, annotations et sauvegarde combinée, y compris par image dans une sélection multiple. Le dépôt public unique est `Josephggx/clementine`.
+Version 1.0.20 du 12 novembre 2026 : ajoute l’onglet Nouveautés et fiabilise le dépôt de sélections multiples dans la roue. L’historique initial est publié sans notification. Le dépôt public unique est `Josephggx/clementine`.
 
 ## Construire et mettre à jour
+
+### Annonces dans l’onglet Nouveautés
+
+`Resources/News.json` contient les annonces embarquées dans l’app, avec date de publication, version, icône, titre et phrase courte en français et en anglais. Ajouter une entrée uniquement pour un changement utile à présenter. `notify: true` ajoute cette annonce au compteur ; `false` la laisse dans l’historique sans notification. Les annonces sont triées par date décroissante, puis selon l’ordre du fichier pour une même date.
+
+Les dix annonces de la première publication (1.0.20) gardent `notify: false`, y compris dans les versions suivantes. Seules les nouvelles annonces importantes doivent utiliser `notify: true`.
+
+Chaque `id` est permanent : ne jamais le renommer lors d’une correction de texte ni en créer un nouveau à chaque compilation. La page mémorise les identifiants lus dans les préférences locales dès son ouverture. Une mise à jour sans nouvelle annonce conserve un compteur nul. La suite `Tests/check-news.sh` vérifie notamment redémarrages, nouvelles annonces, retours à une version antérieure et indépendance des préférences de bêta.
+
+`package-beta.sh` compile les sources actuelles dans `.build/beta/Clémentine Beta.app`, puis prépare une copie locale dans `outputs/Beta` (ou `CLEMENTINE_OUTPUT_ROOT`). Utiliser `CLEMENTINE_VERSION`, `CLEMENTINE_BUILD` et `CLEMENTINE_BUNDLE_ID` pour identifier le test. Une nouvelle identité permet un essai vierge. Le canal bêta désactive le flux de mises à jour public et utilise sa propre destination dans Applications ; il ne remplace pas la version stable. Le script n’installe, ne lance et ne publie rien.
 
 Lancer `./build.sh`. La compilation produit `.build/Clémentine.app` et ne remplace pas l’application installée. Les mises à jour sont publiées sur GitHub ; Joseph les installe depuis l’app pour vérifier les changements.
 

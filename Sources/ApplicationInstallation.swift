@@ -1,7 +1,12 @@
 import AppKit
 
 enum ApplicationInstallation {
-  static let applicationName = "Clémentine.app"
+  static var applicationName: String {
+    applicationName(channel: Bundle.main.object(forInfoDictionaryKey: "ClementineDistributionChannel") as? String)
+  }
+  static func applicationName(channel: String?) -> String {
+    channel == "beta" ? "Clémentine Beta.app" : "Clémentine.app"
+  }
 
   static func needsInstallationHandoff(source: URL, readOnlyVolume: Bool) -> Bool {
     let path = source.standardizedFileURL.path

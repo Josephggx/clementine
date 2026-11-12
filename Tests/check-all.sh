@@ -8,6 +8,7 @@ checks=(
   check-compatibility.sh
   check-drag.sh
   check-batch-drag.sh
+  check-news.sh
   check-update-feed.sh
   check-workspace-files.sh
   check-modules.sh

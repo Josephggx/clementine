@@ -1,6 +1,8 @@
 import AppKit
 
 let manager = FileManager.default
+precondition(ApplicationInstallation.applicationName(channel: nil) == "Clémentine.app")
+precondition(ApplicationInstallation.applicationName(channel: "beta") == "Clémentine Beta.app")
 let root = manager.temporaryDirectory.appendingPathComponent("Clementine-install-test-\(UUID().uuidString)")
 try manager.createDirectory(at: root, withIntermediateDirectories: true)
 defer { try? manager.removeItem(at: root) }

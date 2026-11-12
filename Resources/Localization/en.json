@@ -542,5 +542,8 @@
   "Recadrez et annotez votre image dans le même éditeur.": "Crop and annotate your image in the same editor.",
   "Passez de Crop à Annotate sans perdre vos modifications": "Switch between Crop and Annotate without losing your edits",
   "Enregistrez le cadrage et les annotations ensemble": "Save the crop and annotations together",
-  "Zone de recadrage invalide": "Invalid crop area"
+  "Zone de recadrage invalide": "Invalid crop area",
+  "Nouveautés": "What’s new",
+  "Les nouveautés arrivent bientôt.": "New updates are on their way.",
+  "{0} nouveautés non lues": "{0} unread updates"
 }

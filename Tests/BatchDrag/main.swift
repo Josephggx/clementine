@@ -99,4 +99,32 @@ info.draggingSequenceNumber=1;info.draggingLocation=wheel.center
 check(!wheel.performDragOperation(info) && commits==0,"centre is never a drop button")
 wheel.onValidate={_ in false};info.draggingLocation=WheelGeometry.point(84,WheelGeometry.angle(0,count:1),center:wheel.center)
 check(!wheel.performDragOperation(info) && commits==0,"cancelled drag is rejected")
-print("PASS \(checks) batch drag checks; 1/10/11/25/100 files, late payloads, reordered URLs, native drop callbacks and 294 real image conversions")
+// Finder enters at the empty centre because the wheel opens under the pointer.
+// Keep negotiating the file drag there, but never execute a centre/gutter drop.
+for count in [1, 10, 14, 31, 100] {
+  let board = NSPasteboard.withUniqueName()
+  defer { board.releaseGlobally() }
+  board.writeObjects(files.prefix(count).map { $0 as NSURL })
+  let destination = WheelView(frame: CGRect(x: 0, y: 0, width: 272, height: 272),
+    urls: Array(files.prefix(count)), items: [WheelItem(title: "PNG", icon: "", action: "convert:png"),
+      WheelItem(title: "PDF", icon: "", action: "convert:pdf")], preview: false)
+  let dragInfo = DragInfo(board, point: destination.center)
+  var executions = 0
+  destination.onChoose = { _, input, _ in executions += 1; return input.count == count }
+  check(!destination.draggingEntered(dragInfo).isEmpty, "centre entry keeps Finder's \(count)-file gesture")
+  check(destination.selected == nil, "centre is not highlighted")
+  check(!destination.prepareForDragOperation(dragInfo), "centre cannot prepare a drop")
+  check(!destination.performDragOperation(dragInfo) && executions == 0, "centre never executes")
+  dragInfo.draggingLocation = WheelGeometry.point(84, WheelGeometry.angle(0, count: 2), center: destination.center)
+  check(!destination.draggingUpdated(dragInfo).isEmpty && destination.selected == 0, "native hover selects the accepted petal")
+  let exit = NSEvent.enterExitEvent(with: .mouseExited, location: .zero, modifierFlags: [],
+    timestamp: 0, windowNumber: 0, context: nil, eventNumber: 0, trackingNumber: 0, userData: nil)!
+  destination.mouseExited(with: exit)
+  check(destination.selected == 0, "unrelated mouse tracking cannot clear native drag selection")
+  destination.draggingExited(dragInfo)
+  check(destination.selected == nil, "native drag exit clears hover")
+  check(!destination.draggingEntered(dragInfo).isEmpty && destination.selected == 0, "native reentry restores hover")
+  check(destination.prepareForDragOperation(dragInfo), "same highlighted petal accepts drop")
+  check(destination.performDragOperation(dragInfo) && executions == 1, "centre-to-petal batch executes once")
+}
+print("PASS \(checks) batch drag checks; 1/10/11/14/25/31/100 files, centre entry, native hover ownership, late payloads, reordered URLs and 294 real image conversions")

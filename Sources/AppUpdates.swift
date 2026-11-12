@@ -36,6 +36,7 @@ final class AppUpdates: NSObject, ObservableObject {
   }
 
   func start(isBusy: @escaping () -> Bool, isOnboarding: @escaping () -> Bool) {
+    guard Bundle.main.object(forInfoDictionaryKey: "ClementineDistributionChannel") as? String != "beta" else { return }
     guard !started else { return }
     started = true
     self.isBusy = isBusy
@@ -73,6 +74,7 @@ final class AppUpdates: NSObject, ObservableObject {
   }
 
   @objc func checkForUpdates(_ sender: Any? = nil) {
+    guard Bundle.main.object(forInfoDictionaryKey: "ClementineDistributionChannel") as? String != "beta" else { return }
     refreshInstalledCopy()
     if needsRelaunch {
       relaunchInstalledCopy()
