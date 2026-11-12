@@ -32,6 +32,11 @@ struct WheelDragSession {
       if !down { idleGeneration = generation }
       return change
     }
+    if phase == .dragging, containsFiles {
+      // Also sample on mouse-up: AppKit may publish the final generation just
+      // before prepareForDragOperation / performDragOperation.
+      pasteboardGeneration = generation
+    }
     if !down {
       switch phase {
       case .dragging:
@@ -88,6 +93,23 @@ struct WheelDragSession {
     idleGeneration = generation
     _ = shortcut.update(dragging: false, flags: [], resolve: { _ in nil })
     return true
+  }
+}
+
+/// Read one coherent, complete payload. Never convert only the URLs that happened
+/// to be available while Finder was still publishing the selection.
+struct WheelDropPayload {
+  let urls: [URL]
+  let generation: Int
+
+  init?(pasteboard: NSPasteboard) {
+    let generation = pasteboard.changeCount
+    let fileItems = pasteboard.pasteboardItems?.filter { $0.types.contains(.fileURL) }.count ?? 0
+    let urls = (pasteboard.readObjects(forClasses: [NSURL.self],
+      options: [.urlReadingFileURLsOnly: true]) as? [URL]) ?? []
+    guard !urls.isEmpty, urls.count >= fileItems, pasteboard.changeCount == generation else { return nil }
+    self.urls = urls
+    self.generation = generation
   }
 }
 

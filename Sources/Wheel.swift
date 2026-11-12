@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-struct WheelItem {
+struct WheelItem: Equatable {
   let title: String
   let icon: String
   let action: String
@@ -70,7 +70,7 @@ final class WheelSurface: NSView {
   }
   required init?(coder: NSCoder) { fatalError() }
   func update(_ items: [WheelItem]) {
-    wheel.replaceItems(items)
+    if wheel.items != items { wheel.replaceItems(items) }
     if #available(macOS 26.0, *) { /* The hosting view observes the stable selection model. */ }
     else if let material, material is NSVisualEffectView {
       let mask = CAShapeLayer()
@@ -178,7 +178,7 @@ final class WheelController {
     return nil
   }
   private func dragURLs(_ pasteboard: NSPasteboard) -> [URL] {
-    (pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]) ?? []
+    WheelDropPayload(pasteboard: pasteboard)?.urls ?? []
   }
   func refresh(down overrideDown: Bool? = nil, flags overrideFlags: NSEvent.ModifierFlags? = nil) {
     let time = ProcessInfo.processInfo.systemUptime
@@ -205,6 +205,13 @@ final class WheelController {
     if change.began {
       pendingClose?.cancel(); pendingClose = nil
       files = cachedURLs
+    }
+    if drag.phase == .dragging, !cachedURLs.isEmpty, files != cachedURLs {
+      files = cachedURLs
+      if let surface, panelSession == drag.id, let mode = drag.mode {
+        surface.wheel.updateURLs(files)
+        surface.update(items(files, mode: mode))
+      }
     }
     if let mode = drag.mode, drag.phase == .dragging, shownMode != mode || panelSession != drag.id {
       present(files, mode: mode, session: drag.id)
@@ -287,8 +294,9 @@ final class WheelController {
   private func present(_ urls: [URL], mode: String, session: UInt64?) {
     guard !urls.isEmpty else { return }
     let choices = items(urls, mode: mode)
-    if let surface, let panel, panelSession == session, surface.wheel.urls == urls {
+    if let surface, let panel, panelSession == session, surface.wheel.urls == urls || session != nil {
       shownMode = mode
+      surface.wheel.updateURLs(urls)
       surface.wheel.emptyText = mode == "tools" ? "No tools" : "No conversions"
       surface.update(choices)
       trace?("update mode=\(mode) window=\(panel.windowNumber)")
@@ -320,12 +328,16 @@ final class WheelController {
     surface.wheel.onRefresh = { [weak self] in if session != nil { self?.refreshNativeDrag() } }
     surface.wheel.onValidate = { [weak self] info in
       guard let self else { return false }
-      guard self.dragURLs(info.draggingPasteboard) == urls else { return false }
+      // The native drag identity validates the gesture, not the order or a
+      // possibly partial list observed before Finder finished preparing it.
+      // Reading every file here also blocks AppKit's tracking loop on big lots.
       if let session { return self.drag.acceptsDrop(id: session, generation: info.draggingPasteboard.changeCount) }
       return self.panel?.preview == true
     }
     surface.wheel.onChoose = { [weak self] item, inputs, generation in
       guard let self else { return false }
+      guard self.acceptsDragFiles?(inputs) != false,
+        self.items(inputs, mode: self.shownMode ?? mode).contains(where: { $0.action == item.action }) else { return false }
       if let session {
         guard let generation, self.drag.commit(id: session, generation: generation) else { return false }
       } else { guard self.panel?.preview == true else { return false } }
@@ -363,7 +375,8 @@ final class WheelController {
   }
 }
 final class WheelView: NSView {
-  let urls: [URL], preview: Bool
+  private(set) var urls: [URL]
+  let preview: Bool
   private(set) var items: [WheelItem]
   var onChoose: ((WheelItem, [URL], Int?) -> Bool)?
   var onValidate: ((NSDraggingInfo) -> Bool)?
@@ -402,10 +415,16 @@ final class WheelView: NSView {
     registerForDraggedTypes([.fileURL])
     setAccessibilityElement(true); setAccessibilityRole(.group)
     replaceItems(items)
+    updateURLs(urls)
+  }
+  func updateURLs(_ urls: [URL]) {
+    guard self.urls != urls || fileSizeText == "…" else { return }
+    self.urls = urls
     DispatchQueue.global(qos: .userInitiated).async { [weak self] in
       let size = urls.reduce(Int64(0)) { $0 + Int64((try? $1.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) }
       let label = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
       DispatchQueue.main.async { [weak self] in
+        guard self?.urls == urls else { return }
         self?.fileSizeText = label; self?.needsDisplay = true
       }
     }
@@ -542,9 +561,12 @@ final class WheelView: NSView {
     !update(sender).isEmpty && selected != nil
   }
   override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+    // Resolve the full payload once, at drop time. The early preview snapshot
+    // is deliberately not used for execution or compared with this ordering.
+    guard !consumed, let payload = WheelDropPayload(pasteboard: sender.draggingPasteboard) else { return false }
     guard !update(sender).isEmpty, let slot = selected else { return false }
-    guard let files = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !files.isEmpty else { return false }
-    consumed = onChoose?(items[slot], files, sender.draggingPasteboard.changeCount) == true
+    guard payload.generation == sender.draggingPasteboard.changeCount else { return false }
+    consumed = onChoose?(items[slot], payload.urls, payload.generation) == true
     return consumed
   }
   override func draggingEnded(_ sender: NSDraggingInfo) {

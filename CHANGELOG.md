@@ -1,5 +1,10 @@
 # Nouveautés de Clémentine
 
+## À publier
+
+- Roue : accepte la sélection complète au dépôt, même lorsque les fichiers sont publiés progressivement ou réordonnés pendant un glissement multiple. La validation suit le geste en cours et conserve la protection contre les doubles déclenchements.
+- Tests de dépôt natif hors écran avec 1, 10, 11, 25 et 100 fichiers, y compris une sélection finalisée au relâchement de la souris et la conversion réelle de chaque image.
+
 ## 1.0.19 — 27 octobre 2026
 
 - Images : Crop et Annotate réunis dans Edit, avec l’icône d’annotation et un sélecteur Annotate / Crop. Les réglages de couleur restent disponibles sous Adjust.
