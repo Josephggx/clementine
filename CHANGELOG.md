@@ -1,5 +1,9 @@
 # Nouveautés de Clémentine
 
+## À publier
+
+- Mise à jour : téléchargement et préparation en arrière-plan dès la détection. Le bouton propose ensuite de redémarrer, sans retélécharger ni ouvrir une confirmation supplémentaire. Les traitements en cours se terminent avant la relance.
+
 ## 1.0.20 — 12 novembre 2026
 
 - Nouveautés : onglet avec cloche, compteur d’annonces non lues et historique daté. Ouvrir la page remet le compteur à zéro ; l’état de lecture est conservé après redémarrage et mise à jour. Dix annonces rétrospectives proposées en français et en anglais, sans badge de notification pour cette première publication.

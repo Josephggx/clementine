@@ -7,13 +7,18 @@ import Sparkle
 #endif
 
 /// Sparkle owns the update check schedule, downloads, signature verification,
-/// replacement and relaunch. Scheduled checks only expose our sidebar CTA.
+/// replacement and relaunch. Background checks prepare the update silently;
+/// our sidebar invokes the prepared installation only on an explicit click.
 final class AppUpdates: NSObject, ObservableObject {
   static let shared = AppUpdates()
   @Published private(set) var availableVersion: String?
   @Published private(set) var canCheckForUpdates = false
   private var isBusy: () -> Bool = { false }
   private var isOnboarding: () -> Bool = { false }
+  @Published private(set) var preparation = UpdatePreparation()
+  private var userInitiatedCheck = false
+  private var userRequestedInstallation = false
+  private var preparedInstallTimer: Timer?
   private var started = false
   private var installationTimer: Timer?
   private var terminationTimer: Timer?
@@ -30,6 +35,28 @@ final class AppUpdates: NSObject, ObservableObject {
     startingUpdater: false, updaterDelegate: self, userDriverDelegate: self)
   private var checkObservation: NSKeyValueObservation?
   #endif
+
+  var updateActionEnabled: Bool {
+    if needsRelaunch || preparation.canInstall { return true }
+    if preparation.isPreparing || preparation.phase == .waitingForWork || preparation.phase == .installing { return false }
+    return canCheckForUpdates
+  }
+
+  var updateActionTitle: String {
+    if needsRelaunch { return "Relancer Clémentine" }
+    switch preparation.phase {
+    case .downloading: return "Téléchargement…"
+    case .preparing: return "Préparation…"
+    case .ready: return "Redémarrer pour mettre à jour"
+    case .waitingForWork: return "En attente de la fin du traitement…"
+    case .installing: return "Redémarrage…"
+    default: return "Mettre à jour"
+    }
+  }
+
+  var updateActionSymbol: String {
+    needsRelaunch || preparation.canInstall ? "arrow.clockwise" : "arrow.down.to.line"
+  }
 
   static var installedVersion: String {
     Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
@@ -66,6 +93,9 @@ final class AppUpdates: NSObject, ObservableObject {
       controller.updater.clearFeedURLFromUserDefaults()
       controller.updater.httpHeaders=["Cache-Control":"no-cache","Pragma":"no-cache"]
     }
+    // Product policy: also enable prefetch for existing installations whose
+    // previous Sparkle preference disabled automatic downloads. No forced quit.
+    controller.updater.automaticallyDownloadsUpdates = true
     controller.startUpdater()
     if controller.updater.automaticallyChecksForUpdates {
       controller.updater.checkForUpdatesInBackground()
@@ -81,7 +111,35 @@ final class AppUpdates: NSObject, ObservableObject {
       return
     }
     #if canImport(Sparkle)
-    controller.checkForUpdates(sender)
+    if preparation.canInstall {
+      let install = preparation.requestInstallation(isBusy: isBusy())
+      install?()
+      if preparation.phase == .waitingForWork {
+        preparedInstallTimer?.invalidate()
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] timer in
+          guard let self else { timer.invalidate(); return }
+          let action = self.preparation.continueInstallation(isBusy: self.isBusy())
+          if let action {
+            timer.invalidate(); self.preparedInstallTimer = nil
+            action()
+          }
+        }
+        preparedInstallTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+      }
+      return
+    }
+    if preparation.phase == .needsInteraction {
+      // E.g. an application owned by another macOS account: let Sparkle ask
+      // for the system authorization, reusing the downloaded archive.
+      controller.checkForUpdates(sender)
+      return
+    }
+    guard !preparation.isPreparing, preparation.phase != .waitingForWork,
+      preparation.phase != .installing, controller.updater.canCheckForUpdates else { return }
+    userInitiatedCheck = true
+    installationWarning = nil
+    controller.updater.checkForUpdatesInBackground()
     #endif
   }
 
@@ -145,6 +203,7 @@ final class AppUpdates: NSObject, ObservableObject {
     terminationTimer?.invalidate()
     installedCopyTimer?.invalidate()
     installationTimer?.invalidate()
+    preparedInstallTimer?.invalidate()
   }
 }
 
@@ -164,20 +223,69 @@ extension AppUpdates: SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
     _ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState
   ) {
     availableVersion = update.displayVersionString
+    // Automatic updates that cannot be prepared silently need the native UI
+    // (authorization, major upgrade, information-only release…).
+    if !preparation.canInstall && preparation.phase != .waitingForWork && preparation.phase != .installing {
+      preparation.needsInteraction()
+    }
   }
 
   func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
     availableVersion = item.displayVersionString
+    installationWarning = nil
+    preparation.downloading()
   }
 
   func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
     availableVersion = nil
+    preparation.reset()
+    if userInitiatedCheck {
+      userInitiatedCheck = false
+      let alert = NSAlert()
+      alert.messageText = tr("Clémentine est à jour")
+      alert.addButton(withTitle: tr("OK"))
+      alert.runModal()
+    }
+  }
+
+  func updater(_ updater: SPUUpdater, willDownloadUpdate item: SUAppcastItem, with request: NSMutableURLRequest) {
+    userInitiatedCheck = false
+    preparation.downloading()
+  }
+
+  func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {
+    preparation.extracting()
+  }
+
+  func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
+    immediateInstallationBlock installHandler: @escaping () -> Void) -> Bool {
+    availableVersion = item.displayVersionString
+    userInitiatedCheck = false
+    installationWarning = nil
+    preparation.ready { [weak self] in
+      guard let self else { return }
+      self.userRequestedInstallation = true
+      self.monitorRequestedInstallation()
+      installHandler()
+    }
+    // Keep the prepared callback for our CTA. Sparkle can also install on a
+    // normal quit, but must never bring down the running app in the background.
+    return true
+  }
+
+  func updater(_ updater: SPUUpdater, userDidMake choice: SPUUserUpdateChoice,
+    forUpdate item: SUAppcastItem, state: SPUUserUpdateState) {
+    if choice == .install { userRequestedInstallation = true }
   }
 
   func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
     receipt.begin(build: item.versionString, version: item.displayVersionString)
     installationWarning = nil
     logger.info("Installing build \(item.versionString, privacy: .public)")
+    if userRequestedInstallation { monitorRequestedInstallation() }
+  }
+
+  private func monitorRequestedInstallation() {
     installedCopyTimer?.invalidate()
     let deadline = Date().addingTimeInterval(15 * 60)
     let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] timer in
@@ -199,6 +307,7 @@ extension AppUpdates: SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
   }
 
   func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
+    guard userRequestedInstallation else { return }
     terminationTimer?.invalidate()
     // Sparkle first asks its helper to send a normal macOS quit event. A
     // second normal termination initiated by our process handles the case
@@ -215,18 +324,24 @@ extension AppUpdates: SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
   }
 
   func updater(_ updater: SPUUpdater, didAbortWithError error: Error) {
+    preparedInstallTimer?.invalidate(); preparedInstallTimer = nil
+    userRequestedInstallation = false
     terminationTimer?.invalidate()
     terminationTimer = nil
     installedCopyTimer?.invalidate()
     installedCopyTimer = nil
     let error = error as NSError
     guard !(error.domain == SUSparkleErrorDomain && error.code == SUError.noUpdateError.rawValue) else { return }
+    preparation.fail()
+    let showError = userInitiatedCheck
+    userInitiatedCheck = false
     receipt.cancel()
     logger.error("Update aborted: \(error.domain, privacy: .public) / \(error.code)")
     if error.domain == SUSparkleErrorDomain && error.code != SUError.installationCanceledError.rawValue
       && error.code != SUError.installationAuthorizeLaterError.rawValue {
       installationWarning = "La mise à jour n’a pas abouti. Votre version actuelle est conservée."
     }
+    if showError { NSAlert(error: error).runModal() }
   }
 
   func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: Error?) {
@@ -271,8 +386,7 @@ struct UpdateSidebarButton: View {
   var body: some View {
     if updates.availableVersion != nil || updates.needsRelaunch {
       Button { updates.checkForUpdates() } label: {
-        Label(trString(updates.needsRelaunch ? "Relancer Clémentine" : "Mettre à jour"),
-          systemImage: updates.needsRelaunch ? "arrow.clockwise" : "arrow.down.to.line")
+        Label(trString(updates.updateActionTitle), systemImage: updates.updateActionSymbol)
           .font(.system(size: 13, weight: .semibold))
           .padding(11)
           .foregroundStyle(citrus)
@@ -280,7 +394,7 @@ struct UpdateSidebarButton: View {
             in: RoundedRectangle(cornerRadius: 9))
       }
       .buttonStyle(StableInteractionButtonStyle())
-      .disabled(!updates.canCheckForUpdates && !updates.needsRelaunch)
+      .disabled(!updates.updateActionEnabled)
       .help(trString(updates.needsRelaunch ? "Ouvrir la version déjà installée" : "Installer Clémentine \(updates.availableVersion ?? "")"))
       .onHover { hover.active = $0 }
       .animation(.easeInOut(duration: 0.18), value: hover.active)
@@ -299,7 +413,7 @@ struct AppVersionLabel: View {
         .font(.system(size: 11))
         .foregroundStyle(.secondary)
       Button { updates.checkForUpdates() } label: {
-        Text(tr("Rechercher une mise à jour"))
+        Text(trString(updates.availableVersion != nil || updates.needsRelaunch ? updates.updateActionTitle : "Rechercher une mise à jour"))
           .font(.system(size: 11))
           .foregroundStyle(.secondary)
           .padding(.horizontal, 6).padding(.vertical, 4)
@@ -307,7 +421,7 @@ struct AppVersionLabel: View {
             in: RoundedRectangle(cornerRadius: 5))
       }
       .buttonStyle(StableInteractionButtonStyle())
-      .disabled(!updates.canCheckForUpdates && !updates.needsRelaunch)
+      .disabled(!updates.updateActionEnabled)
       .onHover { hover.active = $0 }
       .animation(.easeInOut(duration: 0.18), value: hover.active)
     }

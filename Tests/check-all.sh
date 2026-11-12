@@ -10,6 +10,7 @@ checks=(
   check-batch-drag.sh
   check-news.sh
   check-update-feed.sh
+  check-update-preparation.sh
   check-workspace-files.sh
   check-modules.sh
   check-image-edit.sh

@@ -62,7 +62,7 @@ Un lancement depuis le DMG ou une copie transloquée ouvre la copie de `/Applica
 
 Le DMG et le flux sont signés en Ed25519. La clé privée est dans le Trousseau macOS sous le compte `io.joseph.clementine.desktop` ; elle n’est ni dans le projet, ni dans les dépôts GitHub. Conserver une sauvegarde sécurisée du Trousseau : perdre cette clé empêcherait de signer les prochaines mises à jour reconnues par les installations existantes.
 
-Les vérifications automatiques restent silencieuses. Le bouton « Mettre à jour » apparaît dans la sidebar lorsqu’une version est disponible ; le clic ouvre l’interface d’installation Sparkle. Aucune installation automatique n’est activée. Une conversion en cours retarde le redémarrage. La version installée figure au bas des Réglages.
+Les vérifications automatiques restent silencieuses. Sparkle télécharge, vérifie et prépare la mise à jour en arrière-plan, y compris pour les installations existantes. La sidebar affiche la progression, puis « Redémarrer pour mettre à jour » uniquement lorsque Sparkle fournit sa continuation d’installation. Le clic utilise cette continuation sans second téléchargement ni confirmation. Une conversion en cours retarde la relance. Aucune fermeture automatique n’est déclenchée sans ce clic ; Sparkle peut aussi terminer une installation préparée lors d’une fermeture normale. Si une autorisation système est nécessaire, le parcours natif Sparkle reste disponible. Une recherche manuelle suit le même parcours ; elle confirme si aucune mise à jour n’est disponible. La version installée figure au bas des Réglages. `Tests/check-update-preparation.sh` vérifie les transitions, les erreurs et la consommation unique de la continuation.
 
 ## Icône
 

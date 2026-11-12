@@ -545,5 +545,11 @@
   "Zone de recadrage invalide": "Invalid crop area",
   "Nouveautés": "What’s new",
   "Les nouveautés arrivent bientôt.": "New updates are on their way.",
-  "{0} nouveautés non lues": "{0} unread updates"
+  "{0} nouveautés non lues": "{0} unread updates",
+  "Téléchargement…": "Downloading…",
+  "Préparation…": "Preparing…",
+  "Redémarrer pour mettre à jour": "Restart to update",
+  "En attente de la fin du traitement…": "Waiting for the current task…",
+  "Redémarrage…": "Restarting…",
+  "Clémentine est à jour": "Clémentine is up to date"
 }
